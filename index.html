@@ -2,393 +2,711 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>M HAMZA | Premium Dil Kartları</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M HAMZA | Dil Kartları</title>
 
 <link rel="manifest" href="manifest.json">
+
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
-<meta name="theme-color" content="#0B0F19">
+<meta name="theme-color" content="#050710">
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#04050a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Dil Kartları">
-
-<!-- Modern Fontlar -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-title" content="Kelime Kartları">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
 <style>
-  :root {
-    --bg-dark: #07090F;
-    --bg-light: #131A2A;
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-blur: blur(20px);
-    
-    --cyan: #00F0FF;
-    --violet: #8A2BE2;
-    --pink: #FF007F;
-    --gold: #FFD700;
-    --green: #00FF87;
-    --red: #FF3366;
-    
-    --text-main: #FFFFFF;
-    --text-muted: #8E9BB0;
-    
-    --radius-sm: 12px;
-    --radius-md: 20px;
-    --radius-lg: 32px;
-    
-    --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
-    --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.4);
+  :root{
+    --bg:#04050a;
+    --panel:rgba(13,17,34,0.2);
+    --panel-2:rgba(19,26,51,0.24);
+    --cyan:#4fe8ff;
+    --cyan-soft:#8ff2ff;
+    --violet:#9b7bff;
+    --pink:#ff5fb8;
+    --gold:#ffd23b;
+    --green:#3dffa0;
+    --red:#ff3b5c;
+    --lime:#c9ff3e;
+    --text:#eef4ff;
+    --muted:#8291b3;
+    --good:#3dffa0;
+    --bad:#ff5f7a;
+    --radius:20px;
   }
+  *{box-sizing:border-box;}
+  html,body{margin:0;overflow-x:hidden;}
+  body{
+    background-image:
+      radial-gradient(circle at 50% -20%, rgba(90,110,200,0.20), transparent 55%),
+      radial-gradient(circle at 10% -8%, rgba(79,232,255,0.14), transparent 42%),
+      radial-gradient(circle at 105% 8%, rgba(155,123,255,0.14), transparent 46%),
+      radial-gradient(circle at 30% 108%, rgba(79,232,255,0.04), transparent 55%),
+      radial-gradient(circle at 90% 95%, rgba(255,210,59,0.05), transparent 45%),
+      linear-gradient(180deg, #050710 0%, #04050a 40%, #030308 100%);
+    background-color:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:26px 14px 60px;
+  }
+  ::selection{background:rgba(79,232,255,0.3);}
+  .app{position:relative;z-index:1;width:100%;max-width:480px;opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .9s ease,transform .9s ease;}
+  .app.revealed{opacity:1;transform:none;pointer-events:auto;}
+  button, .chip, .opt, .tab, .level-opt, .lang-opt, .cat-trigger, .cat-close, a{
+    font-family:inherit;
+    -webkit-tap-highlight-color:transparent;
+    tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    outline:none;
+  }
+  button, .chip, .opt, .tab, .level-opt, .lang-opt{-webkit-user-select:none;user-select:none;}
+  :focus-visible{outline:2px solid var(--cyan-soft);outline-offset:2px;}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ===== SPLASH ===== */
+  #splash{
+    position:fixed;inset:0;z-index:999;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:56px 0 48px;
+    background:radial-gradient(circle at 50% 42%, rgba(79,232,255,0.18), transparent 60%),
+      linear-gradient(180deg,#03040a,#050914 55%,#060a18);
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    cursor:pointer;transition:opacity .8s ease,visibility .8s;
+  }
+  #splash.hidden{opacity:0;visibility:hidden;}
+  #snowCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;}
+  .splash-content{position:relative;z-index:2;text-align:center;padding:0 24px;display:flex;flex-direction:column;align-items:center;margin:auto 0;}
+  .splash-name{
+    font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    font-size:40px;font-weight:700;letter-spacing:.06em;margin:0;
+    max-width:340px;line-height:1.25;
+    color:rgba(255,255,255,0.55);
+    -webkit-text-stroke:1px rgba(255,255,255,0.9);
+    text-shadow:0 0 10px rgba(255,255,255,0.75),0 0 28px rgba(220,240,255,0.6),0 0 66px rgba(155,123,255,0.4),0 0 110px rgba(79,232,255,0.3);
+    animation:neonBreathe 3.4s ease-in-out infinite;
+  }
+  @keyframes neonBreathe{
+    0%,100%{text-shadow:0 0 8px rgba(255,255,255,0.7),0 0 24px rgba(220,240,255,0.55),0 0 56px rgba(155,123,255,0.36),0 0 96px rgba(79,232,255,0.26);}
+    50%{text-shadow:0 0 16px rgba(255,255,255,1),0 0 40px rgba(220,240,255,0.85),0 0 84px rgba(155,123,255,0.55),0 0 140px rgba(79,232,255,0.4);}
+  }
+  .splash-sub{
+    margin-top:24px;font-size:12.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--cyan-soft);
+    animation:starTwinkle 2.6s ease-in-out infinite;
+  }
+  @keyframes starTwinkle{
+    0%{opacity:.45;text-shadow:0 0 6px rgba(79,232,255,0.5),0 0 10px rgba(79,232,255,0.3);}
+    22%{opacity:.75;text-shadow:0 0 10px rgba(79,232,255,0.7),0 0 20px rgba(79,232,255,0.45);}
+    45%{opacity:.55;text-shadow:0 0 7px rgba(79,232,255,0.55),0 0 14px rgba(79,232,255,0.35);}
+    68%{opacity:1;text-shadow:0 0 16px rgba(79,232,255,1),0 0 32px rgba(79,232,255,0.7),0 0 50px rgba(79,232,255,0.4);}
+    86%{opacity:.65;text-shadow:0 0 9px rgba(79,232,255,0.6),0 0 18px rgba(79,232,255,0.4);}
+    100%{opacity:.45;text-shadow:0 0 6px rgba(79,232,255,0.5),0 0 10px rgba(79,232,255,0.3);}
+  }
+  .ig-link{
+    display:inline-flex;align-items:center;gap:7px;margin-top:30px;
+    padding:8px 16px;border-radius:999px;
+    background:rgba(255,255,255,0.04);border:1px solid rgba(255,95,184,0.35);
+    color:var(--pink);text-decoration:none;font-size:12px;letter-spacing:.04em;
+    box-shadow:0 0 16px rgba(255,95,184,0.18);transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .ig-link:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(255,95,184,0.32);}
+  .ig-link svg{width:16px;height:16px;flex-shrink:0;}
   
-  html, body {
-    overflow-x: hidden;
-    font-family: 'Inter', sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    min-height: 100vh;
+  .goethe-note{
+    margin-top:26px;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    color:var(--green);
+    text-shadow: 0 0 6px rgba(61,255,160,0.6), 0 0 14px rgba(61,255,160,0.5), 0 0 22px rgba(61,255,160,0.3);
+    text-align:center;
+    max-width:320px;
+    line-height:1.6;
+    font-weight:700;
   }
 
-  /* --- AURORA BACKGROUND --- */
-  body::before {
-    content: '';
-    position: fixed;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: 
-      radial-gradient(circle at 50% 50%, rgba(138, 43, 226, 0.15), transparent 40%),
-      radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.1), transparent 30%),
-      radial-gradient(circle at 20% 80%, rgba(255, 0, 127, 0.08), transparent 40%);
-    animation: auroraDrift 20s ease-in-out infinite alternate;
-    z-index: -1;
-    pointer-events: none;
+  .top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:11px;color:var(--cyan-soft);margin-bottom:4px;text-shadow:0 0 10px rgba(79,232,255,0.4);}
+  h1{font-family:Georgia,'Iowan Old Style',serif;font-size:27px;margin:0 0 6px;font-weight:700;letter-spacing:.01em;}
+  .lang-pair{font-size:13.5px;font-weight:700;margin-bottom:14px;}
+  .lang-pair .a{text-shadow:0 0 10px currentColor;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+
+  .sound-btn{
+    flex-shrink:0;width:44px;height:44px;border-radius:14px;
+    background:var(--panel);border:1px solid rgba(79,232,255,0.25);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 0 14px rgba(79,232,255,0.12);transition:box-shadow .2s ease, border-color .2s ease, transform .15s ease;
+    font-size:19px;color:var(--cyan-soft);
+  }
+  .sound-btn:hover{transform:translateY(-1px);box-shadow:0 0 18px rgba(79,232,255,0.3);}
+  .sound-btn:active{transform:scale(.92);}
+  .sound-btn.on{border-color:rgba(79,232,255,0.7);box-shadow:0 0 18px rgba(79,232,255,0.35);}
+  .sound-btn svg{width:20px;height:20px;stroke:var(--cyan-soft);}
+  .sound-btn.off svg{stroke:var(--muted);}
+  .top-btn-row{display:flex;gap:8px;}
+  .sound-off-label{
+    display:none;text-align:right;margin-top:-6px;margin-bottom:10px;
+    font-size:11px;font-weight:800;letter-spacing:.05em;
+    color:#3dffa0;
+    animation:starTwinkleGreen 2.2s ease-in-out infinite;
+  }
+  .sound-off-label.show{display:block;}
+  @keyframes starTwinkleGreen{
+    0%{opacity:.4;text-shadow:0 0 5px rgba(61,255,160,0.5),0 0 9px rgba(61,255,160,0.3);}
+    25%{opacity:.7;text-shadow:0 0 9px rgba(61,255,160,0.7),0 0 17px rgba(61,255,160,0.4);}
+    50%{opacity:.55;text-shadow:0 0 6px rgba(61,255,160,0.55),0 0 12px rgba(61,255,160,0.35);}
+    75%{opacity:1;text-shadow:0 0 14px rgba(61,255,160,1),0 0 26px rgba(61,255,160,0.6);}
+    100%{opacity:.4;text-shadow:0 0 5px rgba(61,255,160,0.5),0 0 9px rgba(61,255,160,0.3);}
   }
 
-  @keyframes auroraDrift {
-    0% { transform: rotate(0deg) scale(1); }
-    100% { transform: rotate(15deg) scale(1.1); }
+  .lang-box{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .lang-opt{
+    flex:1 1 27%;min-width:78px;text-align:center;padding:12px 4px;border-radius:16px;cursor:pointer;
+    background:var(--panel);border:1px solid rgba(255,255,255,0.06);transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+  }
+  .lang-opt:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.28);}
+  .lang-opt:active{transform:scale(.95);}
+  .lang-opt .flag{font-size:20px;line-height:1;margin-bottom:4px;}
+  .lang-opt .lname{font-size:12px;font-weight:700;color:var(--muted);}
+  .lang-opt.active[data-lang="de"]{background:linear-gradient(135deg, rgba(255,59,92,0.22), rgba(255,210,59,0.14));border-color:rgba(255,210,59,0.6);box-shadow:0 0 16px rgba(255,59,92,0.25);}
+  .lang-opt.active[data-lang="de"] .lname{color:var(--gold);}
+  .lang-opt.active[data-lang="en"]{background:linear-gradient(135deg, rgba(62,168,255,0.24), rgba(223,238,255,0.10));border-color:rgba(62,168,255,0.6);box-shadow:0 0 16px rgba(62,168,255,0.25);}
+  .lang-opt.active[data-lang="en"] .lname{color:var(--cyan-soft);}
+  .lang-opt.active[data-lang="ar"]{background:linear-gradient(135deg, rgba(41,224,122,0.24), rgba(255,210,59,0.12));border-color:rgba(41,224,122,0.6);box-shadow:0 0 16px rgba(41,224,122,0.25);}
+  .lang-opt.active[data-lang="ar"] .lname{color:var(--green);}
+  .lang-opt.active[data-lang="fr"]{background:linear-gradient(135deg, rgba(255,95,184,0.24), rgba(155,123,255,0.12));border-color:rgba(255,95,184,0.6);box-shadow:0 0 16px rgba(255,95,184,0.25);}
+  .lang-opt.active[data-lang="fr"] .lname{color:var(--pink);}
+  .lang-opt.active[data-lang="es"]{background:linear-gradient(135deg, rgba(255,59,92,0.24), rgba(255,210,59,0.14));border-color:rgba(255,59,92,0.6);box-shadow:0 0 16px rgba(255,59,92,0.25);}
+  .lang-opt.active[data-lang="es"] .lname{color:var(--red);}
+  .lang-opt.active[data-lang="ru"]{background:linear-gradient(135deg, rgba(155,123,255,0.24), rgba(79,232,255,0.12));border-color:rgba(155,123,255,0.6);box-shadow:0 0 16px rgba(155,123,255,0.25);}
+  .lang-opt.active[data-lang="ru"] .lname{color:var(--violet);}
+
+  .level-box{display:flex;gap:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(79,232,255,0.18);border-radius:14px;padding:5px;margin-bottom:14px;}
+  .level-opt{flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);cursor:pointer;transition:all .2s ease;}
+  .level-opt:hover{color:var(--text);}
+  .level-opt:active{transform:scale(.94);}
+  .level-opt.active{background:linear-gradient(135deg, rgba(79,232,255,0.24), rgba(155,123,255,0.2));color:var(--cyan-soft);box-shadow:0 0 16px rgba(79,232,255,0.28), inset 0 0 0 1px rgba(79,232,255,0.45);text-shadow:0 0 8px rgba(79,232,255,0.4);}
+
+  .tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .tab{flex:1;padding:10px 0;text-align:center;border-radius:12px;border:1px solid rgba(79,232,255,0.16);background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--muted);font-size:13px;cursor:pointer;transition:all .15s ease;}
+  .tab:hover{color:var(--text);border-color:rgba(79,232,255,0.35);}
+  .tab:active{opacity:.6;transform:scale(.97);}
+  .tab.active{
+    position:relative;
+    background:linear-gradient(135deg, rgba(79,232,255,0.2), rgba(155,123,255,0.2), rgba(255,95,184,0.16));
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    color:#eafcff;border:1px solid rgba(255,255,255,0.35);font-weight:700;
+    box-shadow:0 0 24px rgba(79,232,255,0.45), 0 0 46px rgba(155,123,255,0.28), inset 0 0 12px rgba(255,255,255,0.14);
+    text-shadow:0 0 10px rgba(255,255,255,0.6);
+    animation:tabGlow 3s ease-in-out infinite;
+  }
+  @keyframes tabGlow{
+    0%,100%{box-shadow:0 0 24px rgba(79,232,255,0.5), 0 0 46px rgba(155,123,255,0.3), inset 0 0 14px rgba(255,255,255,0.18);}
+    50%{box-shadow:0 0 32px rgba(79,232,255,0.7), 0 0 58px rgba(155,123,255,0.45), inset 0 0 18px rgba(255,255,255,0.26);}
+  }
+  .tab.active:active{opacity:.8;}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+  .chip{padding:5px 12px;border-radius:999px;font-size:11.5px;background:var(--panel);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--muted);border:1px solid rgba(79,232,255,0.14);cursor:pointer;transition:transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;}
+  .chip:hover{border-color:rgba(79,232,255,0.4);color:var(--text);}
+  .chip:active{transform:scale(.93);}
+  .chip.active{background:rgba(79,232,255,0.1);color:var(--cyan-soft);border-color:rgba(79,232,255,0.55);box-shadow:0 0 10px rgba(79,232,255,0.2);}
+  .cat-trigger{background:rgba(155,123,255,0.08);color:var(--violet);border-color:rgba(155,123,255,0.4);font-weight:700;}
+  .cat-overlay{
+    position:fixed;inset:0;z-index:500;
+    background:rgba(4,6,12,0.72);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .cat-overlay.open{display:flex;}
+  .cat-panel{
+    width:100%;max-width:480px;max-height:68vh;overflow-y:auto;
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid rgba(79,232,255,0.3);border-top-left-radius:22px;border-top-right-radius:22px;
+    padding:18px 16px 26px;box-shadow:0 -10px 44px rgba(0,0,0,0.55);
+  }
+  .cat-panel-header{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:14px;font-weight:700;color:var(--cyan-soft);margin-bottom:14px;
+    padding-bottom:10px;border-bottom:1px solid rgba(79,232,255,0.15);
+    text-shadow:0 0 8px rgba(79,232,255,0.35);
+  }
+  .cat-close{cursor:pointer;color:var(--muted);font-size:15px;padding:4px 10px;border-radius:8px;}
+  .cat-close:active{background:rgba(255,255,255,0.08);}
+  .cat-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .cat-grid .chip{margin:0;}
+
+  .progress-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .bar{height:3px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:20px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));box-shadow:0 0 10px rgba(79,232,255,0.7);transition:width .25s ease;}
+
+  .stage{perspective:1400px;margin-bottom:18px;}
+  .card{position:relative;height:300px;border-radius:var(--radius);cursor:pointer;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1);}
+  .card.flipped{transform:rotateY(180deg);}
+  .face{position:absolute;inset:0;border-radius:var(--radius);backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center;overflow:hidden;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
+  .face-front{
+    background:
+      linear-gradient(135deg, rgba(79,232,255,0.09), rgba(155,123,255,0.07), rgba(255,210,59,0.05)),
+      linear-gradient(160deg,var(--panel-2),var(--panel));
+    box-shadow:0 8px 28px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(79,232,255,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .face-back{
+    background:
+      linear-gradient(135deg, rgba(255,95,184,0.09), rgba(155,123,255,0.07), rgba(79,232,255,0.05)),
+      linear-gradient(160deg,rgba(28,16,48,0.32),var(--panel));
+    box-shadow:0 8px 28px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,95,184,0.32), inset 0 1px 0 rgba(255,255,255,0.06);
+    transform:rotateY(180deg);
+  }
+  .tag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-soft);text-shadow:0 0 8px rgba(79,232,255,0.4);margin-bottom:10px;}
+  .face-back .tag{
+    background:linear-gradient(90deg, #ff3b30 0%, #ff3b30 42%, #ffffff 58%, #ffffff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 6px rgba(255,59,48,0.35));
+  }
+  .tr-flag-text{
+    background:linear-gradient(90deg, #ff3b30 0%, #ff3b30 42%, #ffffff 58%, #ffffff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent!important;
+    filter:drop-shadow(0 0 6px rgba(255,59,48,0.3));
+  }
+  .level-badge{position:absolute;top:14px;right:16px;font-size:10px;font-weight:800;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:rgba(79,232,255,0.18);color:var(--cyan-soft);border:1px solid rgba(79,232,255,0.45);}
+  .speak-controls{display:flex;justify-content:center;gap:6px;margin-top:10px;}
+  .speak-caption{
+    text-align:center;margin-top:4px;line-height:1.3;
+    font-size:9.5px;font-weight:600;letter-spacing:.03em;
+    color:#9b7bff; /* yedek: gradient desteklenmezse görünür kalsın */
+    opacity:.85;
+  }
+  @supports ((background-clip:text) or (-webkit-background-clip:text)){
+    .speak-caption{
+      background:linear-gradient(90deg,#4fe8ff,#ff5fb8,#9b7bff);
+      -webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;color:transparent;
+      filter:drop-shadow(0 0 4px rgba(155,123,255,0.35));
+    }
+  }
+  .speak-icon-btn{
+    width:30px;height:30px;border-radius:999px;font-size:14px;line-height:1;
+    background:rgba(79,232,255,0.14);border:1px solid rgba(79,232,255,0.3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .speak-icon-btn:hover{transform:translateY(-1px);box-shadow:0 0 12px rgba(79,232,255,0.35);}
+  .speak-icon-btn:active{opacity:.6;transform:scale(.92);}
+  #turtleBtn{background:rgba(155,123,255,0.14);border-color:rgba(155,123,255,0.3);}
+  .word{font-size:29px;font-weight:700;line-height:1.25;font-family:Georgia,'Iowan Old Style',serif;}
+  .word[dir="rtl"]{font-family:'Segoe UI',Tahoma,sans-serif;}
+  .pos{font-size:12px;color:var(--muted);margin-top:8px;}
+  .example{font-size:12.5px;margin-top:13px;font-style:italic;line-height:1.5;opacity:.95;}
+  .example[dir="rtl"]{font-style:normal;}
+  .example span{font-weight:700;}
+  .hint{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px;}
+
+  .controls{display:flex;gap:8px;}
+  button.ctrl{flex:1;padding:12px 0;border-radius:14px;border:1px solid rgba(79,232,255,0.22);background:var(--panel);color:var(--text);font-size:13.5px;cursor:pointer;transition:all .2s;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+  button.ctrl:hover{background:rgba(79,232,255,0.14);}
+  button.ctrl:active{opacity:.55;transform:scale(.97);}
+  button.ctrl.primary{
+    position:relative;overflow:hidden;
+    background:linear-gradient(135deg, rgba(79,232,255,0.32), rgba(155,123,255,0.32), rgba(255,95,184,0.28));
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.4);color:#fff;font-weight:800;
+    box-shadow:0 4px 20px rgba(79,232,255,0.35), 0 0 30px rgba(155,123,255,0.3), inset 0 0 12px rgba(255,255,255,0.15);
+    text-shadow:0 0 10px rgba(255,255,255,0.5);
+    background-size:200% 200%;
+    animation:primaryShine 3.5s ease-in-out infinite;
+  }
+  @keyframes primaryShine{
+    0%,100%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+  }
+  button.ctrl.primary:hover{box-shadow:0 6px 26px rgba(79,232,255,0.55), 0 0 44px rgba(155,123,255,0.5), inset 0 0 18px rgba(255,255,255,0.3);}
+  button.ctrl.primary:active{opacity:.7;box-shadow:0 2px 10px rgba(155,123,255,0.3);}
+
+  .quiz-card{
+    background:
+      linear-gradient(135deg, rgba(79,232,255,0.09), rgba(155,123,255,0.07), rgba(255,95,184,0.05)),
+      linear-gradient(160deg,var(--panel-2),var(--panel));
+    box-shadow:0 8px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(79,232,255,0.26), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-radius:var(--radius);padding:28px 22px;text-align:center;margin-bottom:18px;overflow:hidden;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  }
+  .quiz-word{font-size:29px;font-weight:700;margin-bottom:6px;font-family:Georgia,'Iowan Old Style',serif;}
+  .quiz-sub{font-size:12px;color:var(--muted);}
+  .options{display:flex;flex-direction:column;gap:10px;}
+  .opt{padding:13px 16px;border-radius:14px;border:1px solid rgba(79,232,255,0.2);background:var(--panel);color:var(--text);font-size:14.5px;text-align:left;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:transform .15s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;}
+  .opt:hover:not([disabled]){border-color:rgba(79,232,255,0.55);background:rgba(79,232,255,0.08);transform:translateX(2px);}
+  .opt:active:not([disabled]){transform:scale(.98);}
+  .opt.correct{background:rgba(61,255,160,0.14);border-color:var(--good);color:var(--good);box-shadow:0 0 14px rgba(61,255,160,0.3);}
+  .opt.wrong{background:rgba(255,95,122,0.14);border-color:var(--bad);color:var(--bad);box-shadow:0 0 14px rgba(255,95,122,0.3);}
+  .opt[disabled]{cursor:default;}
+
+  .score-pill{display:inline-block;font-size:12px;color:var(--cyan-soft);background:rgba(79,232,255,0.14);padding:5px 13px;border-radius:999px;margin-bottom:14px;text-shadow:0 0 8px rgba(79,232,255,0.3);}
+  .done{text-align:center;padding:40px 20px;}
+  .done .word{font-size:34px;margin-bottom:6px;font-family:Georgia,'Iowan Old Style',serif;}
+
+  .mistake-item{
+    background:var(--panel-2); border:1px solid rgba(255,95,122,0.3); border-radius:14px; padding:16px; text-align:left; margin-bottom:12px;
+  }
+  .mistake-word{font-size:18px; font-weight:bold; margin-bottom:8px; color:var(--text);}
+  .mistake-given{font-size:13px; color:var(--bad); margin-bottom:4px;}
+  .mistake-correct{font-size:13px; color:var(--good);}
+
+  .session-timer{
+    text-align:center;font-size:11.5px;color:var(--cyan-soft);margin-top:22px;
+    letter-spacing:.05em;font-weight:700;
+    background:rgba(79,232,255,0.08);border:1px solid rgba(79,232,255,0.25);
+    padding:7px 12px;border-radius:999px;
+    text-shadow:0 0 8px rgba(79,232,255,0.4);
   }
 
-  body {
-    display: flex;
-    justify-content: center;
-    padding: 20px 16px 80px;
+  /* ===== KAÇINCI SIRADAYIM (toplam sürenin altında, kompakt) ===== */
+  .my-rank-box{
+    margin-top:12px;width:100%;
+    background:linear-gradient(135deg, rgba(155,123,255,0.08), rgba(79,232,255,0.06));
+    border:1px solid rgba(155,123,255,0.3);
+    border-radius:14px;padding:10px 14px;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .my-rank-row{display:flex;align-items:center;gap:8px;font-size:11.5px;}
+  .my-rank-icon{font-size:14px;flex-shrink:0;line-height:1;}
+  .my-rank-label{color:var(--muted);flex:1;text-align:left;font-weight:700;letter-spacing:.02em;}
+  .my-rank-value{color:var(--cyan-soft);font-weight:900;text-shadow:0 0 8px rgba(79,232,255,0.45);white-space:nowrap;}
+  .my-rank-row:last-child .my-rank-value{color:var(--violet);text-shadow:0 0 8px rgba(155,123,255,0.5);}
+  .my-rank-total{color:var(--muted);font-weight:600;font-size:10.5px;}
+  .my-rank-pending{color:var(--muted);font-size:10.5px;font-weight:600;}
+  .my-rank-empty{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.02em;}
+  .credit{text-align:center;font-size:11px;color:var(--muted);margin-top:26px;letter-spacing:.06em;opacity:.75;background:rgba(10,14,24,0.35);padding:8px 12px;border-radius:10px;}
+  .credit b{color:var(--cyan-soft);font-weight:700;text-shadow:0 0 8px rgba(79,232,255,0.5);}
+
+  /* ===== İSİM MODALI ===== */
+  #nameOverlay{
+    position:fixed;inset:0;z-index:1000;
+    background:rgba(10,4,12,0.78);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  #nameOverlay.open{display:flex;}
+  .name-card{
+    width:100%;max-width:380px;
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid rgba(79,232,255,0.35);border-radius:22px;
+    padding:26px 22px;text-align:center;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+  }
+  .name-card h3{margin:0 0 6px;font-size:19px;color:var(--text);font-family:Georgia,'Iowan Old Style',serif;}
+  .name-card p{margin:0 0 18px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .name-card input{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(79,232,255,0.3);
+    background:rgba(0,0,0,0.2);color:var(--text);font-size:15px;margin-bottom:14px;text-align:center;
+  }
+  .name-card input:focus{outline:2px solid var(--cyan-soft);}
+  .pw-field-wrap{position:relative;margin-bottom:10px;}
+  .pw-field-wrap input{
+    width:100%;padding:12px 14px 12px 46px;border-radius:12px;border:1px solid rgba(79,232,255,0.3);
+    background:rgba(0,0,0,0.2);color:var(--text);font-size:15px;text-align:center;
+    letter-spacing:2px;
+  }
+  .pw-field-wrap input:focus{outline:2px solid var(--cyan-soft);}
+  .pw-eye{
+    position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+    font-size:19px;cursor:pointer;user-select:none;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .pw-eye .pw-emoji{
+    display:inline-block;
+    transition:opacity .28s ease, transform .32s cubic-bezier(.34,1.56,.64,1), filter .28s ease;
+  }
+  .pw-eye:active{transform:translateY(-50%) scale(0.85);}
+  .pw-eye .pw-emoji.out{opacity:0;transform:scale(0.4) rotate(-12deg);position:absolute;filter:blur(2px);}
+  .pw-eye .pw-emoji.in{opacity:1;transform:scale(1) rotate(0deg);filter:blur(0);}
+  .login-error{
+    color:#ff5f7a;font-size:12px;margin:-6px 0 12px;min-height:16px;
+    text-shadow:0 0 8px rgba(255,95,122,0.5);
+  }
+  .login-hint{font-size:11px;color:var(--muted);margin:-8px 0 14px;line-height:1.5;}
+  .name-card button{
+    width:100%;padding:12px 0;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--cyan),var(--pink));color:#2a1420;font-weight:700;font-size:14px;
+    box-shadow:0 4px 18px rgba(255,95,184,0.35);
+  }
+  .name-card button[disabled]{opacity:.6;cursor:default;}
+
+  /* ===== LİDERLİK TABLOSU (giriş ekranının altında sabit) ===== */
+  .splash-lb{
+    margin-top:28px;width:100%;max-width:360px;
+    background:rgba(13,17,34,0.72);
+    border:1px solid rgba(255,210,59,0.45);
+    border-radius:16px;
+    padding:14px 14px 8px;
+    max-height:none;overflow:visible;touch-action:none;
+    box-shadow:0 0 18px rgba(255,210,59,0.3), inset 0 0 14px rgba(255,210,59,0.1);
+    animation:lbGoldPulse 2.6s ease-in-out infinite;
+  }
+  @keyframes lbGoldPulse{
+    0%,100%{box-shadow:0 0 14px rgba(255,210,59,0.22), inset 0 0 10px rgba(255,210,59,0.06);border-color:rgba(255,210,59,0.35);}
+    50%{box-shadow:0 0 34px rgba(255,210,59,0.6), 0 0 54px rgba(255,210,59,0.3), inset 0 0 18px rgba(255,210,59,0.16);border-color:rgba(255,210,59,0.8);}
+  }
+  .splash-lb-title{
+    font-size:11.5px;font-weight:700;color:var(--gold);letter-spacing:.04em;
+    margin-bottom:10px;text-align:center;
+    text-shadow:0 0 10px rgba(255,210,59,0.6);
+  }
+  /* İki sütun: sol = süre, sağ = seviye. Dar ekranlarda medya sorgusuyla alt alta düşer. */
+  .splash-lb-cols{display:flex;align-items:stretch;gap:9px;}
+  .splash-lb-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;}
+  .splash-lb-col-divider{width:1px;flex-shrink:0;align-self:stretch;background:linear-gradient(180deg,transparent,rgba(255,210,59,0.4),transparent);}
+  .splash-lb-subtitle{
+    font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    margin-bottom:7px;text-align:center;opacity:.95;white-space:nowrap;
+  }
+  .splash-lb-subtitle.time{color:var(--cyan-soft);text-shadow:0 0 8px rgba(79,232,255,0.5);}
+  .splash-lb-subtitle.level{color:var(--violet);text-shadow:0 0 8px rgba(155,123,255,0.55);}
+  .splash-lb-list{display:flex;flex-direction:column;gap:6px;padding-bottom:6px;}
+  .splash-lb-col .lb-row{padding:6px 6px;gap:5px;border-radius:9px;}
+  .splash-lb-col .lb-rank{width:15px;font-size:10.5px;}
+  .splash-lb-col .lb-name{font-size:10.5px;}
+  .splash-lb-col .lb-time{font-size:9.5px;}
+  .lb-row{
+    display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;
+    background:rgba(255,255,255,0.03);border:1px solid transparent;
+  }
+  .lb-row.me{background:rgba(255,210,59,0.14);border-color:rgba(255,210,59,0.4);}
+  .lb-rank{width:20px;text-align:center;font-weight:800;font-size:12px;color:var(--muted);}
+  .lb-name{flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+  .lb-time{font-size:11px;color:var(--cyan-soft);font-weight:700;white-space:nowrap;}
+  .lb-empty{text-align:center;color:var(--muted);font-size:10.5px;padding:10px 4px;line-height:1.4;}
+
+  /* Dar ekranlarda sütunlar sıkışıp bozulmasın diye alt alta diz */
+  @media (max-width:370px){
+    .splash-lb-cols{flex-direction:column;gap:12px;}
+    .splash-lb-col-divider{width:100%;height:1px;}
   }
 
-  ::selection { background: rgba(0, 240, 255, 0.3); }
+  /* İlk 3 için neon altın / gümüş / bronz */
+  .lb-row:nth-child(1){
+    background:rgba(255,214,59,0.12);border-color:rgba(255,214,59,0.55);
+    box-shadow:0 0 16px rgba(255,214,59,0.3), inset 0 0 10px rgba(255,214,59,0.12);
+  }
+  .lb-row:nth-child(1) .lb-rank{color:#ffe45c;text-shadow:0 0 10px rgba(255,214,59,0.9);}
+  .lb-row:nth-child(1) .lb-time{color:#ffe45c;font-weight:900;text-shadow:0 0 10px rgba(255,214,59,0.8),0 0 18px rgba(255,214,59,0.4);}
+  .lb-row:nth-child(1) .lb-name{color:#ffe45c;font-weight:900;text-shadow:0 0 10px rgba(255,214,59,0.8),0 0 18px rgba(255,214,59,0.4);}
+  .lb-row:nth-child(2){
+    background:rgba(210,220,235,0.12);border-color:rgba(210,220,235,0.55);
+    box-shadow:0 0 16px rgba(210,220,235,0.28), inset 0 0 10px rgba(210,220,235,0.12);
+  }
+  .lb-row:nth-child(2) .lb-rank{color:#eef3fb;text-shadow:0 0 10px rgba(220,230,245,0.9);}
+  .lb-row:nth-child(2) .lb-time{color:#eef3fb;font-weight:900;text-shadow:0 0 10px rgba(220,230,245,0.75),0 0 18px rgba(220,230,245,0.4);}
+  .lb-row:nth-child(2) .lb-name{color:#eef3fb;font-weight:900;text-shadow:0 0 10px rgba(220,230,245,0.75),0 0 18px rgba(220,230,245,0.4);}
+  .lb-row:nth-child(3){
+    background:rgba(224,140,79,0.14);border-color:rgba(224,140,79,0.55);
+    box-shadow:0 0 16px rgba(224,140,79,0.3), inset 0 0 10px rgba(224,140,79,0.12);
+  }
+  .lb-row:nth-child(3) .lb-rank{color:#f0a468;text-shadow:0 0 10px rgba(224,140,79,0.9);}
+  .lb-row:nth-child(3) .lb-time{color:#f0a468;font-weight:900;text-shadow:0 0 10px rgba(224,140,79,0.8),0 0 18px rgba(224,140,79,0.4);}
+  .lb-row:nth-child(3) .lb-name{color:#f0a468;font-weight:900;text-shadow:0 0 10px rgba(224,140,79,0.8),0 0 18px rgba(224,140,79,0.4);}
 
-  h1, h2, h3, .word, .splash-name, .quiz-word {
-    font-family: 'Outfit', sans-serif;
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:0.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:0.001ms !important;
+      scroll-behavior:auto !important;
+    }
+    /* Sahne motoru kendi içinde hareketi zaten durdurur (tek kare çizer);
+       burada sadece grain katmanı kapatılır. */
+    #grain{display:none !important;}
   }
-
-  .app {
-    position: relative; z-index: 1; width: 100%; max-width: 500px;
-    opacity: 0; transform: translateY(20px); pointer-events: none;
-    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  /* ===== BİLGİ / NASIL KULLANILIR PANELLERİ ===== */
+  .info-overlay{
+    position:fixed;inset:0;z-index:500;
+    background:rgba(2,3,8,0.82);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .25s ease;
   }
-  .app.revealed { opacity: 1; transform: none; pointer-events: auto; }
-
-  button, a {
-    font-family: 'Inter', sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    outline: none; border: none; cursor: pointer;
+  .info-overlay.open{opacity:1;visibility:visible;pointer-events:auto;}
+  .info-card{
+    position:relative;width:100%;max-width:480px;
+    background:linear-gradient(160deg, rgba(19,26,51,0.92), rgba(10,12,24,0.96));
+    border:1px solid rgba(79,232,255,0.35);border-radius:22px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.55), 0 0 40px rgba(79,232,255,0.15);
+    max-height:80vh;max-height:80dvh;display:flex;flex-direction:column;
   }
-
-  /* ===== SPLASH EKRANI (LÜKS TASARIM) ===== */
-  #splash {
-    position: fixed; inset: 0; z-index: 999;
-    background: var(--bg-dark);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; transition: opacity 0.6s ease, visibility 0.6s;
-    backdrop-filter: var(--glass-blur);
+  .info-close{
+    position:absolute;top:12px;right:12px;z-index:2;
+    width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,95,184,0.4);
+    background:rgba(10,12,24,0.8);color:var(--pink);font-size:16px;cursor:pointer;
+    box-shadow:0 0 12px rgba(255,95,184,0.25);
   }
-  #splash.hidden { opacity: 0; visibility: hidden; }
-  
-  .splash-content {
-    text-align: center; padding: 40px;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    backdrop-filter: blur(40px);
-    display: flex; flex-direction: column; align-items: center;
+  .info-scroll{overflow-y:auto;padding:32px 24px 36px;}
+  .info-title{
+    font-family:Georgia,'Iowan Old Style',serif;font-size:22px;font-weight:700;text-align:center;
+    color:#eef4ff;margin-bottom:12px;
+    text-shadow:0 0 10px rgba(79,232,255,0.6),0 0 24px rgba(155,123,255,0.4);
   }
-
-  .splash-name {
-    font-size: 48px; font-weight: 900; line-height: 1.1;
-    background: linear-gradient(135deg, #FFF, #A0B0C0);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    margin-bottom: 8px; letter-spacing: -1px;
+  .info-lead{color:var(--text);font-size:13.5px;line-height:1.65;margin-bottom:18px;text-align:center;}
+  .info-h3{
+    font-size:15px;font-weight:800;margin:22px 0 10px;color:#4fe8ff;
+    text-shadow:0 0 10px rgba(79,232,255,0.6);
   }
-
-  .splash-sub {
-    font-size: 13px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase;
-    color: var(--cyan);
-    animation: pulseGlow 2s infinite alternate;
+  .info-h4{font-size:13.5px;font-weight:700;margin:16px 0 6px;color:#ffd23b;text-shadow:0 0 8px rgba(255,210,59,0.4);}
+  .info-scroll p{font-size:13px;line-height:1.6;color:var(--text);margin-bottom:8px;}
+  .info-closing{
+    margin-top:22px;padding-top:16px;border-top:1px solid rgba(79,232,255,0.15);
+    font-size:12px;color:var(--muted);line-height:1.7;font-style:italic;text-align:center;
   }
-
-  @keyframes pulseGlow {
-    0% { opacity: 0.6; text-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
-    100% { opacity: 1; text-shadow: 0 0 20px rgba(0, 240, 255, 0.6); }
+  .info-footer{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .info-cta{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 26px;border-radius:999px;width:100%;justify-content:center;
+    background:linear-gradient(120deg,#4fe8ff,#9b7bff,#ff5fb8,#4fe8ff);
+    background-size:300% 300%;animation:pmNeonShift 5s ease-in-out infinite;
+    color:#04050a;font-weight:800;font-size:14px;text-decoration:none;
+    box-shadow:0 6px 24px rgba(79,232,255,0.35), 0 0 34px rgba(255,95,184,0.28);
   }
-
-  .goethe-note {
-    margin-top: 24px; font-size: 11px; letter-spacing: 1px;
-    color: var(--green); opacity: 0.8;
+  @keyframes pmNeonShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  .info-support{
+    display:inline-flex;align-items:center;gap:7px;color:var(--pink);font-size:12.5px;
+    text-decoration:none;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,95,184,0.3);
   }
-
-  /* ===== ÜST BAR ===== */
-  .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--cyan); text-transform: uppercase; margin-bottom: 4px; }
-  h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
-  
-  .top-btn-row { display: flex; gap: 10px; }
-  .sound-btn {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: var(--glass-bg); border: 1px solid var(--glass-border);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-main); font-size: 18px;
-    backdrop-filter: var(--glass-blur); transition: all 0.3s ease;
+  .info-support svg{width:15px;height:15px;flex-shrink:0;}
+  .info-howto-trigger{
+    margin-top:6px;font-size:13px;font-weight:700;color:#3dffa0;cursor:pointer;
+    text-shadow:0 0 8px rgba(61,255,160,0.5);
   }
-  .sound-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
-  .sound-btn.on { color: var(--cyan); border-color: rgba(0, 240, 255, 0.3); box-shadow: var(--shadow-glow); }
-
-  /* ===== DİL & SEVİYE SEÇİMİ ===== */
-  .lang-box, .level-box, .tabs {
-    display: flex; gap: 8px; margin-bottom: 16px;
-    background: rgba(0,0,0,0.2); padding: 6px; border-radius: var(--radius-md);
-    border: 1px solid var(--glass-border);
+  .info-howto-trigger span{color:var(--muted);font-weight:400;font-size:11px;}
+  .info-glow-title{
+    text-align:center;font-size:16px;font-weight:800;margin:24px 0 12px;
+    background:linear-gradient(120deg,#4fe8ff,#9b7bff,#ff5fb8,#4fe8ff);
+    background-size:300% 300%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:pmNeonShift 4s ease-in-out infinite;
   }
-  
-  .lang-opt, .level-opt, .tab {
-    flex: 1; text-align: center; padding: 12px 0; border-radius: var(--radius-sm);
-    font-size: 14px; font-weight: 600; color: var(--text-muted);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
-  }
-  
-  .lang-opt.active, .level-opt.active, .tab.active {
-    background: rgba(255,255,255,0.1); color: #FFF;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  }
-  
-  .lang-opt .flag { font-size: 22px; margin-bottom: 4px; }
-  .lang-opt .lname { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-
-  .tab.active { background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(138, 43, 226, 0.15)); border: 1px solid rgba(0,240,255,0.3); }
-
-  /* ===== CHIPS (KATEGORİLER) ===== */
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-  .chip {
-    padding: 8px 16px; border-radius: 30px; font-size: 12px; font-weight: 600;
-    background: var(--glass-bg); border: 1px solid var(--glass-border);
-    color: var(--text-muted); transition: all 0.3s ease;
-  }
-  .chip.active {
-    background: rgba(0, 240, 255, 0.1); color: var(--cyan);
-    border-color: rgba(0, 240, 255, 0.4); box-shadow: var(--shadow-glow);
-  }
-
-  /* ===== KART ALANI (3D GLASSMORPHISM) ===== */
-  .stage { perspective: 1000px; margin-bottom: 24px; }
-  .card {
-    position: relative; height: 320px; border-radius: var(--radius-lg);
-    transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: pointer;
-  }
-  .card.flipped { transform: rotateY(180deg); }
-  
-  .face {
-    position: absolute; inset: 0; border-radius: var(--radius-lg);
-    backface-visibility: hidden; display: flex; flex-direction: column;
-    justify-content: center; align-items: center; padding: 32px; text-align: center;
-    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-card), inset 0 1px 1px rgba(255,255,255,0.1);
-    backdrop-filter: var(--glass-blur);
-  }
-  .face-back { transform: rotateY(180deg); border-color: rgba(138, 43, 226, 0.3); }
-
-  .level-badge {
-    position: absolute; top: 20px; right: 20px;
-    font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;
-    background: rgba(0, 240, 255, 0.1); color: var(--cyan); border: 1px solid rgba(0,240,255,0.3);
-  }
-
-  .speak-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 8px; }
-  .speak-icon-btn {
-    width: 36px; height: 36px; border-radius: 50%; font-size: 16px;
-    background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-    color: #FFF; transition: all 0.2s ease;
-  }
-  .speak-icon-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
-
-  .tag { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
-  .word { font-size: 42px; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
-  .pos { font-size: 13px; color: var(--cyan); font-weight: 500; margin-bottom: 16px; }
-  .example { font-size: 15px; color: var(--text-muted); font-style: italic; line-height: 1.6; }
-
-  /* ===== KONTROLLER ===== */
-  .controls { display: flex; gap: 12px; }
-  button.ctrl {
-    flex: 1; padding: 16px 0; border-radius: var(--radius-md);
-    background: var(--glass-bg); border: 1px solid var(--glass-border);
-    color: #FFF; font-size: 15px; font-weight: 600;
-    transition: all 0.3s ease; backdrop-filter: var(--glass-blur);
-  }
-  button.ctrl:hover { background: rgba(255,255,255,0.1); }
-  button.ctrl:active { transform: scale(0.96); }
-  
-  button.ctrl.primary {
-    background: linear-gradient(135deg, var(--cyan), var(--violet));
-    color: #000; border: none; font-weight: 800;
-    box-shadow: 0 10px 20px rgba(0, 240, 255, 0.3);
-  }
-  button.ctrl.primary:hover { box-shadow: 0 12px 25px rgba(0, 240, 255, 0.5); transform: translateY(-2px); }
-
-  /* ===== PROGRESS BAR ===== */
-  .progress-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
-  .bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
-  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--violet)); transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-
-  /* ===== QUIZ EKRANI ===== */
-  .quiz-card {
-    background: var(--glass-bg); border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg); padding: 40px 24px; text-align: center; margin-bottom: 24px;
-    backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-card);
-  }
-  .options { display: flex; flex-direction: column; gap: 12px; }
-  .opt {
-    padding: 18px 20px; border-radius: var(--radius-md); font-size: 15px; font-weight: 500;
-    background: var(--glass-bg); border: 1px solid var(--glass-border);
-    color: #FFF; text-align: left; transition: all 0.2s; backdrop-filter: var(--glass-blur);
-  }
-  .opt:hover:not([disabled]) { background: rgba(255,255,255,0.1); transform: translateX(4px); }
-  .opt.correct { background: rgba(0, 255, 135, 0.2); border-color: var(--green); color: var(--green); }
-  .opt.wrong { background: rgba(255, 51, 102, 0.2); border-color: var(--red); color: var(--red); }
-
-  /* ===== OVERLAY & MODALS ===== */
-  .cat-overlay, #nameOverlay {
-    position: fixed; inset: 0; z-index: 1000;
-    background: rgba(7, 9, 15, 0.8); backdrop-filter: blur(10px);
-    display: none; align-items: center; justify-content: center; padding: 20px;
-  }
-  .cat-overlay.open, #nameOverlay.open { display: flex; }
-  
-  .name-card, .cat-panel {
-    width: 100%; max-width: 400px;
-    background: rgba(20, 25, 40, 0.9); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: var(--radius-lg); padding: 32px 24px; text-align: center;
-    box-shadow: 0 24px 48px rgba(0,0,0,0.5);
-  }
-  
-  .name-card input {
-    width: 100%; padding: 16px; border-radius: var(--radius-md);
-    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-    color: #FFF; font-size: 15px; margin-bottom: 16px; font-family: 'Inter', sans-serif;
-  }
-  .name-card input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2); }
-  
-  .name-card button {
-    width: 100%; padding: 16px; border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--cyan), var(--violet));
-    color: #000; font-weight: 800; font-size: 16px; margin-top: 8px;
-  }
-
-  /* Alt Bilgiler */
-  .session-timer { text-align: center; font-size: 12px; color: var(--cyan); margin-top: 32px; font-weight: 600; letter-spacing: 1px; }
-  .credit { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 16px; opacity: 0.6; }
 </style>
+<link rel="stylesheet" href="sky.css">
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 
-<!-- Giriş Ekranı (Leaderboard.js için gerekli) -->
+<!-- ===== SAHNE: gece göl atmosferi (sky.js tarafından çizilir) ===== -->
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="grade" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
 <div id="nameOverlay">
   <div class="name-card">
-    <h3 style="font-size: 24px; margin-bottom: 8px;">Hoş Geldin 👋</h3>
-    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">İlerlemeni kaydetmek için giriş yap.</p>
-    <input type="text" id="nameInput" maxlength="20" placeholder="Kullanıcı Adı">
+    <h3>Hoş geldin! 👋</h3>
+    <p>Liderlik tablosunda görünmek için adını ve şifreni gir. Sitede geçirdiğin süre ve ilerlemen kalıcı olarak bu hesaba bağlanacak.</p>
+    <input type="text" id="nameInput" maxlength="20" placeholder="Kullanıcı adını yaz...">
     <div class="pw-field-wrap">
-      <input type="password" id="passwordInput" maxlength="30" placeholder="Şifre">
+      <span class="pw-eye" id="pwEye" title="Şifreyi göster/gizle">
+        <span class="pw-emoji in" id="pwEmojiVisible">🐵</span>
+        <span class="pw-emoji out" id="pwEmojiHidden" style="position:absolute;">🙈</span>
+      </span>
+      <input type="text" id="passwordInput" maxlength="30" placeholder="Şifreni yaz...">
     </div>
-    <div class="login-error" id="loginError" style="color: var(--red); font-size: 12px; margin-bottom: 16px;"></div>
-    <button id="nameSubmit">Sisteme Gir</button>
+    <div class="login-hint">İlk kez giriyorsan, yazdığın şifre kalıcı şifren olacak. Daha önce bu kullanıcı adıyla girdiysen, aynı şifreyle devam edebilirsin.</div>
+    <div class="login-error" id="loginError"></div>
+    <button id="nameSubmit">Başla</button>
   </div>
 </div>
 
-<!-- Splash Ekranı -->
 <div id="splash">
+  <canvas id="snowCanvas"></canvas>
   <div class="splash-content">
-    <h1 class="splash-name">M HAMZA</h1>
-    <h1 class="splash-name" style="font-size: 32px; margin-bottom: 24px;">DİL KARTLARI</h1>
-    <div class="splash-sub">Giriş İçin Dokun</div>
-    <div class="goethe-note">CEFR & GOETHE UYUMLU</div>
-    
-    <div class="splash-lb" id="splashLb" style="margin-top: 32px; text-align: left; width: 100%; background: rgba(0,0,0,0.2); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.05);">
-      <div style="font-size: 12px; color: var(--gold); font-weight: 700; margin-bottom: 12px; text-align: center;">🏆 Liderlik Tablosu</div>
-      <div id="splashLbList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    <h1 class="splash-name">DİL KARTLARI</h1>
+    <div class="splash-sub">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
+    <a class="ig-link" id="igLink" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+      muhammedf.fdn
+    </a>
+    <div class="goethe-note">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
+
+    <div class="splash-lb" id="splashLb">
+      <div class="splash-lb-title">🏆 Sıralamalar</div>
+      <div class="splash-lb-cols">
+        <div class="splash-lb-col">
+          <div class="splash-lb-subtitle time">⏱️ Vakit</div>
+          <div id="splashLbTimeList" class="splash-lb-list"></div>
+        </div>
+        <div class="splash-lb-col-divider"></div>
+        <div class="splash-lb-col">
+          <div class="splash-lb-subtitle level">⭐ Seviye</div>
+          <div id="splashLbLevelList" class="splash-lb-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Ana Uygulama -->
 <div class="app" id="mainApp">
-  
   <div class="top-row">
     <div>
-      <div class="eyebrow">Öğrenim Merkezi</div>
-      <h1 id="langPair">🇩🇪 Almanca</h1>
+      <div class="eyebrow">Kelime Kartları</div>
+      <h1>Dil Kartları</h1>
     </div>
     <div class="top-btn-row">
-      <button class="sound-btn on" id="soundBtn">🔊</button>
-      <button class="sound-btn" id="fullscreenBtn">⛶</button>
+      <div class="sound-btn on" id="soundBtn" title="Sesi aç/kapat">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" id="soundIcon">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"/>
+          <path d="M16.5 8.5a5 5 0 0 1 0 7"/>
+          <path d="M19 6a9 9 0 0 1 0 12"/>
+        </svg>
+      </div>
+      <div class="sound-btn" id="fullscreenBtn" title="Tam ekran">⛶</div>
+      <div class="sound-btn" id="infoBtn" title="Bilgi">ⓘ</div>
     </div>
   </div>
+
+  <div class="lang-pair" id="langPair"></div>
+  <div class="sub">Seviye, dil ve kategori seç — kartına dokun, dinle, öğren</div>
 
   <div class="lang-box" id="langBox">
     <div class="lang-opt active" data-lang="de"><div class="flag">🇩🇪</div><div class="lname">Almanca</div></div>
     <div class="lang-opt" data-lang="en"><div class="flag">🇬🇧</div><div class="lname">İngilizce</div></div>
     <div class="lang-opt" data-lang="ar"><div class="flag">🇸🇦</div><div class="lname">Arapça</div></div>
+    <div class="lang-opt" data-lang="fr"><div class="flag">🇫🇷</div><div class="lname">Fransızca</div></div>
+    <div class="lang-opt" data-lang="es"><div class="flag">🇪🇸</div><div class="lname">İspanyolca</div></div>
+    <div class="lang-opt" data-lang="ru"><div class="flag">🇷🇺</div><div class="lname">Rusça</div></div>
   </div>
 
   <div class="level-box" id="levelBox"></div>
 
   <div class="tabs">
     <div class="tab active" id="tabCards">Kartlar</div>
-    <div class="tab" id="tabQuiz">Test</div>
+    <div class="tab" id="tabQuiz">Quiz</div>
     <div class="tab" id="tabPersonal">🎯 Kişisel</div>
   </div>
 
   <div class="chips" id="chips">
     <div class="chip active" id="catAllChip">Tümü</div>
-    <div class="chip" id="catTrigger">📂 Kategori Seç</div>
+    <div class="chip cat-trigger" id="catTrigger">📂 Kategori Seç</div>
   </div>
 
-  <!-- Kategori Seçim Modali -->
   <div class="cat-overlay" id="catOverlay">
     <div class="cat-panel">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--cyan);">
+      <div class="cat-panel-header">
         <span>Kategori Seç</span>
-        <span id="catClose" style="cursor: pointer; color: white;">✕</span>
+        <span class="cat-close" id="catClose">✕</span>
       </div>
-      <div id="catGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
+      <div class="cat-grid" id="catGrid"></div>
     </div>
   </div>
 
-  <!-- Kart Görünümü -->
   <div id="cardsView">
     <div class="progress-row">
       <span id="cardCount">1 / 40</span>
-      <span id="cardCat" style="color: var(--cyan);">Tümü</span>
+      <span id="cardCat">Tümü</span>
     </div>
     <div class="bar"><div class="bar-fill" id="cardBar" style="width:5%"></div></div>
 
@@ -396,25 +714,25 @@
       <div class="card" id="card">
         <div class="face face-front">
           <div class="level-badge" id="levelBadgeFront">A1</div>
-          <div class="speak-controls">
-            <button type="button" class="speak-icon-btn" id="rabbitBtn">🐰</button>
-            <button type="button" class="speak-icon-btn" id="turtleBtn">🐢</button>
-          </div>
           <div class="tag" id="tagFront">Deutsch</div>
           <div class="word" id="frontWord">Hallo</div>
           <div class="pos" id="frontPos">ünlem</div>
           <div class="example" id="frontExample"></div>
+          <div class="speak-controls">
+            <button type="button" class="speak-icon-btn" id="rabbitBtn" title="Hızlı dinle">🐰</button>
+            <button type="button" class="speak-icon-btn" id="turtleBtn" title="Yavaş dinle">🐢</button>
+          </div>
+          <div class="speak-caption">Dinlemek İçin Tıkla</div>
         </div>
         <div class="face face-back">
           <div class="level-badge" id="levelBadgeBack">A1</div>
-          <div class="tag" style="color: var(--pink);">Türkçe</div>
+          <div class="tag">Türkçe</div>
           <div class="word" id="trWord">Merhaba</div>
           <div class="example" id="trExample"></div>
         </div>
       </div>
     </div>
-    
-    <div style="text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Çevirmek için karta dokun</div>
+    <div class="hint">Çevirmek için karta dokun</div>
 
     <div class="controls">
       <button class="ctrl" id="prevBtn">Önceki</button>
@@ -423,56 +741,1140 @@
     </div>
   </div>
 
-  <!-- Quiz Görünümü -->
   <div id="quizView" style="display:none;">
     <div class="progress-row">
       <span id="quizCount">Soru 1 / 40</span>
-      <span id="scorePill" style="color: var(--green);">0 doğru</span>
+      <span class="score-pill" id="scorePill">0 doğru</span>
     </div>
     <div class="bar"><div class="bar-fill" id="quizBar" style="width:5%"></div></div>
 
     <div class="quiz-card">
-      <div class="tag" style="color:var(--cyan); margin-bottom: 16px;">Bu kelimenin anlamı nedir?</div>
+      <div class="tag" style="color:var(--cyan-soft)">Bu kelimenin anlamı nedir?</div>
       <div class="quiz-word" id="quizWord">Hallo</div>
-      <div class="pos" id="quizPos" style="margin-top: 8px;">ünlem</div>
+      <div class="quiz-sub" id="quizPos">ünlem</div>
     </div>
 
     <div class="options" id="options"></div>
+
+    <div class="controls">
+      <button class="ctrl" id="quizPrevBtn">Önceki</button>
+      <button class="ctrl" id="quizNextBtn">Sonraki</button>
+    </div>
+    <div class="controls" style="margin-top:8px;">
+      <button class="ctrl primary" id="quizFinishBtn" style="flex:1;">Quizi Bitir</button>
+    </div>
   </div>
 
-  <!-- Sonuç Ekranları -->
-  <div id="doneView" style="display:none; text-align: center; padding: 60px 20px;">
+  <div id="doneView" class="done" style="display:none;">
     <div class="word">Bitti! 🎉</div>
-    <div id="finalScore" style="font-size: 16px; color: var(--text-muted); margin-bottom: 30px;"></div>
-    <button class="ctrl primary" id="showMistakesBtn" style="width: 100%; margin-bottom: 12px; display: none;">Hatalarını Gör</button>
-    <button class="ctrl" id="restartBtn" style="width: 100%;">Tekrar Başla</button>
+    <div class="sub" id="finalScore" style="margin-top:6px;"></div>
+    <div class="controls" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+      <button class="ctrl" id="showMistakesBtn" style="display:none;">Hatalarını Gör</button>
+      <button class="ctrl primary" id="restartBtn">Tekrar Başla</button>
+    </div>
   </div>
 
-  <div id="mistakesView" style="display:none; padding-top: 20px;">
-    <h2 style="color: var(--red); text-align: center; margin-bottom: 24px;">Hataların</h2>
-    <div id="mistakesList" style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;"></div>
-    <button class="ctrl primary" id="backToDoneBtn" style="width: 100%; margin-top: 24px;">Geri Dön</button>
+  <div id="mistakesView" class="done" style="display:none; padding-top:20px;">
+    <div class="word" style="color:var(--bad); font-size:24px;">Quiz Hataların</div>
+    <div id="mistakesList" style="margin-top:20px; max-height:50vh; overflow-y:auto; padding-right:5px;"></div>
+    <div class="controls" style="margin-top:20px;">
+      <button class="ctrl primary" id="backToDoneBtn">Sonuçlara Dön</button>
+    </div>
   </div>
 
-  <!-- Kişisel Mod (Progress.js İçin Alan) -->
   <div id="personalView" style="display:none;"></div>
 
-  <!-- Durum Bilgileri -->
+  <div class="info-overlay" id="infoPanel">
+    <div class="info-card">
+      <button class="info-close" id="infoCloseBtn">✕</button>
+      <div class="info-scroll">
+        <div class="info-title">M HAMZA | Dil Kartları</div>
+        <p class="info-lead">M HAMZA | Dil Kartları web uygulaması, yabancı dil kelime bilginizi modern, etkileşimli ve estetik bir arayüzle geliştirmeniz için özel olarak tasarlandı.</p>
+
+        <h3 class="info-h3">🌟 Öne Çıkan Özellikler</h3>
+
+        <h4 class="info-h4">1. 🇩🇪 🇬🇧 🇸🇦 🇫🇷 🇪🇸 🇷🇺 Çoklu Dil ve Seviye Desteği</h4>
+        <p>Almanca, İngilizce ve Arapça: Farklı diller arasında tek tıkla geçiş yapabilirsiniz.</p>
+        <p>CEFR Standartlarında Seviyeler: A1, A2, B1 ve B2 seviyelerine uygun olarak kategorize edilmiş kelime havuzu.</p>
+        <p>Goethe Enstitüsü Uyumu: Almanca bölümünde sunulan kelimeler, Goethe sınav müfredatı ve standartları ile birebir uyumludur.</p>
+
+        <h4 class="info-h4">2. 🗂️ Kategori Bazlı Odaklanmış Çalışma</h4>
+        <p>Sadece genel kelimelerle sınırlı kalmayın! Günlük yaşam, seyahat, eğitim, iş dünyası ve daha birçok farklı kategorideki kelime gruplarını filtreleyerek ihtiyacınıza yönelik pratik yapabilirsiniz.</p>
+
+        <h4 class="info-h4">3. 🔊 Akıllı Seslendirme ve Telaffuz Desteği (TTS)</h4>
+        <p>Çift Hızlı Dinleme: Kelimeleri hem normal hızda (🐰) hem de yavaşlatılmış hızda (🐢) dinleyerek doğru telaffuzları öğrenebilirsiniz.</p>
+        <p>Cihaz ve Cloud Desteği: Hem cihazınızın yerel ses motorunu hem de gelişmiş seslendirme altyapısını kullanarak akıcı bir ses deneyimi sunar.</p>
+
+        <h4 class="info-h4">4. 🎴 İnteraktif Kart ve Örnek Cümle Analizi</h4>
+        <p>Kök Eşleştirmeli Renklendirme: Kelimelerin cümle içerisindeki kullanımı, kök ve ek analizine göre özel renk vurgularıyla sunulur. Bu sayede kelimenin bağlam içindeki anlamını çok daha hızlı kavrarsınız.</p>
+        <p>Çevirmeli Kart Yapısı: Kartın üzerine dokunarak Türkçe karşılığını ve örnek cümle çevirisini anında görüntüleyebilirsiniz.</p>
+
+        <h4 class="info-h4">5. 🧠 Quiz Modu ve Hata Analizi</h4>
+        <p>Öğrendiğiniz kelimeleri test etmek için dinamik test (quiz) moduna geçebilirsiniz.</p>
+        <p>Test sonunda yaptığınız hataları detaylıca listeleyebilir, eksik olduğunuz noktaları tespit ederek tekrar çalışabilirsiniz.</p>
+
+        <h4 class="info-h4">6. 🏆 Liderlik Tablosu ve Oturum Takibi</h4>
+        <p>Sitede geçirdiğiniz aktif çalışma süresini takip edebilir, adınızı liderlik tablosuna yazdırarak diğer dil öğrenenlerle tatlı bir rekabete girebilirsiniz.</p>
+
+        <h4 class="info-h4">7. 📲 PWA (Progressive Web App) ve Çevrimdışı Kullanım</h4>
+        <p>Uygulamayı mobil cihazınıza veya bilgisayarınıza bir uygulama gibi yükleyebilir, dilediğiniz her yerde pratik yapmaya devam edebilirsiniz.</p>
+
+        <h3 class="info-h3">🎨 Görsel ve Kullanıcı Dostu Tasarım</h3>
+        <p>Gece Modu ve Estetik Atmosfer: Derin uzay teması, animasyonlu yıldızlar ve görsel efektlerle gözü yormayan, uzun süreli çalışmalara uygun bir ortam.</p>
+        <p>Kaldığın Yerden Devam Et: Kart konum hafızası sayesinde sayfa yenilense bile hangi kartta kaldığınızı unutmaz.</p>
+
+        <p class="info-closing">Günümüzde böyle uygulamalar genelde yüksek ücretler talep ederler, biz sizin için ücretsiz ve diğer tüm uygulamalardan daha ulaşılabilir bir web sitesi sunuyoruz. Tek kazancımız ise bu hizmetten faydalanmanız ve bizim bunu görerek mutlu olmamızdır.</p>
+
+        <div class="info-footer">
+          <a class="info-cta" href="https://muhammedfidann06.github.io/turkishdeucard/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
+          <a class="info-support" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+            Destek Ve Önerileriniz İçin: @muhammedf.fdn
+          </a>
+          <div class="info-howto-trigger" id="howToOpenBtn">❔ Nasıl Kullanılır? <span>(Tıkla)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-overlay" id="howToPanel">
+    <div class="info-card">
+      <button class="info-close" id="howToCloseBtn">✕</button>
+      <div class="info-scroll">
+        <h3 class="info-h3">🚀 Nasıl Kullanılır?</h3>
+        <p>Siteye giriş yaptığınız andan itibaren sade ve sezgisel bir arayüz sizi karşılar. Pratik yapmaya başlamak için şu adımları izleyebilirsiniz:</p>
+
+        <h4 class="info-h4">1. Giriş ve Profil Oluşturma</h4>
+        <p>Ana ekranda "Giriş İçin Ekrana Tıklayın" yazısına dokunun.</p>
+        <p>Çıkan pencereye adınızı girerek başlayın. Bu sayede sitede geçirdiğiniz süre kaydedilir ve liderlik tablosundaki yerinizi alabilirsiniz.</p>
+
+        <h4 class="info-h4">2. Dil ve Seviye Seçimi</h4>
+        <p>Üst menüden çalışmak istediğiniz dili (Almanca 🇩🇪, İngilizce 🇬🇧, Arapça 🇸🇦, Fransızca 🇫🇷, İspanyolca 🇪🇸 veya Rusça 🇷🇺) seçin.</p>
+        <p>Hemen altındaki seviye kutusundan öğrenme düzeyinize göre A1, A2, B1, B2 veya tüm seviyeleri bir arada görmek için TÜMÜ seçeneğine tıklayın.</p>
+
+        <h4 class="info-h4">3. Kategori İnceleme</h4>
+        <p>"📂 Kategori Seç" butonuna basarak belirli bir alana (örneğin Günlük Yaşam, Gıda, Meslekler vb.) odaklanabilir ya da tüm kategorileri karışık çalışabilirsiniz.</p>
+
+        <h4 class="info-h4">4. Kartlar Modunda Çalışma</h4>
+        <p>Kelimeyi ve Cümleyi İnceleyin: Kartın ön yüzünde kelimenin okunuşu, türü ve örnek cümle içerisindeki kullanımı vurgulu olarak yer alır.</p>
+        <p>Dinleyin: Kelimenin doğru telaffuzunu duymak için normal hız için tavşan (🐰), yavaş ve tane tane dinlemek için kaplumbağa (🐢) simgesine dokunun.</p>
+        <p>Anlamını Görün: Kartın üzerine tıklayarak (veya dokunarak) kartı çevirebilir, Türkçe karşılığını ve Türkçe örnek cümleyi görüntüleyebilirsiniz.</p>
+        <p>Gezinin: Sonraki, Önceki veya kart sırasını rastgele değiştirmek için Karıştır butonlarını kullanın.</p>
+
+        <h4 class="info-h4">5. Quiz (Test) Modu ile Kendinizi Sınayın</h4>
+        <p>Üstteki Quiz sekmesine geçerek öğrendiğiniz kelimeleri çoktan seçmeli testlerle pekiştirin.</p>
+        <p>Test bittiğinde toplam doğru sayınızı görebilir, "Hatalarını Gör" butonuna tıklayarak yanlış yaptığınız soruların doğrularını inceleyebilirsiniz.</p>
+
+        <h4 class="info-h4">6. Çalışma Sürenizi Takip Edin</h4>
+        <p>Sayfanın alt kısmındaki canlı kronometre sayesinde o oturumda ne kadar süre aktif pratik yaptığınızı anlık olarak takip edin.</p>
+
+        <div class="info-glow-title">🎯 Kişisel Çalışma Alanı</div>
+        <p>Standart kelime havuzunun ve genel testlerin ötesinde, uygulamanın üst menüsünde yer alan "🎯 Kişisel" sekmesi, tamamen size ait ve esnek bir öğrenme deneyimi sunmak için tasarlanmıştır.</p>
+        <p>Odaklanmış, Sade Arayüz: Kişisel sekmesine geçiş yaptığınızda; ekrandaki genel seviye (A1, A2 vb.) ve kategori filtreleri otomatik olarak gizlenir. Bu sayede dikkatiniz dağılmadan doğrudan kendi çalışma alanınıza odaklanabilirsiniz.</p>
+        <p>Kişiselleştirilmiş Yönetim (Özel Modül): Bu sekmeye tıkladığınızda uygulamanın özel altyapısı devreye girer. Bu alan, kendi öğrenme rotanızı çizebileceğiniz, özel kelime listelerinizi veya kişisel istatistiklerinizi yönetebileceğiniz size özel bir pano (dashboard) olarak işlev görür.</p>
+        <p>⚪️ Çalışmaya Başla kısmına tıklayın ve özel olarak oluşturulan sistem sayesinde kalıcı bir şekilde bilgi birikiminizi artırın.</p>
+        <p>⚪️ Genel Tekrar ile öğrendiklerinizi pekiştirin ve emin olun.</p>
+        <p>⚪️ Günlük Tekrar ile geçen gün çalıştıklarınızı tekrar edin.</p>
+        <p>⚪️ Üst kısımda dil seçenekleri ve seviye seçenekleri ile seviyenize göre çalışın.</p>
+        <p>⚪️ Toplam ilerlemeniz gösterilir, bu sayede ilerlemenizi kendi gözlerinizle takip edin.</p>
+        <p>⚪️ Hata yaptığınız kelimeleri görün, tekrar edin. Kaç defa karşınıza çıktığını ve kaç defa hata yaptığınızı kendi gözlerinizle görün.</p>
+
+        <div class="info-footer">
+          <a class="info-cta" href="https://muhammedfidann06.github.io/turkishdeucard/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
+          <a class="info-support" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+            Destek Ve Önerileriniz İçin: @muhammedf.fdn
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="session-timer" id="sessionTimer">⏱ Bu oturumda: 0sn</div>
-  <div class="session-timer" id="profileTimer" style="margin-top: 8px; color: var(--text-muted);">👤 Profil yükleniyor...</div>
-  <div class="credit">Tasarım & Altyapı: M. Hamza Fidan</div>
+  <div class="session-timer" id="profileTimer">👤 Profil yükleniyor...</div>
+  <div class="my-rank-box" id="myRankBox">
+    <div class="my-rank-empty">🏅 Sıralamanı görmek için giriş yap</div>
+  </div>
+  <div class="credit">İsim hakları <b>M HAMZA</b>'ya aittir</div>
 </div>
 
-<!-- Senin Mevcut Script Dosyaların (Sakın Silme) -->
 <script src="vocab-core.js"></script>
 <script src="vocab-de.js"></script>
 <script src="vocab-en.js"></script>
 <script src="vocab-ar.js"></script>
+<script src="vocab-fr.js"></script>
+<script src="vocab-es.js"></script>
+<script src="vocab-ru.js"></script>
 <script src="leaderboard.js"></script>
+<script>
+/* ================================================================
+   ŞİFRE GÖSTER/GİZLE — Maymun emoji animasyonu (sadece görsel, saf UI)
+   Kimlik doğrulama mantığının tamamı artık leaderboard.js içinde.
+================================================================ */
+document.addEventListener('DOMContentLoaded', function(){
+  const pwInput = document.getElementById('passwordInput');
+  const pwEye = document.getElementById('pwEye');
+  const emojiVisible = document.getElementById('pwEmojiVisible');
+  const emojiHidden = document.getElementById('pwEmojiHidden');
+  let pwHidden = false;
+  if(pwEye && pwInput && emojiVisible && emojiHidden){
+    pwEye.onclick = () => {
+      pwHidden = !pwHidden;
+      pwInput.type = pwHidden ? 'password' : 'text';
+      if(pwHidden){
+        emojiVisible.classList.remove('in'); emojiVisible.classList.add('out');
+        emojiHidden.classList.remove('out'); emojiHidden.classList.add('in');
+      } else {
+        emojiHidden.classList.remove('in'); emojiHidden.classList.add('out');
+        emojiVisible.classList.remove('out'); emojiVisible.classList.add('in');
+      }
+    };
+  }
+});
+</script>
+<script>
+/* Kelime verisi artık vocab-core.js / vocab-de.js / vocab-en.js / vocab-ar.js /
+   vocab-fr.js / vocab-es.js / vocab-ru.js dosyalarından yükleniyor
+   (bkz. yukarıdaki <script src> etiketleri). fr/es/ru şu an boş iskelettir. */
+/* ======================= CONFIG ======================= */
+const LANGS = {
+  de:{ label:"Almanca", native:"Deutsch", levels:["A1","A2","B1","B2"], voice:"de-DE", dir:"ltr" },
+  en:{ label:"İngilizce", native:"English", levels:["A1","A2","B1","B2"], voice:"en-US", dir:"ltr" },
+  ar:{ label:"Arapça", native:"العربية", levels:["A1","A2","B1","B2"], voice:"ar-SA", dir:"rtl" },
+  fr:{ label:"Fransızca", native:"Français", levels:["A1","A2","B1","B2"], voice:"fr-FR", dir:"ltr" },
+  es:{ label:"İspanyolca", native:"Español", levels:["A1","A2","B1","B2"], voice:"es-ES", dir:"ltr" },
+  ru:{ label:"Rusça", native:"Русский", levels:["A1","A2","B1","B2"], voice:"ru-RU", dir:"ltr" }
+};
+
+let activeLang = "de";
+let activeLevel = "TÜMÜ";
+let activeCat = "Tümü";
+let deck = [];
+let idx = 0;
+let flipped = false;
+let soundOn = true;
+
+let quizDeck = [];
+let qIdx = 0;
+let score = 0;
+let answered = false;
+let mistakes = []; // QUIZ HATALARINI TUTACAĞIMIZ DİZİ
+let quizAnswers = []; // her soru indexine karşılık { opts, chosen, correct } - geri dönüp bakabilmek için
+
+/* ======================= TTS (best available system voice) ======================= */
+/* =========================================================
+   SES SİSTEMİ
+   Öncelik:
+   1. Cihazın / tarayıcının kendi speechSynthesis TTS sistemi
+   2. TTS çalışmazsa Google Translate TTS yedek sistem
+   ========================================================= */
+/* =========================================================
+   1. TTS SESLERİNİ YÜKLE
+   ========================================================= */
+let voicesCache = [];
+function loadVoices(){
+  if('speechSynthesis' in window){
+    voicesCache = window.speechSynthesis.getVoices() || [];
+  }else{
+    voicesCache = [];
+  }
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    loadVoices();
+  };
+}
+/* =========================================================
+   2. UYGUN TTS SESİNİ BUL
+   ========================================================= */
+function pickVoice(langCode){
+  loadVoices();
+  const prefix = String(langCode || '')
+    .split('-')[0]
+    .toLowerCase();
+  if(!prefix) return null;
+  const candidates = voicesCache.filter(v =>
+    v.lang &&
+    v.lang.toLowerCase().startsWith(prefix)
+  );
+  if(candidates.length === 0){
+    return null;
+  }
+  // Önce tam dil eşleşmesi
+  const exact = candidates.filter(v =>
+    v.lang.toLowerCase() === String(langCode).toLowerCase()
+  );
+  const pool = exact.length ? exact : candidates;
+  // Daha doğal sesleri önceliklendir
+  const priorityKeywords = [
+    "Siri",
+    "Enhanced",
+    "Premium",
+    "Pro",
+    "Natural",
+    "Neural",
+    "Wavenet",
+    "Google",
+    "Online",
+    "Samantha",
+    "Alex",
+    "Ava",
+    "Serena",
+    "Daniel",
+    "Anna",
+    "Markus",
+    "Petra"
+  ];
+  for(const kw of priorityKeywords){
+    const found = pool.find(v =>
+      v.name &&
+      v.name.toLowerCase().includes(kw.toLowerCase())
+    );
+    if(found){
+      return found;
+    }
+  }
+  // Hiçbiri bulunamazsa ilk uygun sesi kullan
+  return pool[0];
+}
+/* =========================================================
+   3. GOOGLE TRANSLATE TTS
+   YEDEK SES SİSTEMİ
+   ========================================================= */
+function googleTTSUrl(text, langCode, slow){
+  const speed = slow ? 0.24 : 1;
+  return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(langCode)}&client=tw-ob&ttsspeed=${speed}`;
+}
+/* =========================================================
+   4. GOOGLE TTS SESLENDİRME
+   ========================================================= */
+function speakGoogle(text, langCode, slow, onEnd){
+  try{
+    const audio = new Audio(
+      googleTTSUrl(text, langCode, slow)
+    );
+    let done = false;
+    const finish = (ok) => {
+      if(done) return;
+      done = true;
+      if(onEnd){
+        onEnd(ok);
+      }
+    };
+    audio.onended = () => {
+      finish(true);
+    };
+    audio.onerror = () => {
+      finish(false);
+    };
+    // Google TTS çok uzun süre cevap vermezse başarısız kabul et
+    const timeout = setTimeout(() => {
+      finish(false);
+    }, 5000);
+    audio.addEventListener(
+      'playing',
+      () => {
+        clearTimeout(timeout);
+      },
+      { once:true }
+    );
+    const playPromise = audio.play();
+    if(playPromise){
+      playPromise.catch(() => {
+        clearTimeout(timeout);
+        finish(false);
+      });
+    }
+  }catch(e){
+    if(onEnd){
+      onEnd(false);
+    }
+  }
+}
+/* =========================================================
+   5. SADECE CİHAZ / TARAYICI TTS
+   ========================================================= */
+function speakNative(text, lang, rate, onResult){
+  if(!('speechSynthesis' in window)){
+    if(onResult){
+      onResult(false);
+    }
+    return;
+  }
+  try{
+    // Önce devam eden sesleri durdur
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    // Uygun dili seç
+    const voice = pickVoice(lang);
+    if(voice){
+      u.voice = voice;
+      u.lang = voice.lang;
+    }else{
+      u.lang = lang;
+    }
+    u.rate = rate || 0.92;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    let started = false;
+    let finished = false;
+    // Native TTS başarısız olursa Google TTS'ye geç
+    const fail = () => {
+      if(finished) return;
+      finished = true;
+      if(onResult){
+        onResult(false);
+      }
+    };
+    // TTS gerçekten başladı
+    u.onstart = () => {
+      started = true;
+    };
+    // TTS başarıyla tamamlandı
+    u.onend = () => {
+      if(finished) return;
+      finished = true;
+      if(onResult){
+        onResult(true);
+      }
+    };
+    // TTS hata verdi
+    u.onerror = () => {
+      fail();
+    };
+    // TTS 2.5 saniye içinde başlamadıysa başarısız kabul et
+    setTimeout(() => {
+      if(!started && !finished){
+        try{
+          window.speechSynthesis.cancel();
+        }catch(e){}
+        fail();
+      }
+    }, 2500);
+    // TTS'yi başlat
+    window.speechSynthesis.speak(u);
+  }catch(e){
+    if(onResult){
+      onResult(false);
+    }
+  }
+}
+/* =========================================================
+   6. ANA SESLENDİRME
+   ÖNCE NATIVE TTS
+   BAŞARISIZSA GOOGLE TTS
+   ========================================================= */
+function speak(text, lang){
+  if(!soundOn) return;
+  // Türkçe kelimeleri seslendirme
+  if(String(lang).toLowerCase().startsWith('tr')) return;
+  // Önce cihazın kendi TTS sistemini dene
+  speakNative(
+    text,
+    lang,
+    0.92,
+    (ok) => {
+      // Native TTS başarısız olduysa
+      // Google Translate TTS'yi kullan
+      if(!ok){
+        const code = String(lang).split('-')[0];
+        speakGoogle(
+          text,
+          code,
+          false,
+          () => {}
+        );
+      }
+    }
+  );
+}
+/* =========================================================
+   7. YAVAŞ SESLENDİRME
+   ÖNCE NATIVE TTS
+   BAŞARISIZSA GOOGLE TTS
+   ========================================================= */
+function speakSlow(text, lang){
+  if(!soundOn) return;
+  // Türkçe kelimeleri seslendirme
+  if(String(lang).toLowerCase().startsWith('tr')) return;
+  // Önce cihazın kendi TTS sistemini dene
+  speakNative(
+    text,
+    lang,
+    0.55,
+    (ok) => {
+      // Native TTS başarısız olduysa
+      // Google Translate TTS'yi kullan
+      if(!ok){
+        const code = String(lang).split('-')[0];
+        speakGoogle(
+          text,
+          code,
+          true,
+          () => {}
+        );
+      }
+    }
+  );
+}
+/* =========================================================
+   8. MEDYANIN / TARAYICININ TTS MOTORUNU ISIT
+   ========================================================= */
+function warmUpSpeech(){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    loadVoices();
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+/* =========================================================
+   9. GOOGLE TTS FONKSİYONUNU DIŞARIDAN ERİŞİLEBİLİR YAP
+   ========================================================= */
+window.PM_speakGoogle = speakGoogle;
+/* ======================= OTURUM SÜRESİ GÖSTERGESİ ======================= */
+function startSessionTimer(){
+  const el = document.getElementById('sessionTimer');
+  if(!el) return;
+  const start = Date.now();
+  function fmt(totalSeconds){
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if(h > 0) return `${h}s ${m}dk ${sec}sn`;
+    if(m > 0) return `${m}dk ${sec}sn`;
+    return `${sec}sn`;
+  }
+  function tick(){
+    const elapsed = (window.LB_getActiveSeconds ? window.LB_getActiveSeconds() : (Date.now() - start) / 1000);
+    const idle = (window.LB_isIdle ? window.LB_isIdle() : false);
+    el.textContent = `⏱ Bu oturumda: ${fmt(elapsed)}${idle ? ' ⏸' : ''}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+document.getElementById('soundBtn').onclick = () => {
+  soundOn = !soundOn;
+  const btn = document.getElementById('soundBtn');
+  btn.classList.toggle('on', soundOn);
+  btn.classList.toggle('off', !soundOn);
+  const offLabel = document.getElementById('soundOffLabel');
+  if(offLabel) offLabel.classList.toggle('show', !soundOn);
+  if(!soundOn && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+};
+
+document.getElementById('fullscreenBtn').onclick = () => {
+  try{
+    if(!document.fullscreenElement){
+      (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || function(){}).call(document.documentElement);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+    }
+  }catch(e){}
+};
+
+document.getElementById('infoBtn').onclick = () => {
+  const el = document.getElementById('infoPanel');
+  if(el) el.classList.add('open');
+};
+document.getElementById('infoCloseBtn').onclick = () => {
+  const el = document.getElementById('infoPanel');
+  if(el) el.classList.remove('open');
+};
+document.getElementById('howToOpenBtn').onclick = () => {
+  const el = document.getElementById('howToPanel');
+  if(el) el.classList.add('open');
+};
+document.getElementById('howToCloseBtn').onclick = () => {
+  const el = document.getElementById('howToPanel');
+  if(el) el.classList.remove('open');
+};
+
+/* ======================= COLOR SPLIT (kök eşleştirmeli) ======================= */
+function normalizeWord(w){
+  return String(w)
+    .replace(/^(der|die|das)\s+/i, '')
+    .replace(/\s*\(.*?\)\s*/g, ' ')
+    .trim();
+}
+
+function buildCandidates(word){
+  const w = word.toLowerCase();
+  const cands = new Set([w]);
+  if(/mek$/.test(w) && w.length > 5){ cands.add(w.slice(0, -3)); cands.add(w.slice(0, -4)); }
+  else if(/mak$/.test(w) && w.length > 5){ cands.add(w.slice(0, -3)); cands.add(w.slice(0, -4)); }
+  if(/en$/.test(w) && w.length > 4) cands.add(w.slice(0, -2));
+  if(w.length > 4) cands.add(w.slice(0, Math.ceil(w.length * 0.7)));
+  return Array.from(cands).filter(c => c.length >= 2).sort((a, b) => b.length - a.length);
+}
+
+function findStemMatch(sentence, dictWord){
+  const clean = normalizeWord(dictWord);
+  if(!clean) return null;
+  const skip = new Set(['sich','zu','to','a','an','the','in','on','at','for','with','of','up','out','get','be']);
+  const tokens = clean.split(/\s+/).filter(t => t && !skip.has(t.toLowerCase()));
+  const mainToken = tokens.sort((a, b) => b.length - a.length)[0] || clean;
+  const isShort = mainToken.length <= 2;
+  const candidates = isShort ? [mainToken.toLowerCase()] : buildCandidates(mainToken);
+
+  const parts = sentence.split(/(\s+)/);
+  for(const target of candidates){
+    let bestIdx = -1, bestLen = -1;
+    for(let i = 0; i < parts.length; i++){
+      const clean2 = parts[i].toLowerCase().replace(/[^a-zçğıöşüäöüß]/gi, '');
+      if(!clean2) continue;
+      if(isShort){
+        if(clean2 === target){ bestIdx = i; break; }
+        continue;
+      }
+      if(clean2.length < target.length) continue;
+      let common = 0;
+      for(let k = 0; k < target.length; k++){
+        if(clean2[k] === target[k]) common++; else break;
+      }
+      if(common === target.length && clean2.length > bestLen){
+        bestLen = clean2.length; bestIdx = i;
+      }
+    }
+    if(bestIdx !== -1){
+      let offset = 0;
+      for(let i = 0; i < bestIdx; i++) offset += parts[i].length;
+      return { start: offset, end: offset + parts[bestIdx].length };
+    }
+  }
+  return null;
+}
+
+function colorSplit(sentence, word, c1, c2){
+  if(!sentence) return '';
+  const range = findStemMatch(sentence, word);
+  if(!range){
+    return `<span style="color:${c1}">${sentence}</span>`;
+  }
+  const before = sentence.slice(0, range.start);
+  const match = sentence.slice(range.start, range.end);
+  const after = sentence.slice(range.end);
+  return `${before}<span style="color:${c1}">${match}</span><span style="color:${c2}">${after}</span>`;
+}
+
+/* ======================= RENDER: LANG / LEVEL / CHIPS ======================= */
+function renderLangPair(){
+  const L = LANGS[activeLang];
+  const colorMap = { de:"var(--gold)", en:"var(--cyan-soft)", ar:"var(--green)", fr:"var(--pink)", es:"var(--red)", ru:"var(--violet)" };
+  document.getElementById('langPair').innerHTML =
+    `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a tr-flag-text">Türkçe</span>`;
+}
+
+function rebuildLevelBox(){
+  const L = LANGS[activeLang];
+  const allLevels = ["TÜMÜ", ...L.levels];
+  if(!allLevels.includes(activeLevel)) activeLevel = "TÜMÜ";
+  const box = document.getElementById('levelBox');
+  box.innerHTML = '';
+  allLevels.forEach(lv => {
+    const d = document.createElement('div');
+    d.className = 'level-opt' + (lv===activeLevel ? ' active' : '');
+    d.textContent = lv;
+    d.onclick = () => { activeLevel = lv; activeCat='Tümü'; rebuildLevelBox(); rebuildChips(); applyFilter(); };
+    box.appendChild(d);
+  });
+}
+
+function poolForLevel(){
+  if(activeLevel === "TÜMÜ") return VOCAB.filter(v => v.lang===activeLang);
+  return VOCAB.filter(v => v.lang===activeLang && v.level===activeLevel);
+}
+
+function rebuildChips(){
+  const pool = poolForLevel();
+  const cats = Array.from(new Set(pool.map(v=>v.cat))).sort((a,b)=>a.localeCompare(b,'tr'));
+  if(cats.length && !cats.includes(activeCat) && activeCat !== 'Tümü') activeCat = 'Tümü';
+
+  const gridEl = document.getElementById('catGrid');
+  gridEl.innerHTML = '';
+  cats.forEach(cat=>{
+    const c = document.createElement('div');
+    c.className = 'chip' + (cat===activeCat ? ' active' : '');
+    c.textContent = cat;
+    c.onclick = () => {
+      activeCat = cat;
+      applyFilter();
+      closeCatPanel();
+    };
+    gridEl.appendChild(c);
+  });
+  updateCatUI();
+}
+
+function updateCatUI(){
+  const allChip = document.getElementById('catAllChip');
+  const trigger = document.getElementById('catTrigger');
+  const isAll = activeCat === 'Tümü';
+  allChip.classList.toggle('active', isAll);
+  trigger.classList.toggle('active', !isAll);
+  trigger.textContent = isAll ? '📂 Kategori Seç' : ('📂 ' + activeCat);
+  document.querySelectorAll('#catGrid .chip').forEach(c=>{
+    c.classList.toggle('active', c.textContent===activeCat);
+  });
+}
+
+function openCatPanel(){ document.getElementById('catOverlay').classList.add('open'); }
+function closeCatPanel(){ document.getElementById('catOverlay').classList.remove('open'); }
+
+document.getElementById('catAllChip').onclick = () => { activeCat = 'Tümü'; applyFilter(); };
+document.getElementById('catTrigger').onclick = openCatPanel;
+document.getElementById('catClose').onclick = closeCatPanel;
+document.getElementById('catOverlay').onclick = (e) => { if(e.target.id === 'catOverlay') closeCatPanel(); };
+
+document.querySelectorAll('.lang-opt').forEach(opt=>{
+  opt.onclick = () => {
+    activeLang = opt.dataset.lang;
+    document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('active', o===opt));
+    activeLevel = "TÜMÜ";
+    activeCat = 'Tümü';
+    renderLangPair();
+    rebuildLevelBox();
+    rebuildChips();
+    applyFilter();
+  };
+});
+
+function applyFilter(){
+  updateCatUI();
+  const pool = poolForLevel();
+  deck = activeCat==='Tümü' ? [...pool] : pool.filter(v=>v.cat===activeCat);
+  idx = 0; flipped = false;
+  restoreCardPosition();
+  renderCard();
+  buildQuizDeck();
+}
+
+/* ======================= CARD RENDER ======================= */
+function renderCard(){
+  if(deck.length===0){
+     document.getElementById('frontWord').textContent = "Kelime Yok";
+     document.getElementById('trWord').textContent = "";
+     document.getElementById('frontExample').textContent = "";
+     document.getElementById('trExample').textContent = "";
+     return;
+  }
+  const v = deck[idx];
+  const L = LANGS[v.lang];
+  const frontWordEl = document.getElementById('frontWord');
+  frontWordEl.textContent = v.w;
+  frontWordEl.setAttribute('dir', L.dir);
+  document.getElementById('frontPos').textContent = v.pos;
+  document.getElementById('tagFront').textContent = L.native;
+  document.getElementById('trWord').textContent = v.tr;
+
+  const frontEx = document.getElementById('frontExample');
+  frontEx.innerHTML = colorSplit(v.ex, v.w, v.c1, v.c2);
+  frontEx.setAttribute('dir', L.dir);
+
+  const trEx = document.getElementById('trExample');
+  trEx.innerHTML = colorSplit(v.exTr, v.tr, v.c1, v.c2);
+  trEx.setAttribute('dir','ltr');
+
+  document.getElementById('cardCount').textContent = `${idx+1} / ${deck.length}`;
+  document.getElementById('cardCat').textContent = activeCat;
+  document.getElementById('cardBar').style.width = `${((idx+1)/deck.length)*100}%`;
+  document.getElementById('levelBadgeFront').textContent = v.level;
+  document.getElementById('levelBadgeBack').textContent = v.level;
+  document.getElementById('card').classList.remove('flipped');
+  flipped = false;
+}
+
+document.getElementById('rabbitBtn').onclick = (e) => {
+  e.stopPropagation();
+  const v = deck[idx]; if(!v) return;
+  speak(v.w, LANGS[v.lang].voice);
+};
+document.getElementById('turtleBtn').onclick = (e) => {
+  e.stopPropagation();
+  const v = deck[idx]; if(!v) return;
+  speakSlow(v.w, LANGS[v.lang].voice);
+};
+
+document.getElementById('card').onclick = () => {
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+  const v = deck[idx];
+  if(!v) return;
+  if(!flipped){ speak(v.w, LANGS[v.lang].voice); }
+  saveCardPosition();
+};
+
+document.getElementById('nextBtn').onclick = () => {
+  if(deck.length===0) return;
+  idx = (idx+1) % deck.length;
+  renderCard();
+  const v = deck[idx];
+  speak(v.w, LANGS[v.lang].voice);
+  spawnShootingStar();
+  saveCardPosition();
+};
+document.getElementById('prevBtn').onclick = () => {
+  if(deck.length===0) return;
+  idx = (idx-1+deck.length) % deck.length;
+  renderCard();
+  const v = deck[idx];
+  speak(v.w, LANGS[v.lang].voice);
+  saveCardPosition();
+};
+document.getElementById('shuffleBtn').onclick = () => {
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  idx = 0; renderCard();
+  saveCardPosition();
+};
+
+/* ======================= KART KONUMU HAFIZASI (sessionStorage) =======================
+   Sekme/uygulama arka plana atılsa veya ekran kilitlense bile kaldığı yerden
+   devam etsin diye sessionStorage kullanıyoruz (localStorage DEĞİL): tarayıcı
+   sekmesi tamamen kapatılıp yeniden açıldığında (yeni gün, yeni oturum) bu
+   veri otomatik silinir ve kullanıcı en baştan başlar — istenen davranış budur. */
+const CARD_POS_KEY = 'cardPos_v1';
+function saveCardPosition(){
+  try{
+    sessionStorage.setItem(CARD_POS_KEY, JSON.stringify({ lang:activeLang, level:activeLevel, cat:activeCat, idx }));
+  }catch(e){}
+}
+function restoreCardPosition(){
+  try{
+    const raw = sessionStorage.getItem(CARD_POS_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(saved.lang===activeLang && saved.level===activeLevel && saved.cat===activeCat && saved.idx < deck.length){
+      idx = saved.idx;
+    }
+  }catch(e){}
+}
+
+/* ======================= QUIZ ======================= */
+function buildQuizDeck(){
+  quizDeck = [...deck];
+  mistakes = [];
+  quizAnswers = [];
+  for(let i=quizDeck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [quizDeck[i],quizDeck[j]]=[quizDeck[j],quizDeck[i]]; }
+  qIdx = 0; score = 0; answered = false;
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
+  document.getElementById('doneView').style.display = 'none';
+  document.getElementById('mistakesView').style.display = 'none';
+  if(quizTabActive){ document.getElementById('quizView').style.display = 'block'; }
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
+  if(quizDeck.length===0) return;
+  if(qIdx >= quizDeck.length){
+    const answeredCount = quizAnswers.filter(a=>a).length;
+    if(quizTabActive){
+      document.getElementById('quizView').style.display = 'none';
+      document.getElementById('doneView').style.display = 'block';
+      const mistakeBtn = document.getElementById('showMistakesBtn');
+      if(mistakes.length > 0) {
+        mistakeBtn.style.display = 'block';
+      } else {
+        mistakeBtn.style.display = 'none';
+      }
+    }
+    document.getElementById('finalScore').textContent = `${score} / ${answeredCount} doğru cevap`;
+    return;
+  }
+  if(quizTabActive){
+    document.getElementById('quizView').style.display = 'block';
+    document.getElementById('doneView').style.display = 'none';
+    document.getElementById('mistakesView').style.display = 'none';
+  }
+  const v = quizDeck[qIdx];
+  const qWordEl = document.getElementById('quizWord');
+  qWordEl.textContent = v.w;
+  qWordEl.setAttribute('dir', LANGS[v.lang].dir);
+  document.getElementById('quizPos').textContent = v.pos;
+  document.getElementById('quizCount').textContent = `Soru ${qIdx+1} / ${quizDeck.length}`;
+  document.getElementById('quizBar').style.width = `${((qIdx+1)/quizDeck.length)*100}%`;
+  document.getElementById('scorePill').textContent = `${score} doğru`;
+
+  const existing = quizAnswers[qIdx];
+
+  const prevBtnEl = document.getElementById('quizPrevBtn');
+  if(prevBtnEl) prevBtnEl.disabled = (qIdx===0);
+  const nextBtnEl = document.getElementById('quizNextBtn');
+  if(nextBtnEl) nextBtnEl.disabled = !existing;
+  const finishBtnEl = document.getElementById('quizFinishBtn');
+  if(finishBtnEl) finishBtnEl.disabled = (quizAnswers.filter(a=>a).length===0);
+
+  const optionsEl = document.getElementById('options');
+  optionsEl.innerHTML = '';
+
+  if(existing){
+    // Daha önce cevaplanmış soru: sadece görüntüle, seçim değiştirilemez.
+    answered = true;
+    existing.opts.forEach(o=>{
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = o;
+      b.disabled = true;
+      if(o === existing.correct) b.classList.add('correct');
+      else if(o === existing.chosen) b.classList.add('wrong');
+      optionsEl.appendChild(b);
+    });
+    return;
+  }
+
+  answered = false;
+  let opts = [v.tr];
+  let pool = poolForLevel().filter(x => x.tr !== v.tr);
+  if(pool.length < 3){
+    pool = VOCAB.filter(x => x.lang===activeLang && x.tr !== v.tr);
+  }
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  opts = opts.concat(pool.slice(0,3).map(x=>x.tr));
+  for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
+
+  opts.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = o;
+    b.onclick = () => selectAnswer(o, v.tr, b, opts);
+    optionsEl.appendChild(b);
+  });
+}
+
+function selectAnswer(chosen, correct, btnEl, opts){
+  if(answered) return;
+  answered = true;
+  const v = quizDeck[qIdx];
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled = true;
+    if(b.textContent===correct) b.classList.add('correct');
+    else if(b===btnEl) b.classList.add('wrong');
+  });
+
+  quizAnswers[qIdx] = { opts: opts.slice(), chosen: chosen, correct: correct };
+
+  if(chosen===correct) {
+    score++;
+  } else {
+    mistakes.push({ word: v.w, correct: correct, given: chosen });
+  }
+  
+  document.getElementById('scorePill').textContent = `${score} doğru`;
+  setTimeout(()=>{ qIdx++; renderQuiz(); }, 700);
+}
+
+document.getElementById('quizPrevBtn').onclick = () => {
+  if(qIdx > 0){ qIdx--; renderQuiz(); }
+};
+document.getElementById('quizNextBtn').onclick = () => {
+  if(quizAnswers[qIdx]){ qIdx++; renderQuiz(); }
+};
+document.getElementById('quizFinishBtn').onclick = () => {
+  qIdx = quizDeck.length;
+  renderQuiz();
+};
+
+document.getElementById('restartBtn').onclick = buildQuizDeck;
+
+document.getElementById('showMistakesBtn').onclick = () => {
+    document.getElementById('doneView').style.display = 'none';
+    document.getElementById('mistakesView').style.display = 'block';
+    
+    const list = document.getElementById('mistakesList');
+    list.innerHTML = '';
+    
+    mistakes.forEach(m => {
+        list.innerHTML += `
+        <div class="mistake-item">
+            <div class="mistake-word">${m.word}</div>
+            <div class="mistake-given">Senin Cevabın: <b>${m.given}</b></div>
+            <div class="mistake-correct">Doğrusu: <b>${m.correct}</b></div>
+        </div>`;
+    });
+};
+
+document.getElementById('backToDoneBtn').onclick = () => {
+    document.getElementById('mistakesView').style.display = 'none';
+    document.getElementById('doneView').style.display = 'block';
+};
+
+/* ======================= TABS ======================= */
+// $ : küçük bir yardımcı — eleman yoksa (ör. dosyalardan biri eski kaldıysa)
+// sessizce atlar, TÜM script'in çökmesine (ve giriş tıklamasının bile
+// çalışmamasına) yol açmaz.
+function $(id){ return document.getElementById(id); }
+function setDisplay(id, val){ const el = $(id); if(el) el.style.display = val; }
+function toggleActive(id, on){ const el = $(id); if(el) el.classList.toggle('active', on); }
+
+function deactivateAllTabs(){
+  toggleActive('tabCards', false);
+  toggleActive('tabQuiz', false);
+  toggleActive('tabPersonal', false);
+  setDisplay('cardsView', 'none');
+  setDisplay('quizView', 'none');
+  setDisplay('doneView', 'none');
+  setDisplay('mistakesView', 'none');
+  setDisplay('personalView', 'none');
+  // Kişisel mod farklı bir tema/arkaplan kullandığı için sekmeden çıkınca
+  // ana chip/level seçicilerini tekrar görünür yapıyoruz.
+  setDisplay('levelBox', '');
+  setDisplay('chips', '');
+  setDisplay('langBox', '');
+}
+if($('tabCards')) $('tabCards').onclick = () => {
+  deactivateAllTabs();
+  toggleActive('tabCards', true);
+  setDisplay('cardsView', 'block');
+};
+if($('tabQuiz')) $('tabQuiz').onclick = () => {
+  deactivateAllTabs();
+  toggleActive('tabQuiz', true);
+  setDisplay('quizView', 'block');
+  buildQuizDeck();
+};
+if($('tabPersonal')) $('tabPersonal').onclick = () => {
+  deactivateAllTabs();
+  toggleActive('tabPersonal', true);
+  setDisplay('personalView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  if(window.PM_open) window.PM_open();
+};
+
+/* ======================= INIT ======================= */
+renderLangPair();
+rebuildLevelBox();
+rebuildChips();
+applyFilter();
+
+/* ======================= SNOW / CRYSTAL EFFECT ======================= */
+(function(){
+  const canvas = document.getElementById('snowCanvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, flakes, running = true, windPhase = 0;
+
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function makeFlakes(n){
+    return Array.from({length:n}, () => ({
+      x: Math.random()*w,
+      y: Math.random()*h,
+      r: Math.random()*9 + 4,
+      speedY: Math.random()*1.6 + 0.7,
+      speedX: Math.random()*1.0 - 0.5,
+      rot: Math.random()*Math.PI*2,
+      rotSpeed: (Math.random()*0.05 - 0.025),
+      drift: Math.random()*Math.PI*2,
+      driftSpeed: Math.random()*0.03 + 0.015,
+      opacity: Math.random()*0.5 + 0.55,
+      hue: Math.random() < 0.5 ? "190,235,255" : "210,220,255"
+    }));
+  }
+  
+  flakes = makeFlakes(62);
+
+  function drawCrystal(f){
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    ctx.rotate(f.rot);
+    ctx.globalAlpha = f.opacity;
+    ctx.strokeStyle = `rgba(${f.hue},1)`;
+    ctx.fillStyle = `rgba(${f.hue},1)`;
+    ctx.lineWidth = Math.max(0.6, f.r*0.09);
+    
+    for(let i=0;i<6;i++){
+      ctx.save();
+      ctx.rotate((Math.PI/3)*i);
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(0, f.r);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, f.r*0.45);
+      ctx.lineTo(f.r*0.22, f.r*0.62);
+      ctx.moveTo(0, f.r*0.45);
+      ctx.lineTo(-f.r*0.22, f.r*0.62);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, f.r*0.75);
+      ctx.lineTo(f.r*0.16, f.r*0.88);
+      ctx.moveTo(0, f.r*0.75);
+      ctx.lineTo(-f.r*0.16, f.r*0.88);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(0,0,f.r*0.14,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function tick(){
+    if(!running) return;
+    ctx.clearRect(0,0,w,h);
+    windPhase += 0.012;
+    const gust = Math.sin(windPhase) * 0.6;
+    flakes.forEach(f=>{
+      f.drift += f.driftSpeed;
+      f.rot += f.rotSpeed;
+      f.y += f.speedY;
+      f.x += f.speedX + gust + Math.sin(f.drift)*0.6;
+      if(f.y > h + 12){ f.y = -12; f.x = Math.random()*w; }
+      if(f.x > w + 12) f.x = -12;
+      if(f.x < -12) f.x = w + 12;
+      drawCrystal(f);
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  const splash = document.getElementById('splash');
+  const mainApp = document.getElementById('mainApp');
+  splash.addEventListener('click', () => {
+    splash.classList.add('hidden');
+    mainApp.classList.add('revealed');
+    setTimeout(()=>{ running = false; }, 900);
+    if(window.LB_checkName){
+      setTimeout(window.LB_checkName, 500);
+    }
+    if(typeof warmUpSpeech === 'function') warmUpSpeech();
+    startSessionTimer();
+  }, { once:true });
+})();
+</script>
 <script src="progress.js"></script>
 
-<!-- Kendi Yazdığın Inline Fonksiyonların Bulunduğu Script Etiketi Buraya Gelecek -->
-<!-- (Mevcut index.html dosyasındaki en alttaki <script> ... </script> bloğunu buraya yapıştır) -->
+<script>
+/* ======================= PWA SERVICE WORKER ======================= */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(registration => {
+        console.log("Kelime Kartları PWA aktif:", registration.scope);
+      })
+      .catch(error => {
+        console.error("PWA Service Worker hatası:", error);
+      });
+  });
+}
+</script>
 
+
+<!-- ===== HAREKET KATMANI =====
+     GSAP ve Lenis isteğe bağlıdır: yüklenmezlerse arayüz aynen çalışır,
+     sadece giriş koreografisi CSS ile yapılır. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
+<script defer src="voice.js"></script>
+<script defer src="sky.js"></script>
+<script defer src="motion.js"></script>
+<script defer src="theme.js"></script>
 </body>
 </html>
