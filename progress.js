@@ -92,21 +92,52 @@
     }catch(e){}
   }
 
+  // Firebase'den gelen kelime kayıtlarını, hafızadaki (henüz Firebase'e
+  // ulaşmamış olabilecek) daha taze ilerlemenin ÜZERİNE KÖRÜ KÖRÜNE
+  // YAZMAK yerine, her kelime için hangi kayıt daha güncelse (lastSeen'e
+  // göre) onu koruyarak birleştirir. Bu, "bilinen kelimeler sıfırlandı"
+  // hatasının kök nedenini (loadUserData'nın tekrar tetiklenip henüz
+  // senkronize olmamış Firebase verisiyle hafızayı ezmesi) engeller.
+  function mergeWordProgress(localWords, remoteWords){
+    const merged = Object.assign({}, remoteWords || {});
+    Object.keys(localWords || {}).forEach(key=>{
+      const l = localWords[key];
+      const r = merged[key];
+      if(!r){ merged[key] = l; return; }
+      const lTime = l.lastSeen || 0;
+      const rTime = r.lastSeen || 0;
+      // Eşitlik durumunda (ör. iki tarafta da lastSeen yoksa) yerelde
+      // "known" varsa onu koru — veri kaybını asla tercih etme.
+      if(lTime > rTime || (lTime === rTime && l.known && !r.known)){
+        merged[key] = l;
+      }
+    });
+    return merged;
+  }
+
   function loadUserData(name, cb){
     currentName = name;
     currentKey = getKey(name);
     dataLoaded = false;
     const local = safeLocalGet('pm_data_'+currentKey);
-    wordProgress = (local && local.words) ? local.words : {};
-    meta = (local && local.meta) ? local.meta : null;
+    const localWords = (local && local.words) ? local.words : {};
+    const localMeta = (local && local.meta) ? local.meta : null;
+    wordProgress = localWords;
+    meta = localMeta;
 
     const ref = dbRef('progress/'+currentKey);
     if(ref){
       ref.once('value').then(snap=>{
         const val = snap.val();
         if(val){
-          if(val.words) wordProgress = val.words;
-          if(val.meta) meta = val.meta;
+          if(val.words) wordProgress = mergeWordProgress(localWords, val.words);
+          // meta için de veri kaybını önle: hangi taraf daha ilerideyse
+          // (xp daha yüksekse) onu esas al; xp yoksa/eşitse yereli koru.
+          if(val.meta){
+            const localXp = (localMeta && localMeta.xp) || 0;
+            const remoteXp = val.meta.xp || 0;
+            meta = (remoteXp >= localXp) ? val.meta : localMeta;
+          }
         }
         finalizeLoad(cb);
       }).catch(()=> finalizeLoad(cb));
@@ -121,6 +152,9 @@
     ensureDailyRollover();
     persistLocalMirror();
     dataLoaded = true;
+    // Bu oturumda hiç XP kazanılmasa bile (ör. kullanıcı sadece göz atıyor),
+    // seviye liderlik tablosunun güncel kalması için mevcut XP'yi bildir.
+    if(window.LB_updateXp) window.LB_updateXp(meta.xp||0);
     if(cb) cb();
   }
   function persistLocalMirror(){
@@ -130,6 +164,11 @@
     persistLocalMirror();
     const ref = dbRef('progress/'+currentKey+'/meta');
     if(ref) ref.set(meta).catch(()=>{});
+    // Seviye liderlik tablosu 'leaderboard/{uid}/xp' alanını okur; her meta
+    // kaydında (görev tamamlama, XP kazanma, oturum bitişi vb.) burayı da
+    // güncel tutuyoruz ki ayrı bir okuma yapmadan tek dinleyiciyle hem süre
+    // hem seviye sıralaması hesaplanabilsin.
+    if(window.LB_updateXp) window.LB_updateXp(meta.xp||0);
   }
   function ensureDailyRollover(){
     const t = todayStr();
@@ -302,7 +341,9 @@
       .pm-root .pm-pill{padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;background:rgba(79,232,255,0.1);border:1px solid var(--pm-border);color:#eef4ff;}
       .pm-root .pm-pill.flame{background:rgba(255,95,184,0.14);border-color:rgba(255,95,184,0.4);}
       .pm-root .pm-mini-select{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
-      .pm-root .pm-chip{padding:6px 11px;border-radius:10px;font-size:11.5px;font-weight:700;color:#8291b3;background:rgba(255,255,255,0.03);border:1px solid rgba(79,232,255,0.18);cursor:pointer;}
+      .pm-root .pm-chip{padding:6px 11px;border-radius:10px;font-size:11.5px;font-weight:700;color:#8291b3;background:rgba(255,255,255,0.03);border:1px solid rgba(79,232,255,0.18);cursor:pointer;transition:transform .15s ease, border-color .15s ease, background .15s ease, color .15s ease;}
+      .pm-root .pm-chip:hover{border-color:rgba(79,232,255,0.4);color:#eef4ff;}
+      .pm-root .pm-chip:active{transform:scale(.94);}
       .pm-root .pm-chip.active{
         color:#0a0715;
         background:linear-gradient(120deg,var(--pm-accent),var(--pm-accent3),var(--pm-accent2));
@@ -341,14 +382,20 @@
         background:rgba(255,95,122,0.1);border:1px solid rgba(255,95,122,0.4);border-radius:14px;padding:12px 14px;margin-bottom:12px;
       }
       .pm-root .pm-due-banner .pm-due-text{font-size:12.5px;color:#ffd2d9;}
-      .pm-root .pm-due-banner button{flex-shrink:0;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,95,122,0.5);background:rgba(255,95,122,0.18);color:#ffd2d9;font-size:12px;font-weight:700;cursor:pointer;}
+      .pm-root .pm-due-banner button{flex-shrink:0;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,95,122,0.5);background:rgba(255,95,122,0.18);color:#ffd2d9;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s ease, background .15s ease;}
+      .pm-root .pm-due-banner button:hover{background:rgba(255,95,122,0.3);}
+      .pm-root .pm-due-banner button:active{transform:scale(.94);}
       .pm-root .pm-group-row{display:flex;gap:8px;margin-top:8px;}
-      .pm-root .pm-group-btn{flex:1;padding:12px 6px;border-radius:12px;text-align:center;background:rgba(255,255,255,0.03);border:1px solid var(--pm-border);color:#eef4ff;font-size:12.5px;font-weight:700;cursor:pointer;}
+      .pm-root .pm-group-btn{flex:1;padding:12px 6px;border-radius:12px;text-align:center;background:rgba(255,255,255,0.03);border:1px solid var(--pm-border);color:#eef4ff;font-size:12.5px;font-weight:700;cursor:pointer;transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;}
+      .pm-root .pm-group-btn:hover{transform:translateY(-2px);border-color:rgba(79,232,255,0.45);box-shadow:0 6px 16px rgba(0,0,0,0.3);}
+      .pm-root .pm-group-btn:active{transform:scale(.96);}
       .pm-root .pm-group-btn .g-count{display:block;font-size:10px;color:#8291b3;font-weight:400;margin-top:2px;}
       .pm-root button.pm-btn{
         width:100%;padding:14px 0;border-radius:14px;border:1px solid var(--pm-border);
         background:rgba(255,255,255,0.03);color:#eef4ff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;
+        transition:transform .15s ease, box-shadow .2s ease, opacity .15s ease;
       }
+      .pm-root button.pm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.3);}
       .pm-root button.pm-btn.primary{
         position:relative;overflow:hidden;
         background:linear-gradient(120deg, var(--pm-accent), var(--pm-accent3), var(--pm-accent2), var(--pm-accent));
@@ -362,25 +409,47 @@
         50%{background-position:100% 50%;}
         100%{background-position:0% 50%;}
       }
+      .pm-root button.pm-btn.primary:hover{box-shadow:0 10px 32px rgba(79,232,255,0.5), 0 0 44px rgba(255,95,184,0.4);}
       .pm-root button.pm-btn:active{opacity:.7;transform:scale(.98);}
       .pm-root button.pm-btn.small{padding:10px 0;font-size:12.5px;}
       .pm-root .pm-session-bar{display:flex;justify-content:space-between;font-size:11.5px;color:#8291b3;margin-bottom:8px;}
       .pm-root .pm-study-card{
         background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:20px;padding:26px 20px;text-align:center;margin-bottom:16px;
-        box-shadow:0 10px 30px rgba(0,0,0,0.35);cursor:pointer;
+        box-shadow:0 10px 30px rgba(0,0,0,0.35);cursor:pointer;transition:transform .2s ease, box-shadow .2s ease;
       }
+      .pm-root .pm-study-card:hover{transform:translateY(-2px);box-shadow:0 14px 38px rgba(0,0,0,0.42);}
+      .pm-root .pm-study-card:active{transform:scale(.99);}
       .pm-root .pm-mode-tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pm-accent);margin-bottom:10px;}
       .pm-root .pm-word{font-size:27px;font-weight:700;font-family:Georgia,'Iowan Old Style',serif;color:#eef4ff;margin-bottom:6px;}
       .pm-root .pm-word-sub{font-size:12px;color:#8291b3;margin-bottom:8px;}
       .pm-root .pm-speak-row{display:flex;justify-content:center;gap:10px;margin:10px 0 4px;}
+      .pm-root .pm-speak-caption{
+        text-align:center;margin-bottom:8px;
+        font-size:10.5px;font-weight:600;letter-spacing:.03em;
+        color:#9b7bff;
+        opacity:.85;
+      }
+      @supports ((background-clip:text) or (-webkit-background-clip:text)){
+        .pm-root .pm-speak-caption{
+          background:linear-gradient(90deg,#4fe8ff,#ff5fb8,#9b7bff);
+          -webkit-background-clip:text;background-clip:text;
+          -webkit-text-fill-color:transparent;color:transparent;
+          filter:drop-shadow(0 0 4px rgba(155,123,255,0.35));
+        }
+      }
       .pm-root .pm-speak-btn{
         display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;font-size:19px;
         background:rgba(79,232,255,0.14);border:1px solid var(--pm-border);cursor:pointer;
+        transition:transform .15s ease, box-shadow .15s ease;
       }
+      .pm-root .pm-speak-btn:hover{transform:translateY(-1px);box-shadow:0 0 12px rgba(79,232,255,0.35);}
+      .pm-root .pm-speak-btn:active{transform:scale(.88);}
       .pm-root .pm-options{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
-      .pm-root .pm-opt{padding:12px 14px;border-radius:12px;border:1px solid var(--pm-border);background:rgba(255,255,255,0.03);color:#eef4ff;font-size:14px;text-align:left;cursor:pointer;}
-      .pm-root .pm-opt.correct{background:rgba(61,255,160,0.14);border-color:var(--pm-good);color:var(--pm-good);}
-      .pm-root .pm-opt.wrong{background:rgba(255,95,122,0.14);border-color:var(--pm-bad);color:var(--pm-bad);}
+      .pm-root .pm-opt{padding:12px 14px;border-radius:12px;border:1px solid var(--pm-border);background:rgba(255,255,255,0.03);color:#eef4ff;font-size:14px;text-align:left;cursor:pointer;transition:transform .15s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;}
+      .pm-root .pm-opt:hover:not([disabled]){border-color:rgba(79,232,255,0.5);background:rgba(79,232,255,0.08);transform:translateX(2px);}
+      .pm-root .pm-opt:active:not([disabled]){transform:scale(.98);}
+      .pm-root .pm-opt.correct{background:rgba(61,255,160,0.14);border-color:var(--pm-good);color:var(--pm-good);box-shadow:0 0 14px rgba(61,255,160,0.25);}
+      .pm-root .pm-opt.wrong{background:rgba(255,95,122,0.14);border-color:var(--pm-bad);color:var(--pm-bad);box-shadow:0 0 14px rgba(255,95,122,0.25);}
       .pm-root .pm-opt[disabled]{cursor:default;}
       .pm-root .pm-weak-item{background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:left;}
       .pm-root .pm-weak-word{font-size:16px;font-weight:700;color:#eef4ff;}
@@ -471,7 +540,7 @@
     html += '<div class="pm-goal-wrap"><div class="pm-goal-row"><span>Bugün öğrenilen</span><span>'+today+' / '+goal+' kelime</span></div><div class="pm-bar"><div class="pm-bar-fill" style="width:'+goalPct+'%"></div></div></div>';
     html += '</div>';
 
-    if(due.length > 0){
+    if(due.length > 0 && !t.t4){
       html += '<div class="pm-due-banner"><div class="pm-due-text">📋 Dün öğrendiğin <b>'+due.length+'</b> kelimenin günlük tekrarı var</div><button id="pmDueBtn">Tekrar Et</button></div>';
     }
 
@@ -629,7 +698,7 @@
       html += '<div class="pm-mode-tag">'+(flipped ? 'Türkçesi' : 'Yeni Kelime')+'</div>';
       html += '<div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+(flipped ? escapeHtml(v.tr) : escapeHtml(v.w))+'</div>';
       html += '<div class="pm-word-sub">'+escapeHtml(v.pos||'')+'</div>';
-      html += '<div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit" title="Hızlı dinle">🐰</div><div class="pm-speak-btn" id="pmTurtle" title="Yavaş dinle">🐢</div></div>';
+      html += '<div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit" title="Hızlı dinle">🐰</div><div class="pm-speak-btn" id="pmTurtle" title="Yavaş dinle">🐢</div></div><div class="pm-speak-caption">Dinlemek İçin Tıkla</div>';
       html += '<div class="pm-word-sub" style="margin-top:10px;">Çevirmek için karta dokun</div>';
       html += '</div>';
       html += '<button class="pm-btn primary" id="pmNextCard">Sonraki Kelime</button>';
@@ -677,7 +746,7 @@
     const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
     const barHtml = '<div class="pm-session-bar"><span>Soru '+(quizIdx+1)+' / '+batch.length+'</span><span>Adim 2/3 - Anlam Testi</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((quizIdx/batch.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.pos||'')+'</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit">🐰</div><div class="pm-speak-btn" id="pmTurtle">🐢</div></div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.pos||'')+'</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit">🐰</div><div class="pm-speak-btn" id="pmTurtle">🐢</div></div><div class="pm-speak-caption">Dinlemek İçin Tıkla</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
     document.getElementById('pmRabbit').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
     document.getElementById('pmTurtle').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
@@ -713,7 +782,7 @@
     const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
     const barHtml = '<div class="pm-session-bar"><span>Soru '+(listenIdx+1)+' / '+batch.length+'</span><span>Adim 3/3 - Dinleme</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((listenIdx/batch.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">🎧 Duydugun kelimenin anlami ne?</div><div class="pm-word" style="font-size:34px;">🎙️</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit" title="Hizli tekrar dinle">🐰</div><div class="pm-speak-btn" id="pmTurtle" title="Yavas tekrar dinle">🐢</div></div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">🎧 Duydugun kelimenin anlami ne?</div><div class="pm-word" style="font-size:34px;">🎙️</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit" title="Hizli tekrar dinle">🐰</div><div class="pm-speak-btn" id="pmTurtle" title="Yavas tekrar dinle">🐢</div></div><div class="pm-speak-caption">Dinlemek İçin Tıkla</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
     const playFast = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
     const playSlow = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
@@ -834,7 +903,7 @@
     const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
     const barHtml = '<div class="pm-session-bar"><span>Genel Tekrar ('+reviewMode.group+')</span><span>'+(reviewMode.idx+1)+' / '+reviewMode.order.length+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((reviewMode.idx/reviewMode.order.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.pos||'')+'</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit">🐰</div><div class="pm-speak-btn" id="pmTurtle">🐢</div></div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.pos||'')+'</div><div class="pm-speak-row"><div class="pm-speak-btn" id="pmRabbit">🐰</div><div class="pm-speak-btn" id="pmTurtle">🐢</div></div><div class="pm-speak-caption">Dinlemek İçin Tıkla</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
     document.getElementById('pmRabbit').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
     document.getElementById('pmTurtle').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
@@ -850,6 +919,7 @@
         let rec = wordProgress[key];
         if(rec){
           rec.seen = (rec.seen||0)+1;
+          rec.lastSeen = Date.now();
           if(ok){ rec.correct=(rec.correct||0)+1; reviewMode.stats.correct++; }
           else {
             rec.wrong=(rec.wrong||0)+1;
@@ -952,7 +1022,12 @@
   }
 
   window.LB_onNameReady = function(name){
-    if(root && root.style.display !== 'none'){ loadUserData(name, renderHome); }
+    if(dataLoaded && currentName === name){ return; } // zaten yüklü, gereksiz yeniden yüklemeyi (ve olası veri ezmeyi) engelle
+    // Kişisel panel şu an görünür değilse bile veriyi sessizce yükle: bu sayede
+    // meta.xp (dolayısıyla seviye liderlik tablosu) kullanıcı "Kişisel Mod"u
+    // hiç açmasa bile girişte güncellenir. Panel görünürse ayrıca render eder.
+    const isVisible = root && root.style.display !== 'none';
+    loadUserData(name, isVisible ? renderHome : null);
   };
 
   window.PM_open = openPersonalMode;
