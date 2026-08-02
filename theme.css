@@ -94,12 +94,12 @@ body{
 .app .lang-opt[data-lang="es"]{background-image:linear-gradient(158deg, rgba(255,116,104,.24) 0%, rgba(230,120,50,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 .app .lang-opt[data-lang="ru"]{background-image:linear-gradient(158deg, rgba(158,128,255,.26) 0%, rgba(110,90,230,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 
-/* dilin arkasındaki soluk yapı silueti — orijinal boyut, köşelerden kırpılır */
+/* dilin arkasındaki soluk yapı silueti — orijinal renginde, sadece soluk */
 .app .lang-opt .landmark{
   position:absolute; right:-8px; bottom:-4px;
   font-size:56px; line-height:1;
-  opacity:.18;
-  filter:grayscale(1) brightness(1.75) drop-shadow(0 0 12px rgba(150,200,255,.35));
+  opacity:.16;
+  filter:none;
   pointer-events:none;
   z-index:0;
 }
@@ -158,11 +158,6 @@ body{
       0 0 52px rgba(var(--lg),.32),
       inset 0 0 20px rgba(var(--lg),.22);
   }
-}
-.app .lang-opt.active .landmark{
-  opacity:.30;
-  filter:none;
-  text-shadow:0 0 10px rgba(var(--lg),.55);
 }
 /* seçili değilken üstüne gelince / basınca da kendi renginde kıvılcım */
 .app .lang-opt:hover{
@@ -376,11 +371,4 @@ body{
   .flutter,.flutter .wing,.steam path,
   .app .lang-opt.active{animation:none !important;}
   .tf-ripple{display:none !important;}
-}
-
-/* Dil kartlarındaki beyaz SVG yapıları gizle */
-.lang-opt svg,
-.lang-opt .icon,
-.lang-opt .landmark-svg {
-    display: none !important;
 }
