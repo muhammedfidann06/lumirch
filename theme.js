@@ -409,8 +409,8 @@
 
   /* ================================================ 6. ülke silueti (neon yok) */
   var LANDMARK = {
-    de: '🏛️', en: '🕰️', ar: '🕌', fr: '🗼', es: '⛪', ru: '🏰',
-    it: '🏟️', pt: '⛲', nl: '🌷', ja: '⛩️', zh: '🏯', ko: '🏯'
+    de: '🏛️', en: '🕰️', ar: '🕌\uFE0F', fr: '🗼\uFE0F', es: '⛪\uFE0F', ru: '🏰\uFE0F',
+    it: '🏟️', pt: '⛲\uFE0F', nl: '🌷\uFE0F', ja: '⛩️', zh: '🏯', ko: '🏯'
   };
 
   function decorateLangs() {
