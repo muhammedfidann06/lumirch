@@ -4,19 +4,22 @@
    sky.css'ten SONRA yüklenir. Mevcut arayüzü (tipografi, cam paneller, altın
    seçim, cyan vurgular) korur; sahneyi ve birkaç etkileşimi değiştirir.
 
-   Katman sırası:
+   Katman sırası (güncel):
      #scene-bg (0)  manzara fotoğrafı
+     #sky-fx   (0)  ateş böcekleri            ← EN ARKADA
+     .flutter  (0)  kelebekler                ← EN ARKADA
      #grade    (1)  köşe karartma
-     #sky-fx   (2)  yıldızlar · kayan yıldız · ateş böcekleri   ← ARKA PLAN
-     .flutter  (2)  kelebekler                                   ← ARKA PLAN
+     .app      (1)  arayüz — efektlerin üstünde
      #grain    (2)  film taneciği
      #fg-desk  (2)  kahve · açık defter · kitap yığını
-     .app      (3)  arayüz — her şeyin üstünde
+
+   NOT: Yıldızlar ve kayan yıldızlar tamamen kaldırıldı (performans).
    ========================================================================== */
 
 :root{
-  --panel:rgba(13,17,34,0.34);
-  --panel-2:rgba(19,26,51,0.38);
+  /* Paneller şeffaf kalsın: kartların ve quizin arkasında manzara görünsün. */
+  --panel:rgba(13,17,34,0.20);
+  --panel-2:rgba(19,26,51,0.24);
 }
 
 /* ----------------------------------------------------------------- sahne */
@@ -45,15 +48,21 @@ body{
 #sky{display:none !important;}
 #scene-frame{display:none !important;}
 
+/* Bu iki katman sky.css'te de tanımlıydı; sky.js kaldırıldığı için burada
+   kendi ayakları üstünde duracak şekilde yeniden yazıldı. */
 #grade{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
   background:radial-gradient(126% 80% at 50% 40%,
     rgba(0,0,0,0) 52%, rgba(2,4,14,.20) 82%, rgba(2,4,14,.44) 100%) !important;
 }
-#grain{opacity:.030 !important;}
+#grain{
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  opacity:.030 !important;
+}
 
-/* Yıldızlar, kayan yıldızlar ve ateş böcekleri — hepsi arka planda. */
+/* Ateş böcekleri — en arka planda, manzaranın hemen üstünde. */
 #sky-fx{
-  position:fixed; inset:0; z-index:2;
+  position:fixed; inset:0; z-index:0;
   pointer-events:none;
 }
 
@@ -73,8 +82,9 @@ body{
 }
 
 /* ============================================================ DİL KARTLARI
-   Referanstaki gibi her dilin kendi rengi var. Ton, sky.css'teki --aura
-   değişkeninden türetildi; böylece kartın ışığı ile yüzeyi aynı renkte. */
+   Her dilin kendi rengi var. Ton, sky.css'teki --aura değişkeninden
+   türetildi; böylece kartın ışığı ile yüzeyi aynı renkte.
+   RGB neon çerçeve KALDIRILDI. */
 .app .lang-opt{position:relative; overflow:hidden;}
 
 .app .lang-opt[data-lang="de"]{background-image:linear-gradient(158deg, rgba(255,190,72,.26) 0%, rgba(255,150,40,.10) 46%, rgba(8,12,30,0) 78%) !important;}
@@ -84,7 +94,7 @@ body{
 .app .lang-opt[data-lang="es"]{background-image:linear-gradient(158deg, rgba(255,116,104,.24) 0%, rgba(230,120,50,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 .app .lang-opt[data-lang="ru"]{background-image:linear-gradient(158deg, rgba(158,128,255,.26) 0%, rgba(110,90,230,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 
-/* dilin arkasındaki soluk yapı silueti */
+/* dilin arkasındaki soluk yapı silueti — orijinal boyut, köşelerden kırpılır */
 .app .lang-opt .landmark{
   position:absolute; right:-8px; bottom:-4px;
   font-size:56px; line-height:1;
@@ -93,45 +103,81 @@ body{
   pointer-events:none;
   z-index:0;
 }
+/* butonun sınırları dışına hiçbir şey taşmasın: köşelerden temiz kesim */
+.app .lang-opt{
+  overflow:hidden;
+  contain:paint;
+  border-radius:16px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:60px;
+}
+.app .lang-opt .flag{
+  font-size:20px; line-height:1; margin-bottom:4px;
+  max-width:100%;
+}
+.app .lang-opt .lname{
+  max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 .app .lang-opt .flag,
 .app .lang-opt .lname{position:relative; z-index:3;}
 
-/* -------------------------------------------------- seçili kart: neon RGB
-   Dönen bir tayf halkası. Maskeleme ile yalnızca 2px'lik kenar görünür,
-   kartın içi açıkta kalır. */
-@property --neon-a{syntax:'<angle>'; initial-value:0deg; inherits:false;}
+/* ------------------------------------------- seçili dilin renkli ışığı
+   Her dilin kendi tonu --lg değişkeninde; seçilince buton o renkle
+   çevresine yumuşak bir ışık yayar ve hafifçe nefes alır. */
+.app .lang-opt[data-lang="de"]{--lg:255,190,72;}
+.app .lang-opt[data-lang="en"]{--lg:80,170,255;}
+.app .lang-opt[data-lang="ar"]{--lg:62,220,146;}
+.app .lang-opt[data-lang="fr"]{--lg:255,112,186;}
+.app .lang-opt[data-lang="es"]{--lg:255,116,104;}
+.app .lang-opt[data-lang="ru"]{--lg:158,128,255;}
+.app .lang-opt{--lg:150,190,255;}   /* yedek ton */
 
-.app .lang-opt .neon{display:none;}
-.app .lang-opt.active .neon{
-  display:block;
-  position:absolute; inset:0; z-index:2;
-  border-radius:inherit;
-  padding:2px;
-  pointer-events:none;
-  background:conic-gradient(from var(--neon-a),
-    #ff2f7a, #ff9d3c, #ffe14a, #4dff9e, #4fd8ff, #9b7bff, #ff2f7a);
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;
-          mask-composite:exclude;
-  animation:neonSpin 2.8s linear infinite;
-  filter:drop-shadow(0 0 6px rgba(140,190,255,.65));
+.app .lang-opt.active{
+  border-color:rgba(var(--lg),.62) !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--lg),.42),
+    0 0 16px rgba(var(--lg),.42),
+    0 0 38px rgba(var(--lg),.24),
+    inset 0 0 16px rgba(var(--lg),.16);
+  animation:langBreath 2.8s ease-in-out infinite;
 }
-@keyframes neonSpin{to{--neon-a:360deg;}}
+@keyframes langBreath{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(var(--lg),.38),
+      0 0 14px rgba(var(--lg),.34),
+      0 0 30px rgba(var(--lg),.18),
+      inset 0 0 14px rgba(var(--lg),.13);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(var(--lg),.60),
+      0 0 22px rgba(var(--lg),.55),
+      0 0 52px rgba(var(--lg),.32),
+      inset 0 0 20px rgba(var(--lg),.22);
+  }
+}
+.app .lang-opt.active .landmark{
+  opacity:.30;
+  filter:none;
+  text-shadow:0 0 10px rgba(var(--lg),.55);
+}
+/* seçili değilken üstüne gelince / basınca da kendi renginde kıvılcım */
+.app .lang-opt:hover{
+  border-color:rgba(var(--lg),.40);
+  box-shadow:0 6px 16px rgba(0,0,0,.28), 0 0 14px rgba(var(--lg),.22);
+}
+.app .lang-opt:active{
+  box-shadow:0 0 0 2px rgba(var(--lg),.45), 0 0 26px rgba(var(--lg),.50);
+}
 
-/* halkanın dışa vuran yumuşak ışığı */
-.app .lang-opt.active .neon-glow{
-  display:block;
-  position:absolute; inset:-1px; z-index:1;
-  border-radius:inherit;
-  pointer-events:none;
-  background:conic-gradient(from var(--neon-a),
-    #ff2f7a, #ff9d3c, #ffe14a, #4dff9e, #4fd8ff, #9b7bff, #ff2f7a);
-  filter:blur(9px);
-  opacity:.42;
-  animation:neonSpin 2.8s linear infinite;
-}
-.app .lang-opt .neon-glow{display:none;}
+/* Eski neon halka artefaktları (varsa) görünmesin. */
+.app .lang-opt .neon,
+.app .lang-opt .neon-glow,
+.app .lang-opt.active .neon,
+.app .lang-opt.active .neon-glow{display:none !important;}
 
 /* ------------------------------------------------------------- ilerleme */
 .tf-progress{
@@ -158,55 +204,59 @@ body{
 }
 
 /* ================================================================== KART
-   Bulanıklık değil, opaklık: kartın arkası artık görünmüyor. Manzara
-   dokusu çok hafif kalıyor, yazı kontrastı yükseliyor. */
+   Kişisel sekmedeki "Çalışmaya Başla" panelleri gibi: cam etkisi korunur,
+   arkadaki manzara kartın içinden görünür. Opak zemin YOK. */
 .face{
-  background-image:
-    linear-gradient(180deg, rgba(15,17,52,.94), rgba(12,20,60,.93)),
-    url("scene-bg.jpg") !important;
-  background-size:auto, 190% auto !important;
-  background-position:0 0, 50% 24% !important;
-  background-repeat:no-repeat, no-repeat !important;
-  background-color:#0d1236 !important;
-  -webkit-backdrop-filter:none !important;
-          backdrop-filter:none !important;
-  border-color:rgba(176,146,255,.5) !important;
-  box-shadow:0 0 0 1px rgba(140,110,255,.16),
-             0 22px 58px rgba(4,8,28,.6),
-             0 0 44px rgba(120,90,230,.20) !important;
+  background-color:transparent !important;
+  -webkit-backdrop-filter:blur(16px) !important;
+          backdrop-filter:blur(16px) !important;
+  border-color:rgba(176,146,255,.42) !important;
+  box-shadow:0 8px 28px rgba(0,0,0,.35),
+             inset 0 0 0 1px rgba(140,190,255,.20),
+             inset 0 1px 0 rgba(255,255,255,.06) !important;
 }
-.face-back{background-position:0 0, 50% 62% !important;}
-.face .word{text-shadow:0 3px 26px rgba(6,10,34,.9), 0 0 34px rgba(140,180,255,.22);}
+.face-front{
+  background:
+    linear-gradient(135deg, rgba(79,232,255,0.09), rgba(155,123,255,0.07), rgba(255,210,59,0.05)),
+    linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+}
+.face-back{
+  background:
+    linear-gradient(135deg, rgba(255,95,184,0.09), rgba(155,123,255,0.07), rgba(79,232,255,0.05)),
+    linear-gradient(160deg, rgba(28,16,48,0.26), var(--panel)) !important;
+}
+/* yazılar cam üstünde de net kalsın */
+.face .word{text-shadow:0 3px 26px rgba(6,10,34,.95), 0 0 12px rgba(6,10,34,.8);}
 .face .tag,
 .face .pos,
-.face .example{text-shadow:0 2px 12px rgba(4,8,28,.85);}
+.face .example{text-shadow:0 2px 12px rgba(4,8,28,.92), 0 0 5px rgba(4,8,28,.7);}
 
 /* ================================================================== QUIZ
-   Tamamen opak: arkadaki manzara quiz ekranında hiç görünmüyor. */
+   Quiz de kartlar gibi şeffaf: arkadaki manzara görünür. */
 #quizView{
   position:relative;
-  background:#080e26 !important;
-  border:1px solid rgba(120,165,255,.22);
-  border-radius:22px;
-  padding:16px 14px 18px;
-  box-shadow:0 24px 60px rgba(2,5,18,.65);
+  background:none !important;
+  border:0 !important;
+  padding:0 !important;
+  box-shadow:none !important;
 }
-#quizView .quiz-card,
+#quizView .quiz-card{
+  background:
+    linear-gradient(135deg, rgba(79,232,255,0.09), rgba(155,123,255,0.07), rgba(255,95,184,0.05)),
+    linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+  -webkit-backdrop-filter:blur(16px) !important;
+          backdrop-filter:blur(16px) !important;
+}
 #quizView .opt,
 #quizView .ctrl,
 #quizView .score-pill{
-  -webkit-backdrop-filter:none !important;
-          backdrop-filter:none !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+          backdrop-filter:blur(10px) !important;
 }
-#quizView .quiz-card{background:#111a3f !important;}
-#quizView .opt{background:#0e1636 !important;}
-#quizView .opt:hover:not([disabled]){background:#152352 !important;}
-#quizView .opt.correct{background:#0f3b2c !important; border-color:var(--good) !important; color:var(--good) !important;}
-#quizView .opt.wrong{background:#411827 !important; border-color:var(--bad) !important; color:var(--bad) !important;}
-#quizView .ctrl{background:#111a3f !important;}
-#quizView .ctrl.primary{background:linear-gradient(135deg,#2f47c4,#6a3fc4) !important;}
-#quizView .bar{background:#1a2350 !important;}
-#quizView .score-pill{background:#12314a !important;}
+#quizView .quiz-word,
+#quizView .quiz-sub,
+#quizView .opt,
+#quizView .score-pill{text-shadow:0 2px 12px rgba(4,8,28,.9);}
 
 /* ==================================================== BUTON ANİMASYONLARI
    Basınca: yaylı bir çöküş + dokunulan noktadan yayılan ışık halkası. */
@@ -240,6 +290,11 @@ body{
   background:radial-gradient(circle,
     rgba(255,255,255,.55) 0%, rgba(160,210,255,.30) 45%, rgba(160,210,255,0) 72%);
   animation:tfRipple .62s cubic-bezier(.16,1,.3,1) forwards;
+}
+/* dil butonlarında dalga o dilin renginde olsun */
+.app .lang-opt .tf-ripple{
+  background:radial-gradient(circle,
+    rgba(255,255,255,.60) 0%, rgba(var(--lg),.45) 45%, rgba(var(--lg),0) 72%);
 }
 @keyframes tfRipple{
   0%  {transform:scale(.2); opacity:.85;}
@@ -275,10 +330,10 @@ body{
   100%{opacity:0;   transform:translateY(-16px) scaleY(1.14);}
 }
 
-/* ====================================================== KELEBEKLER (arkada)
-   z-index 2 → arayüzün (3) altında kalırlar; kartların üstünden geçmezler. */
+/* ====================================================== KELEBEKLER (en arkada)
+   z-index 0 → manzaranın hemen üstünde, arayüzün ve tüm panellerin altında. */
 .flutter{
-  position:fixed; z-index:2; pointer-events:none;
+  position:fixed; z-index:0; pointer-events:none;
   will-change:transform;
   filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));
 }
@@ -319,7 +374,6 @@ body{
 }
 @media (prefers-reduced-motion:reduce){
   .flutter,.flutter .wing,.steam path,
-  .app .lang-opt.active .neon,
-  .app .lang-opt.active .neon-glow{animation:none !important;}
+  .app .lang-opt.active{animation:none !important;}
   .tf-ripple{display:none !important;}
 }

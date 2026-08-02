@@ -3,12 +3,12 @@
 
    Arayüz mantığına dokunmaz. Eklediği şeyler:
      1. #scene-bg   manzara katmanı (+ hafif parallax)
-     2. #sky-fx     ARKA PLAN: parıldayan yıldızlar · kayan yıldızlar ·
-                    ateş böcekleri  (tek canvas, tek rAF döngüsü)
+     2. #sky-fx     EN ARKA PLAN: birkaç ateş böceği + seyrek kayan yıldız
+                    (parıldayan yıldız alanı kaldırıldı — performans)
      3. #fg-desk    kahve · açık defter · kitap yığını
-     4. .flutter    kelebekler (arka planda, hızlı kanat çırpan)
+     4. .flutter    kelebekler (en arka planda, hızlı kanat çırpan)
      5. ilerleme satırı tek hizaya alınır
-     6. seçili dil kartına dönen neon RGB halka
+     6. dil kartlarına ülke silueti  (neon RGB halka kaldırıldı)
      7. butonlara basınca dalga (ripple) + yaylı çöküş
    ========================================================================== */
 (function () {
@@ -29,7 +29,7 @@
 
   function parallax(bg) {
     if (!bg || reduce) return;
-    var tx = 0, ty = 0, cx = 0, cy = 0, sy = 0, queued = false;
+    var tx = 0, ty = 0, cx = 0, cy = 0, queued = false;
 
     function apply() {
       queued = false;
@@ -37,7 +37,7 @@
       cy += (ty - cy) * 0.055;
       bg.style.transform =
         'translate3d(' + (cx * 9).toFixed(2) + 'px,' +
-        (cy * 7 - sy * 0.05).toFixed(2) + 'px,0) scale(1.06)';
+        (cy * 7).toFixed(2) + 'px,0) scale(1.06)';
       if (Math.abs(tx - cx) > 0.002 || Math.abs(ty - cy) > 0.002) req();
     }
     function req() { if (!queued) { queued = true; requestAnimationFrame(apply); } }
@@ -55,19 +55,20 @@
       req();
     }, { passive: true });
 
-    window.addEventListener('scroll', function () {
-      sy = window.scrollY || 0; req();
-    }, { passive: true });
+    /* Kaydırma sırasında arka plan sabit kalır: sayfa akıcı, cihaz yorulmaz. */
   }
 
-  /* ============================================ 2. yıldızlar & ateş böcekleri
-     Hepsi tek canvas'ta, tek döngüde. Katman arayüzün ARKASINDA (z-index 2).
+  /* ================================ 2. ateş böcekleri + kayan yıldızlar
+     Parıldayan yıldız alanı (140 adet) TAMAMEN kaldırıldı: kaydırma
+     sırasında titreme yapıyor ve pili gereksiz tüketiyordu.
 
-     · Yıldızlar gökyüzü bandında (üst %46). Her birinin kendi rengi, boyu,
-       yanıp sönme periyodu ve fazı var — hepsi aynı anda parlamıyor.
-     · Kayan yıldız 5–13 sn arayla, üst yarıda, kısa bir iz bırakarak geçer.
-     · Ateş böcekleri alt yarıda, çiçeklerin arasında salınır; sıcak sarı
-       ışıkları yavaşça sönüp yanar.
+     Geriye iki hafif şey kaldı:
+       · birkaç ateş böceği — alt yarıda salınır, sıcak sarı ışıkları
+         yavaşça sönüp yanar.
+       · 10–20 sn'de bir tek bir kayan yıldız — üst yarıda, kısa iz bırakır.
+         Ekranda aynı anda en fazla 1 tane olur; maliyeti yok denecek kadar az.
+
+     Katman en arkada (z-index 0) — arayüzün ve panellerin altında.
   ========================================================================= */
   var fx = null;
 
@@ -77,40 +78,17 @@
     cv.setAttribute('aria-hidden', 'true');
     var ctx = cv.getContext('2d');
     var W = 0, H = 0, dpr = 1;
-    var stars = [], flies = [], shots = [], nextShot = 0, t0 = performance.now();
-
-    var STAR_TINTS = [
-      [255, 255, 255], [206, 232, 255], [255, 236, 198],
-      [178, 226, 255], [232, 210, 255], [255, 214, 176]
-    ];
-
-    function seedStars() {
-      stars.length = 0;
-      var n = Math.round(Math.min(140, (W * H) / 3400));
-      for (var i = 0; i < n; i++) {
-        var big = Math.random() < 0.14;
-        stars.push({
-          x: Math.random() * W,
-          y: Math.random() * H * 0.50,
-          r: big ? 1.5 + Math.random() * 1.5 : 0.5 + Math.random() * 0.9,
-          c: STAR_TINTS[(Math.random() * STAR_TINTS.length) | 0],
-          /* farklı periyot + faz = düzensiz, canlı bir parıltı */
-          sp: 0.5 + Math.random() * 2.6,
-          ph: Math.random() * Math.PI * 2,
-          base: 0.18 + Math.random() * 0.34,
-          amp: 0.30 + Math.random() * 0.62,
-          spike: big
-        });
-      }
-    }
+    var flies = [], shots = [], t0 = performance.now();
+    var nextShot = performance.now() + 4000;
 
     function seedFlies() {
       flies.length = 0;
-      var n = Math.round(Math.min(20, W / 34));
+      /* az sayıda: telefonda ~7, geniş ekranda en fazla 9 */
+      var n = Math.max(6, Math.round(Math.min(9, W / 95 + 3)));
       for (var i = 0; i < n; i++) {
         flies.push({
           x: Math.random() * W,
-          y: H * 0.50 + Math.random() * H * 0.46,
+          y: H * 0.52 + Math.random() * H * 0.44,
           /* iki farklı frekansta salınım → düz çizgi yerine gerçek uçuş */
           ax: 12 + Math.random() * 30, ay: 8 + Math.random() * 22,
           fx: 0.16 + Math.random() * 0.30, fy: 0.22 + Math.random() * 0.36,
@@ -123,24 +101,13 @@
       }
     }
 
-    function resize() {
-      dpr = Math.min(2, window.devicePixelRatio || 1);
-      W = window.innerWidth; H = window.innerHeight;
-      cv.width = Math.round(W * dpr);
-      cv.height = Math.round(H * dpr);
-      cv.style.width = W + 'px';
-      cv.style.height = H + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      seedStars(); seedFlies();
-    }
-
     function spawnShot() {
-      /* üst yarıda, sağ-aşağı yönlü, referanstaki gibi ince ve hızlı */
+      /* üst yarıda, aşağı-yana doğru; ince ve hızlı */
       var fromLeft = Math.random() < 0.62;
       var ang = (fromLeft ? 0.30 : 0.62) + Math.random() * 0.22;   /* radyan */
       shots.push({
         x: fromLeft ? -40 + Math.random() * W * 0.5 : W * 0.45 + Math.random() * W * 0.5,
-        y: -20 + Math.random() * H * 0.26,
+        y: -20 + Math.random() * H * 0.24,
         vx: Math.cos(ang) * (620 + Math.random() * 420),
         vy: Math.sin(ang) * (620 + Math.random() * 420),
         life: 0,
@@ -149,62 +116,45 @@
       });
     }
 
+    function resize() {
+      /* 1.5 üstü piksel oranı bu efekt için gereksiz — boşuna yük */
+      dpr = Math.min(1.5, window.devicePixelRatio || 1);
+      W = window.innerWidth; H = window.innerHeight;
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      cv.style.width = W + 'px';
+      cv.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seedFlies();
+    }
+
     function frame(now) {
       var t = (now - t0) / 1000;
       ctx.clearRect(0, 0, W, H);
 
-      /* ---- yıldızlar ---- */
-      for (var i = 0; i < stars.length; i++) {
-        var s = stars[i];
-        var a = s.base + s.amp * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
-        if (a <= 0.02) continue;
-        var c = s.c;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, 6.2832);
-        ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')';
-        ctx.fill();
-
-        if (s.spike && a > 0.55) {
-          /* parlak yıldızlarda ince bir hale + haç ışığı */
-          var g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 7);
-          g.addColorStop(0, 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (a * 0.34).toFixed(3) + ')');
-          g.addColorStop(1, 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',0)');
-          ctx.fillStyle = g;
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 7, 0, 6.2832); ctx.fill();
-
-          ctx.strokeStyle = 'rgba(255,255,255,' + ((a - 0.55) * 0.5).toFixed(3) + ')';
-          ctx.lineWidth = 0.8;
-          var L = s.r * 5.5;
-          ctx.beginPath();
-          ctx.moveTo(s.x - L, s.y); ctx.lineTo(s.x + L, s.y);
-          ctx.moveTo(s.x, s.y - L); ctx.lineTo(s.x, s.y + L);
-          ctx.stroke();
-        }
-      }
-
-      /* ---- kayan yıldızlar ---- */
+      /* ---- kayan yıldız: 10–20 sn'de bir, aynı anda tek ---- */
       if (now > nextShot) {
-        spawnShot();
-        nextShot = now + 5000 + Math.random() * 8000;
+        if (!shots.length) spawnShot();
+        nextShot = now + 10000 + Math.random() * 10000;
       }
       for (var k = shots.length - 1; k >= 0; k--) {
         var sh = shots[k];
         sh.life += 1 / 60;
         sh.x += sh.vx / 60; sh.y += sh.vy / 60;
-        if (sh.life > sh.max || sh.x > W + 200 || sh.y > H * 0.72) { shots.splice(k, 1); continue; }
+        if (sh.life > sh.max || sh.x > W + 200 || sh.y > H * 0.7) { shots.splice(k, 1); continue; }
 
         var fade = 1 - sh.life / sh.max;
         var m = Math.hypot(sh.vx, sh.vy) || 1;
-        var tx = sh.x - (sh.vx / m) * sh.len;
-        var ty = sh.y - (sh.vy / m) * sh.len;
-        var lg = ctx.createLinearGradient(sh.x, sh.y, tx, ty);
+        var qx = sh.x - (sh.vx / m) * sh.len;
+        var qy = sh.y - (sh.vy / m) * sh.len;
+        var lg = ctx.createLinearGradient(sh.x, sh.y, qx, qy);
         lg.addColorStop(0, 'rgba(255,255,255,' + (0.92 * fade).toFixed(3) + ')');
         lg.addColorStop(0.35, 'rgba(190,225,255,' + (0.42 * fade).toFixed(3) + ')');
         lg.addColorStop(1, 'rgba(160,200,255,0)');
         ctx.strokeStyle = lg;
         ctx.lineWidth = 2.1;
         ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(qx, qy); ctx.stroke();
 
         var hg = ctx.createRadialGradient(sh.x, sh.y, 0, sh.x, sh.y, 9);
         hg.addColorStop(0, 'rgba(255,255,255,' + (0.85 * fade).toFixed(3) + ')');
@@ -221,7 +171,7 @@
 
         /* kenardan çıkanı öbür taraftan geri al */
         if (fxp < -30) { f.x += W + 60; } else if (fxp > W + 30) { f.x -= W + 60; }
-        if (fyp < H * 0.44) { f.y += 40; } else if (fyp > H + 30) { f.y -= 60; }
+        if (fyp < H * 0.46) { f.y += 40; } else if (fyp > H + 30) { f.y -= 60; }
 
         var b = 0.5 + 0.5 * Math.sin(t * 1.5 + f.bp);
         b = Math.pow(b, 2.2) * f.bs;                 /* keskin yanıp sönme */
@@ -250,14 +200,14 @@
          THEME_debug()  → sahnedeki nesne sayılarını verir              */
     window.THEME_shoot = function () { spawnShot(); };
     window.THEME_debug = function () {
-      return { yildiz: stars.length, atesbocegi: flies.length, kayan: shots.length };
+      return { atesbocegi: flies.length, kayan: shots.length, yildiz: 0 };
     };
 
     return {
       el: cv,
       mount: function () {
         var grade = document.getElementById('grade');
-        if (grade && grade.parentNode) grade.parentNode.insertBefore(cv, grade.nextSibling);
+        if (grade && grade.parentNode) grade.parentNode.insertBefore(cv, grade);
         else document.body.insertBefore(cv, document.body.firstChild);
         resize();
         window.addEventListener('resize', resize, { passive: true });
@@ -396,7 +346,7 @@
     { c: 'f1', x: 52, y: 13.0, w: 30, a: '#41c8ff', b: '#1f7ce0', d: '#0c2246' },
     { c: 'f2', x: 10, y: 25.5, w: 24, a: '#57d2ff', b: '#2a8de8', d: '#0c2246' },
     { c: 'f3', x: 41, y: 26.5, w: 20, a: '#8ee6ff', b: '#49a8f0', d: '#0c2246' },
-    { c: 'f4', x: 3,  y: 39.0, w: 46, a: '#3fc4ff', b: '#1668d6', d: '#08182f' },
+    { c: 'f4', x: 6,  y: 39.0, w: 22, a: '#c08bff', b: '#7a3ee0', d: '#1a0d33' },
     { c: 'f5', x: 86, y: 39.5, w: 40, a: '#ff9d3c', b: '#e2621a', d: '#2a1206' },
     { c: 'f6', x: 80, y: 84.0, w: 30, a: '#4bcdff', b: '#2181e2', d: '#0c2246' }
   ];
@@ -457,7 +407,7 @@
     new MutationObserver(paint).observe(el, { childList: true, characterData: true, subtree: true });
   }
 
-  /* ==================================== 6. ülke silueti + neon RGB halka */
+  /* ================================================ 6. ülke silueti (neon yok) */
   var LANDMARK = {
     de: '🏛️', en: '🕰️', ar: '🕌', fr: '🗼', es: '⛪', ru: '🏰',
     it: '🏟️', pt: '⛲', nl: '🌷', ja: '⛩️', zh: '🏯', ko: '🏯'
@@ -468,8 +418,8 @@
     for (var i = 0; i < opts.length; i++) {
       var o = opts[i];
 
-      /* eski kıvılcımlar kaldırıldı */
-      var old = o.querySelectorAll('.spark');
+      /* eski kıvılcımlar ve eski RGB neon halkalar kaldırıldı */
+      var old = o.querySelectorAll('.spark, .neon, .neon-glow');
       for (var s = 0; s < old.length; s++) old[s].parentNode.removeChild(old[s]);
 
       if (!o.querySelector('.landmark')) {
@@ -481,16 +431,6 @@
           m.textContent = icon;
           o.insertBefore(m, o.firstChild);
         }
-      }
-      if (!o.querySelector('.neon')) {
-        var glow = document.createElement('span');
-        glow.className = 'neon-glow';
-        glow.setAttribute('aria-hidden', 'true');
-        var ring = document.createElement('span');
-        ring.className = 'neon';
-        ring.setAttribute('aria-hidden', 'true');
-        o.appendChild(glow);
-        o.appendChild(ring);
       }
     }
   }
