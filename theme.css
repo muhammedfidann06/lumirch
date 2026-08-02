@@ -377,3 +377,10 @@ body{
   .app .lang-opt.active{animation:none !important;}
   .tf-ripple{display:none !important;}
 }
+
+/* Dil kartlarındaki beyaz SVG yapıları gizle */
+.lang-opt svg,
+.lang-opt .icon,
+.lang-opt .landmark-svg {
+    display: none !important;
+}
