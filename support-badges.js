@@ -218,14 +218,30 @@
   function buildPdfHtml(lang, level, words) {
     var info = LANG_INFO[lang] || LANG_INFO.de;
     var bugun = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    /* Kişi kendi ana dilinin (NATIVE_LANG) listesini indiriyorsa ve ters
+       öğrenme modundaysa (Türkçe öğreniyorsa), liste de onun öğrendiği
+       yönde olsun: soldaki sütun Türkçe, sağdaki kendi dili. Başka bir
+       dilin listesini indirirse (bonus/merak amaçlı) eski davranış kalır. */
+    var flip = (typeof window.isReversed === 'function') && window.isReversed() &&
+               (typeof window.NATIVE_LANG !== 'undefined') && window.NATIVE_LANG === lang;
+
+    /* Liste her zaman "src" sütununa göre alfabetik sıralanır (dictionary
+       düzeni); collectWords varsayılan olarak w'ye göre sıralar, ters
+       modda src=Türkçe olduğu için burada tr'ye göre yeniden sıralanır. */
+    words = words.slice();
+    if (flip) {
+      words.sort(function (a, b2) { return String(a.tr).localeCompare(String(b2.tr), 'tr', { sensitivity: 'base' }); });
+    }
 
     var rows = '';
     for (var i = 0; i < words.length; i++) {
       var w = words[i];
+      var srcTxt = flip ? w.tr : w.w;
+      var trTxt  = flip ? w.w  : w.tr;
       rows += '<div class="entry">' +
-                '<span class="src">' + esc(w.w) + '</span>' +
+                '<span class="src">' + esc(srcTxt) + '</span>' +
                 '<span class="dots"></span>' +
-                '<span class="tr">' + esc(w.tr) + '</span>' +
+                '<span class="tr">' + esc(trTxt) + '</span>' +
               '</div>';
     }
 
@@ -252,9 +268,10 @@
       '.entry{display:flex;align-items:baseline;font-size:10.5pt;line-height:1.62;' +
       '       break-inside:avoid;page-break-inside:avoid;padding:1.5px 0;}' +
       '.src{color:' + info.renk + ';font-weight:700;white-space:nowrap;' +
-      (info.rtl ? 'direction:rtl;unicode-bidi:isolate;font-size:12pt;' : '') + '}' +
+      ((info.rtl && !flip) ? 'direction:rtl;unicode-bidi:isolate;font-size:12pt;' : '') + '}' +
       '.dots{flex:1 1 auto;border-bottom:1px dotted #bbb;margin:0 5px;transform:translateY(-3px);}' +
-      '.tr{color:#111;white-space:nowrap;}' +
+      '.tr{color:#111;white-space:nowrap;' +
+      ((info.rtl && flip) ? 'direction:rtl;unicode-bidi:isolate;font-size:12pt;' : '') + '}' +
       '@media print{.noprint{display:none !important;}}' +
       '.noprint{position:fixed;top:0;left:0;right:0;background:#0d1226;color:#fff;' +
       '   padding:12px 16px;font-family:system-ui,sans-serif;font-size:14px;text-align:center;z-index:9;}' +
@@ -265,14 +282,14 @@
       '“PDF olarak kaydet” seçeneğini seçin.<button onclick="window.print()">Yazdır / PDF</button></div>' +
       '<div class="cover">' +
         '<div class="brand">Lumira · Dil Kartları</div>' +
-        '<h1>' + info.ad + ' Kelime Listesi</h1>' +
-        '<h2>' + esc(info.yerel) + ' — Türkçe</h2>' +
+        '<h1>' + (flip ? 'Türkçe' : info.ad) + ' Kelime Listesi</h1>' +
+        '<h2>' + (flip ? ('Türkçe — ' + esc(info.yerel)) : (esc(info.yerel) + ' — Türkçe')) + '</h2>' +
         '<div class="rule"></div>' +
         '<div class="meta">Seviye: <b>' + esc(level) + '</b><br>' +
           'Toplam <b>' + words.length + '</b> kelime<br>' + bugun + '</div>' +
         '<div class="foot">lumira-tr.com</div>' +
       '</div>' +
-      '<h3 class="sec">' + info.ad + ' — Türkçe · ' + esc(level) + '</h3>' +
+      '<h3 class="sec">' + (flip ? ('Türkçe — ' + info.ad) : (info.ad + ' — Türkçe')) + ' · ' + esc(level) + '</h3>' +
       '<div class="cols">' + rows + '</div>' +
       '</body></html>';
   }

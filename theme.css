@@ -93,6 +93,7 @@ body{
 .app .lang-opt[data-lang="fr"]{background-image:linear-gradient(158deg, rgba(255,112,186,.24) 0%, rgba(190,80,220,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 .app .lang-opt[data-lang="es"]{background-image:linear-gradient(158deg, rgba(255,116,104,.24) 0%, rgba(230,120,50,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 .app .lang-opt[data-lang="ru"]{background-image:linear-gradient(158deg, rgba(158,128,255,.26) 0%, rgba(110,90,230,.10) 46%, rgba(8,12,30,0) 78%) !important;}
+.app .lang-opt[data-lang="tr"]{background-image:linear-gradient(158deg, rgba(255,90,90,.26) 0%, rgba(220,40,40,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 
 /* dilin arkasındaki soluk yapı silueti — orijinal boyut, köşelerden kırpılır */
 .app .lang-opt .landmark{
@@ -132,6 +133,7 @@ body{
 .app .lang-opt[data-lang="fr"]{--lg:255,112,186;}
 .app .lang-opt[data-lang="es"]{--lg:255,116,104;}
 .app .lang-opt[data-lang="ru"]{--lg:158,128,255;}
+.app .lang-opt[data-lang="tr"]{--lg:255,90,90;}
 .app .lang-opt{--lg:150,190,255;}   /* yedek ton */
 
 .app .lang-opt.active{

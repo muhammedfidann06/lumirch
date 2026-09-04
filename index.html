@@ -796,7 +796,7 @@
   </div>
 
   <div class="lang-pair" id="langPair"></div>
-  <div class="sub">Seviye, dil ve kategori seç — kartına dokun, dinle, öğren</div>
+  <div class="sub" id="mainSub">Seviye, dil ve kategori seç — kartına dokun, dinle, öğren</div>
 
   <div class="lang-box" id="langBox">
     <div class="lang-opt active" data-lang="de"><div class="flag">🇩🇪</div><div class="lname">Almanca</div></div>
@@ -805,6 +805,7 @@
     <div class="lang-opt" data-lang="fr"><div class="flag">🇫🇷</div><div class="lname">Fransızca</div></div>
     <div class="lang-opt" data-lang="es"><div class="flag">🇪🇸</div><div class="lname">İspanyolca</div></div>
     <div class="lang-opt" data-lang="ru"><div class="flag">🇷🇺</div><div class="lname">Rusça</div></div>
+    <div class="lang-opt" data-lang="tr" id="langOptTr" style="display:none;"><div class="flag">🇹🇷</div><div class="lname">Türkçe</div></div>
   </div>
 
   <div class="level-box" id="levelBox"></div>
@@ -861,7 +862,7 @@
         <div class="face face-back">
           <div class="card-bg-emoji" id="backBgEmoji" aria-hidden="true"></div>
           <div class="level-badge" id="levelBadgeBack">A1</div>
-          <div class="tag">Türkçe</div>
+          <div class="tag" id="tagBack">Türkçe</div>
           <div class="word" id="trWord">Merhaba</div>
           <div class="example" id="trExample"></div>
         </div>
@@ -1189,7 +1190,134 @@ const LANGS = {
   ru:{ label:"Rusça", native:"Русский", levels:["A1","A2","B1","B2"], voice:"ru-RU", dir:"ltr" }
 };
 
-let activeLang = "de";
+/* ======================= ANA DİL / HEDEF DİL — çok yönlü öğrenme =======================
+   Varsayılan: NATIVE_LANG='tr', TARGET_LANG=seçilen dil. Bu durumda UYGULAMA
+   HİÇBİR ŞEKİLDE DEĞİŞMEZ — mevcut davranışın birebir aynısı.
+
+   Üç mod:
+   1) NORMAL     (native=tr, target=biri):   vocab-X.js doğrudan kullanılır (orijinal davranış)
+   2) REVERSED   (native≠tr, target=tr):     kişinin kendi dilinin sözlüğü (vocab-X.js) kullanılır,
+                                              sadece ön/arka (kelime/çeviri) yer değiştirir
+   3) CROSS      (native≠tr, target≠tr,
+                  native≠target):            iki gerçek sözlük dosyası, ORTAK TÜRKÇE KARŞILIK
+                                              üzerinden eşleştirilir (ör. Almanca "Auto" ve İngilizce
+                                              "car" ikisi de Türkçede "araba" ise eşleştirilir).
+                                              Hiçbir çeviri UYDURULMAZ — sadece iki insan tarafından
+                                              zaten girilmiş çeviri aynı Türkçe kelimeye çıkıyorsa
+                                              birleştirilir; belirsiz (birden fazla eşleşen) kelimeler
+                                              GÜVENLİK için tamamen atlanır.
+   Veri yapısı, ilerleme kayıtları (wordKeyFor v.w'ye dayanır) ve tüm diğer
+   mantık DOKUNULMADAN kalır — sadece görüntüleme ve kaynak seçim katmanı değişir. */
+let NATIVE_LANG = 'tr';
+let TARGET_LANG = 'de';
+try { NATIVE_LANG = localStorage.getItem('lumira_native_lang') || 'tr'; } catch(e){}
+try { TARGET_LANG = localStorage.getItem('lumira_target_lang') || (NATIVE_LANG!=='tr' ? '' : 'de'); } catch(e){}
+if(!TARGET_LANG){ TARGET_LANG = (NATIVE_LANG==='tr') ? 'de' : 'tr'; }
+let REVERSED_MODE = (NATIVE_LANG !== 'tr' && TARGET_LANG === 'tr');
+let IS_CROSS = (NATIVE_LANG !== 'tr' && TARGET_LANG !== 'tr' && TARGET_LANG !== NATIVE_LANG);
+let CROSS_DECK = [];
+let activeLang = REVERSED_MODE ? NATIVE_LANG : TARGET_LANG;
+
+function isReversed(){ return REVERSED_MODE; }
+function isCross(){ return IS_CROSS; }
+function FRONT_W(v){ return isReversed() ? v.tr : v.w; }
+function BACK_W(v){ return isReversed() ? v.w : v.tr; }
+function FRONT_EX(v){ return isReversed() ? v.exTr : v.ex; }
+function BACK_EX(v){ return isReversed() ? v.ex : v.exTr; }
+function FRONT_DIR(v){ return isReversed() ? 'ltr' : LANGS[v.lang].dir; }
+function BACK_DIR(v){ return isReversed() ? LANGS[v.lang].dir : 'ltr'; }
+function FRONT_VOICE(v){ return isReversed() ? 'tr-TR' : LANGS[v.lang].voice; }
+function BACK_VOICE(v){ return isReversed() ? LANGS[v.lang].voice : 'tr-TR'; }
+function FRONT_LABEL(){ return isReversed() ? 'Türkçe' : LANGS[activeLang].native; }
+function BACK_LABEL(){ return isReversed() ? LANGS[activeLang].native : (isCross() ? LANGS[NATIVE_LANG].native : 'Türkçe'); }
+window.isReversed = isReversed; window.isCross = isCross;
+window.FRONT_W = FRONT_W; window.BACK_W = BACK_W;
+window.FRONT_EX = FRONT_EX; window.BACK_EX = BACK_EX;
+window.FRONT_DIR = FRONT_DIR; window.BACK_DIR = BACK_DIR;
+window.FRONT_VOICE = FRONT_VOICE; window.BACK_VOICE = BACK_VOICE;
+
+/* basePool(): tüm seviye/kategori/quiz/dağıtıcı filtrelemesi TEK NOKTADAN
+   buradan geçer. CROSS modda gerçek VOCAB yerine CROSS_DECK kullanılır;
+   diğer iki modda eskisi gibi VOCAB, activeLang'e göre filtrelenir. */
+function basePool(){ return IS_CROSS ? CROSS_DECK : VOCAB.filter(v => v.lang===activeLang); }
+window.basePool = basePool;
+
+/* İki dilin ORTAK Türkçe karşılığı üzerinden eşleştirilmiş, sentetik ama
+   UYDURULMAMIŞ bir deste üretir. Yalnızca HER İKİ tarafta da tekil
+   (belirsiz olmayan) eşleşmeler kullanılır — bu yüzden %100 iki insanın
+   yazdığı gerçek çeviridir, makine çevirisi YOKTUR. */
+function buildCrossDeck(nativeCode, targetCode){
+  function normTr(s){
+    s = String(s||'').trim().toLowerCase();
+    s = s.replace(/^(bir|biraz)\s+/,'');
+    s = s.replace(/[.!?]+$/,'');
+    return s;
+  }
+  const nativeMap = {}, targetMap = {};
+  VOCAB.forEach(v=>{
+    if(v.lang===nativeCode){ const k=normTr(v.tr); (nativeMap[k]=nativeMap[k]||[]).push(v); }
+    else if(v.lang===targetCode){ const k=normTr(v.tr); (targetMap[k]=targetMap[k]||[]).push(v); }
+  });
+  const out = [];
+  Object.keys(targetMap).forEach(k=>{
+    if(!k) return;
+    const tArr = targetMap[k], nArr = nativeMap[k];
+    if(!tArr || tArr.length!==1 || !nArr || nArr.length!==1) return; /* belirsizse atla */
+    const tW = tArr[0], nW = nArr[0];
+    out.push({
+      lang: targetCode, level: tW.level, cat: tW.cat, pos: tW.pos,
+      w: tW.w, tr: nW.w, ex: tW.ex, exTr: nW.ex, c1: tW.c1, c2: tW.c2
+    });
+  });
+  return out;
+}
+window.buildCrossDeck = buildCrossDeck;
+
+/* Native/hedef çiftini uygular: localStorage'a yazar, modu (normal/ters/
+   çapraz) hesaplar, gerekiyorsa iki sözlüğü de yükleyip CROSS_DECK'i
+   kurar, arayüzü (dil kutusu, alt metin, aktif buton) günceller. Bir
+   Promise döner — çağıran taraf .then() içinde render fonksiyonlarını
+   (renderLangPair/rebuildLevelBox/rebuildChips/applyFilter) çalıştırmalı. */
+function setLangPair(native, target){
+  NATIVE_LANG = native || 'tr';
+  TARGET_LANG = target || (NATIVE_LANG==='tr' ? 'de' : 'tr');
+  try { localStorage.setItem('lumira_native_lang', NATIVE_LANG); } catch(e){}
+  try { localStorage.setItem('lumira_target_lang', TARGET_LANG); } catch(e){}
+  window.NATIVE_LANG = NATIVE_LANG;
+  REVERSED_MODE = (NATIVE_LANG !== 'tr' && TARGET_LANG === 'tr');
+  IS_CROSS = (NATIVE_LANG !== 'tr' && TARGET_LANG !== 'tr' && TARGET_LANG !== NATIVE_LANG);
+  activeLang = REVERSED_MODE ? NATIVE_LANG : TARGET_LANG;
+
+  const lb = document.getElementById('langBox');
+  const sb = document.getElementById('mainSub');
+  const trOpt = document.getElementById('langOptTr');
+  if (trOpt) trOpt.style.display = (NATIVE_LANG !== 'tr') ? '' : 'none';
+  document.querySelectorAll('.lang-opt').forEach(o=>{
+    /* kendi ana dilini "öğrenme" seçeneği olarak gösterme */
+    o.style.display = (o.dataset.lang === NATIVE_LANG) ? 'none' : '';
+    o.classList.toggle('active', o.dataset.lang === TARGET_LANG);
+  });
+  if (lb) lb.style.display = '';
+  if (sb) sb.textContent = 'Seviye, dil ve kategori seç — kartına dokun, dinle, öğren';
+
+  const need = [];
+  if(!IS_CROSS){
+    if(activeLang !== 'de' && !window.VOCAB_LOADED[activeLang]) need.push(window.ensureVocab(activeLang));
+  } else {
+    if(!window.VOCAB_LOADED[NATIVE_LANG]) need.push(window.ensureVocab(NATIVE_LANG));
+    if(!window.VOCAB_LOADED[TARGET_LANG]) need.push(window.ensureVocab(TARGET_LANG));
+  }
+  return Promise.all(need).then(()=>{
+    if(IS_CROSS){ CROSS_DECK = buildCrossDeck(NATIVE_LANG, TARGET_LANG); }
+  });
+}
+window.setLangPair = setLangPair;
+/* Geriye dönük uyumluluk: eski çağrı biçimi hâlâ çalışsın (sadece native
+   verir, hedef otomatik 'tr' olur — splash.js artık setLangPair kullanıyor
+   ama başka bir yerden çağrılırsa diye bırakıldı). */
+function setNativeLang(code){ return setLangPair(code || 'tr', (code && code!=='tr') ? 'tr' : (TARGET_LANG||'de')); }
+window.setNativeLang = setNativeLang;
+window.FRONT_LABEL = FRONT_LABEL; window.BACK_LABEL = BACK_LABEL;
 let activeLevel = "TÜMÜ";
 let activeCat = "Tümü";
 let deck = [];
@@ -1410,8 +1538,6 @@ function speakNative(text, lang, rate, onResult){
    ========================================================= */
 function speak(text, lang){
   if(!soundOn) return;
-  // Türkçe kelimeleri seslendirme
-  if(String(lang).toLowerCase().startsWith('tr')) return;
   // Önce cihazın kendi TTS sistemini dene
   speakNative(
     text,
@@ -1439,8 +1565,6 @@ function speak(text, lang){
    ========================================================= */
 function speakSlow(text, lang){
   if(!soundOn) return;
-  // Türkçe kelimeleri seslendirme
-  if(String(lang).toLowerCase().startsWith('tr')) return;
   // Önce cihazın kendi TTS sistemini dene
   speakNative(
     text,
@@ -1607,9 +1731,17 @@ function colorSplit(sentence, word, c1, c2){
 /* ======================= RENDER: LANG / LEVEL / CHIPS ======================= */
 function renderLangPair(){
   const L = LANGS[activeLang];
-  const colorMap = { de:"var(--gold)", en:"var(--cyan-soft)", ar:"var(--green)", fr:"var(--pink)", es:"var(--red)", ru:"var(--violet)" };
-  document.getElementById('langPair').innerHTML =
-    `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a tr-flag-text">Türkçe</span>`;
+  const colorMap = { de:"var(--gold)", en:"var(--cyan-soft)", ar:"var(--green)", fr:"var(--pink)", es:"var(--red)", ru:"var(--violet)", tr:"#ff5a5a" };
+  if(isReversed()){
+    document.getElementById('langPair').innerHTML =
+      `<span class="a tr-flag-text">Türkçe</span> <span style="color:var(--muted)">⇄</span> <span class="a" style="color:${colorMap[activeLang]}">${L.native}</span>`;
+  } else if(isCross()){
+    document.getElementById('langPair').innerHTML =
+      `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a" style="color:${colorMap[NATIVE_LANG]}">${LANGS[NATIVE_LANG].native}</span>`;
+  } else {
+    document.getElementById('langPair').innerHTML =
+      `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a tr-flag-text">Türkçe</span>`;
+  }
 }
 
 function rebuildLevelBox(){
@@ -1628,8 +1760,8 @@ function rebuildLevelBox(){
 }
 
 function poolForLevel(){
-  if(activeLevel === "TÜMÜ") return VOCAB.filter(v => v.lang===activeLang);
-  return VOCAB.filter(v => v.lang===activeLang && v.level===activeLevel);
+  if(activeLevel === "TÜMÜ") return basePool();
+  return basePool().filter(v => v.level===activeLevel);
 }
 
 function rebuildChips(){
@@ -1675,14 +1807,18 @@ document.getElementById('catOverlay').onclick = (e) => { if(e.target.id === 'cat
 
 document.querySelectorAll('.lang-opt').forEach(opt=>{
   opt.onclick = () => {
-    activeLang = opt.dataset.lang;
-    document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('active', o===opt));
-    activeLevel = "TÜMÜ";
-    activeCat = 'Tümü';
-    renderLangPair();
-    rebuildLevelBox();
-    rebuildChips();
-    applyFilter();
+    const target = opt.dataset.lang;
+    opt.style.opacity = '.55';
+    setLangPair(NATIVE_LANG, target).then(()=>{
+      opt.style.opacity = '';
+      document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('active', o===opt));
+      activeLevel = "TÜMÜ";
+      activeCat = 'Tümü';
+      renderLangPair();
+      rebuildLevelBox();
+      rebuildChips();
+      applyFilter();
+    }).catch(()=>{ opt.style.opacity = ''; });
   };
 });
 
@@ -1721,19 +1857,20 @@ function renderCard(){
   const v = deck[idx];
   const L = LANGS[v.lang];
   const frontWordEl = document.getElementById('frontWord');
-  frontWordEl.textContent = v.w;
-  frontWordEl.setAttribute('dir', L.dir);
+  frontWordEl.textContent = FRONT_W(v);
+  frontWordEl.setAttribute('dir', FRONT_DIR(v));
   document.getElementById('frontPos').textContent = v.cat || v.pos;
-  document.getElementById('tagFront').textContent = L.native;
-  document.getElementById('trWord').textContent = v.tr;
+  document.getElementById('tagFront').textContent = FRONT_LABEL();
+  document.getElementById('tagBack').textContent = BACK_LABEL();
+  document.getElementById('trWord').textContent = BACK_W(v);
 
   const frontEx = document.getElementById('frontExample');
-  frontEx.innerHTML = colorSplit(v.ex, v.w, v.c1, v.c2);
-  frontEx.setAttribute('dir', L.dir);
+  frontEx.innerHTML = colorSplit(FRONT_EX(v), FRONT_W(v), v.c1, v.c2);
+  frontEx.setAttribute('dir', FRONT_DIR(v));
 
   const trEx = document.getElementById('trExample');
-  trEx.innerHTML = colorSplit(v.exTr, v.tr, v.c1, v.c2);
-  trEx.setAttribute('dir','ltr');
+  trEx.innerHTML = colorSplit(BACK_EX(v), BACK_W(v), v.c1, v.c2);
+  trEx.setAttribute('dir', BACK_DIR(v));
 
   document.getElementById('cardCount').textContent = `${idx+1} / ${deck.length}`;
   document.getElementById('cardCat').textContent = activeCat;
@@ -1751,12 +1888,12 @@ function renderCard(){
 document.getElementById('rabbitBtn').onclick = (e) => {
   e.stopPropagation();
   const v = deck[idx]; if(!v) return;
-  speak(v.w, LANGS[v.lang].voice);
+  speak(FRONT_W(v), FRONT_VOICE(v));
 };
 document.getElementById('turtleBtn').onclick = (e) => {
   e.stopPropagation();
   const v = deck[idx]; if(!v) return;
-  speakSlow(v.w, LANGS[v.lang].voice);
+  speakSlow(FRONT_W(v), FRONT_VOICE(v));
 };
 
 document.getElementById('card').onclick = () => {
@@ -1764,7 +1901,7 @@ document.getElementById('card').onclick = () => {
   document.getElementById('card').classList.toggle('flipped', flipped);
   const v = deck[idx];
   if(!v) return;
-  if(!flipped){ speak(v.w, LANGS[v.lang].voice); }
+  if(!flipped){ speak(FRONT_W(v), FRONT_VOICE(v)); }
   saveCardPosition();
 };
 
@@ -1773,7 +1910,7 @@ document.getElementById('nextBtn').onclick = () => {
   idx = (idx+1) % deck.length;
   renderCard();
   const v = deck[idx];
-  speak(v.w, LANGS[v.lang].voice);
+  speak(FRONT_W(v), FRONT_VOICE(v));
   spawnShootingStar();
   saveCardPosition();
 };
@@ -1782,7 +1919,7 @@ document.getElementById('prevBtn').onclick = () => {
   idx = (idx-1+deck.length) % deck.length;
   renderCard();
   const v = deck[idx];
-  speak(v.w, LANGS[v.lang].voice);
+  speak(FRONT_W(v), FRONT_VOICE(v));
   saveCardPosition();
 };
 document.getElementById('shuffleBtn').onclick = () => {
@@ -1865,8 +2002,8 @@ function renderQuiz(){
   }
   const v = quizDeck[qIdx];
   const qWordEl = document.getElementById('quizWord');
-  qWordEl.textContent = v.w;
-  qWordEl.setAttribute('dir', LANGS[v.lang].dir);
+  qWordEl.textContent = FRONT_W(v);
+  qWordEl.setAttribute('dir', FRONT_DIR(v));
   document.getElementById('quizPos').textContent = v.cat || v.pos;
   document.getElementById('quizCount').textContent = `Soru ${qIdx+1} / ${quizDeck.length}`;
   document.getElementById('quizBar').style.width = `${((qIdx+1)/quizDeck.length)*100}%`;
@@ -1900,29 +2037,30 @@ function renderQuiz(){
   }
 
   answered = false;
-  let opts = [v.tr];
+  const correctBack = BACK_W(v);
+  let opts = [correctBack];
   /* Çeldiriciler artık sorunun KATEGORİSİNDEN seçiliyor — kategori yeterince
      kalabalık değilse seviyeye, o da yetmezse dile geri düşülür. Amaç:
      kelimeyi bilmeyen biri "hangisi tanıdık" diye rastgele doğru cevaba
      basamasın, gerçekten anlamı bilmesi gereksin. */
-  let pool = VOCAB.filter(x => x.lang===activeLang && x.cat===v.cat && x.tr !== v.tr);
+  let pool = basePool().filter(x => x.cat===v.cat && BACK_W(x) !== correctBack);
   if(pool.length < 3){
-    let fallback = poolForLevel().filter(x => x.tr !== v.tr && !pool.some(p=>p.tr===x.tr));
+    let fallback = poolForLevel().filter(x => BACK_W(x) !== correctBack && !pool.some(p=>BACK_W(p)===BACK_W(x)));
     pool = pool.concat(fallback);
   }
   if(pool.length < 3){
-    let fallback2 = VOCAB.filter(x => x.lang===activeLang && x.tr !== v.tr && !pool.some(p=>p.tr===x.tr));
+    let fallback2 = basePool().filter(x => BACK_W(x) !== correctBack && !pool.some(p=>BACK_W(p)===BACK_W(x)));
     pool = pool.concat(fallback2);
   }
   for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
-  opts = opts.concat(pool.slice(0,3).map(x=>x.tr));
+  opts = opts.concat(pool.slice(0,3).map(x=>BACK_W(x)));
   for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
 
   opts.forEach(o=>{
     const b = document.createElement('button');
     b.className = 'opt';
     b.textContent = o;
-    b.onclick = () => selectAnswer(o, v.tr, b, opts);
+    b.onclick = () => selectAnswer(o, correctBack, b, opts);
     optionsEl.appendChild(b);
   });
 }
@@ -1944,7 +2082,7 @@ function selectAnswer(chosen, correct, btnEl, opts){
     /* Her doğru cevap +1 XP */
     try{ if(typeof window.PR_addXp === 'function') window.PR_addXp(1); }catch(e){}
   } else {
-    mistakes.push({ word: v.w, correct: correct, given: chosen });
+    mistakes.push({ word: FRONT_W(v), correct: correct, given: chosen });
   }
   
   document.getElementById('scorePill').textContent = `${score} doğru`;
@@ -2036,11 +2174,19 @@ if($('tabPersonal')) $('tabPersonal').onclick = () => {
   if(window.PM_open) window.PM_open();
 };
 
-/* ======================= INIT ======================= */
-renderLangPair();
-rebuildLevelBox();
-rebuildChips();
-applyFilter();
+/* ======================= INIT =======================
+   TARGET_LANG 'de' değilse (ör. onboarding'de İngilizce/Fransızca vb.
+   seçilmişse veya CROSS moddaysa) gereken sözlük(ler) henüz senkron
+   yüklenmemiş olabilir — bu yüzden ilk render, gerekli dosyalar
+   yüklenene KADAR bekliyor. Türkçe-ana-dilli mevcut kullanıcılar için
+   (activeLang zaten 'de' önceden yüklü) bu bekleme anlık/gözle
+   görülmez şekilde geçer; davranış değişmez. */
+setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
+  renderLangPair();
+  rebuildLevelBox();
+  rebuildChips();
+  applyFilter();
+});
 
 /* ======================= SNOW / CRYSTAL EFFECT ======================= */
 (function(){

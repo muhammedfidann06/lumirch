@@ -614,9 +614,11 @@ function fireReminder() {
   if (studiedToday()) return;
   store('pwa_reminder_last', today());
   var w = pickDailyWord();
+  var fw = w ? (window.FRONT_W ? window.FRONT_W(w) : w.w) : '';
+  var bw = w ? (window.BACK_W ? window.BACK_W(w) : w.tr) : '';
   showNotification(
     'Bugün birkaç kelime? 🌙',
-    w ? (w.w + ' — ' + (w.tr || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
+    w ? (fw + ' — ' + (bw || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
     './?src=reminder&tab=cards'
   );
 }
@@ -1017,7 +1019,8 @@ function applyResume(r) {
   /* Önce kelimeyi ara (deste karıştırılmış olabilir), bulamazsan sırayı kullan */
   if (r.word) {
     for (var i = 0; i < deck.length; i++) {
-      if (deck[i] && deck[i].w === r.word) { target = i; break; }
+      var fw = (window.FRONT_W && deck[i]) ? window.FRONT_W(deck[i]) : (deck[i] && deck[i].w);
+      if (deck[i] && fw === r.word) { target = i; break; }
     }
   }
   if (target < 0 && typeof r.idx === 'number' && r.idx < deck.length) target = r.idx;
@@ -1086,10 +1089,12 @@ function showDailyWord() {
       b.innerHTML = '<div class="pwa-empty">Kartlar henüz yüklenmedi. Birkaç saniye sonra tekrar dene.</div>';
       return;
     }
+    var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
+    var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || w.t);
     var card = document.createElement('div');
     card.className = 'pwa-row';
     card.innerHTML = '<div class="ic">📘</div><div class="tx"><b style="font-size:19px">' +
-      escapeHtml(w.w || '') + '</b><span style="font-size:13px">' + escapeHtml(w.tr || w.t || '') + '</span></div>';
+      escapeHtml(fw || '') + '</b><span style="font-size:13px">' + escapeHtml(bw || '') + '</span></div>';
     b.appendChild(card);
 
     var listen = row('🔊', 'Dinle', 'Telaffuzu seslendir');
@@ -1097,19 +1102,20 @@ function showDailyWord() {
       try {
         if (typeof window.speakNative === 'function') {
           var map = { de: 'de-DE', en: 'en-US', ar: 'ar-SA', fr: 'fr-FR', es: 'es-ES', ru: 'ru-RU' };
-          window.speakNative(w.w, map[w.lang || activeLangCode()] || 'de-DE', 0.92, function () {});
+          var voice = window.FRONT_VOICE ? window.FRONT_VOICE(w) : (map[w.lang || activeLangCode()] || 'de-DE');
+          window.speakNative(fw, voice, 0.92, function () {});
         }
       } catch (e) { logError(e); }
     };
     b.appendChild(listen);
 
     var fav = row('⭐', 'Favorilere ekle', '');
-    fav.onclick = function () { addFavorite({ w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() }); toast('⭐ Eklendi', { kind: 'good' }); };
+    fav.onclick = function () { addFavorite({ w: fw, tr: bw || '', lang: w.lang || activeLangCode() }); toast('⭐ Eklendi', { kind: 'good' }); };
     b.appendChild(fav);
 
     var sh = row('📤', 'Paylaş', 'Arkadaşına gönder');
     sh.onclick = function () {
-      var txt = w.w + ' — ' + (w.tr || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
+      var txt = fw + ' — ' + (bw || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
       if (navigator.share) navigator.share({ text: txt, url: location.origin + location.pathname }).catch(function () {});
       else copyText(txt);
     };
@@ -1119,12 +1125,14 @@ function showDailyWord() {
 }
 function updateWidgetData(w) {
   if (!w) return;
-  store('lumira_daily_word', { date: today(), w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() });
+  var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
+  var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || '');
+  store('lumira_daily_word', { date: today(), w: fw, tr: bw || '', lang: w.lang || activeLangCode() });
   try {
     if ('widgets' in navigator) {
       /* Windows Widgets Board / desteklenen platformlar */
       navigator.widgets.updateByTag && navigator.widgets.updateByTag('daily-word', {
-        template: 'daily-word', data: JSON.stringify({ word: w.w, translation: w.tr || '' })
+        template: 'daily-word', data: JSON.stringify({ word: fw, translation: bw || '' })
       });
     }
   } catch (e) {}
