@@ -3,32 +3,6 @@
 // Toplam 5986 benzersiz kelime/ifade
 // 65 kategorinin tamamı kapsanmıştır
 // ============================================
-add("fr","A1","Alfabe","lettre A (son a)","A harfi (a sesi)","harf","Avion commence par A.","Uçak A ile başlar.");
-add("fr","A1","Alfabe","lettre B (son b)","Be harfi (b sesi)","harf","Bateau commence par B.","Tekne B ile başlar.");
-add("fr","A1","Alfabe","lettre C (son k/s)","Ce harfi (s/k sesi)","harf","Chat commence par C.","Kedi C ile başlar.");
-add("fr","A1","Alfabe","lettre D (son d)","De harfi (d sesi)","harf","Danse commence par D.","Dans D ile başlar.");
-add("fr","A1","Alfabe","lettre E (son e)","E harfi (e sesi)","harf","École commence par E.","Okul E ile başlar.");
-add("fr","A1","Alfabe","lettre F (son f)","Efe harfi (f sesi)","harf","Fleur commence par F.","Çiçek F ile başlar.");
-add("fr","A1","Alfabe","lettre G (son g)","Ge harfi (g/h sesi)","harf","Gâteau commence par G.","Pasta G ile başlar.");
-add("fr","A1","Alfabe","lettre H (muette)","Hache harfi (sessiz h)","harf","Hôtel commence par H.","Otel H ile başlar.");
-add("fr","A1","Alfabe","lettre I (son i)","I harfi (i sesi)","harf","Île commence par I.","Ada I ile başlar.");
-add("fr","A1","Alfabe","lettre J (son j)","Jota harfi (h sesi)","harf","Jardin commence par J.","Bahçe J ile başlar.");
-add("fr","A1","Alfabe","lettre K (son k)","Ka harfi (k sesi)","harf","Kilo commence par K.","Kilo K ile başlar.");
-add("fr","A1","Alfabe","lettre L (son l)","Ele harfi (l sesi)","harf","Livre commence par L.","Kitap L ile başlar.");
-add("fr","A1","Alfabe","lettre M (son m)","Eme harfi (m sesi)","harf","Maison commence par M.","Ev M ile başlar.");
-add("fr","A1","Alfabe","lettre N (son n)","Ene harfi (n sesi)","harf","Nuit commence par N.","Gece N ile başlar.");
-add("fr","A1","Alfabe","lettre O (son o)","O harfi (o sesi)","harf","Orange commence par O.","Portakal O ile başlar.");
-add("fr","A1","Alfabe","lettre P (son p)","Pe harfi (p sesi)","harf","Porte commence par P.","Kapı P ile başlar.");
-add("fr","A1","Alfabe","lettre Q (son k)","Cu harfi (k sesi, sadece que/qui)","harf","Question commence par Q.","Soru Q ile başlar.");
-add("fr","A1","Alfabe","lettre R (son r)","Erre harfi (r sesi)","harf","Rivière commence par R.","Nehir R ile başlar.");
-add("fr","A1","Alfabe","lettre S (son s)","Ese harfi (s sesi)","harf","Soleil commence par S.","Güneş S ile başlar.");
-add("fr","A1","Alfabe","lettre T (son t)","Te harfi (t sesi)","harf","Table commence par T.","Masa T ile başlar.");
-add("fr","A1","Alfabe","lettre U (son u)","U harfi (u sesi)","harf","Usine commence par U.","Fabrika U ile başlar.");
-add("fr","A1","Alfabe","lettre V (son v)","Ve harfi (v sesi)","harf","Voiture commence par V.","Araba V ile başlar.");
-add("fr","A1","Alfabe","lettre W (son w)","Doble ve harfi (w sesi)","harf","Wagon commence par W.","Vagon W ile başlar.");
-add("fr","A1","Alfabe","lettre X (son ks)","Equis harfi (ks sesi)","harf","Xylophone commence par X.","Ksilofon X ile başlar.");
-add("fr","A1","Alfabe","lettre Y (son i grec)","Ye harfi (y sesi)","harf","Yaourt commence par Y.","Yoğurt Y ile başlar.");
-add("fr","A1","Alfabe","lettre Z (son z)","Zeta harfi (s sesi)","harf","Zoo commence par Z.","Hayvanat bahçesi Z ile başlar.");
 add("fr","A1","Günler","lundi","pazartesi","isim","Le lundi commence la semaine.","Pazartesi hafta başlar.");
 add("fr","A1","Günler","mardi","salı","isim","Le mardi j'ai cours.","Salı günü dersim var.");
 add("fr","A1","Günler","mercredi","çarşamba","isim","Le mercredi est le milieu de semaine.","Çarşamba haftanın ortasıdır.");

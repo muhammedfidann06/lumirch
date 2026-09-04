@@ -108,7 +108,12 @@
       } catch (err) {
         finish(false);
       }
-    }, 60);
+    }, 0);
+    /* NOT: değer bilerek 60ms'den 0ms'e indirildi. 0ms bile asenkron
+       olduğu için Chrome'un cancel()+speak() aynı-tick yarış hatasını
+       hâlâ önlüyor, ama iOS Safari'nin çok kısa ömürlü kullanıcı-dokunuşu
+       (user-gesture) iznini artık kaçırmıyor — "bazen ses hiç çalmıyor"
+       şikayetinin kök nedeni buydu. */
   }
 
   function warmUpSpeech() {

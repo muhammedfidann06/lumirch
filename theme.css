@@ -94,19 +94,14 @@ body{
 .app .lang-opt[data-lang="es"]{background-image:linear-gradient(158deg, rgba(255,116,104,.24) 0%, rgba(230,120,50,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 .app .lang-opt[data-lang="ru"]{background-image:linear-gradient(158deg, rgba(158,128,255,.26) 0%, rgba(110,90,230,.10) 46%, rgba(8,12,30,0) 78%) !important;}
 
-/* dilin arkasındaki soluk yapı silueti — orijinal renginde, sadece soluk */
+/* dilin arkasındaki soluk yapı silueti — orijinal boyut, köşelerden kırpılır */
 .app .lang-opt .landmark{
   position:absolute; right:-8px; bottom:-4px;
   font-size:56px; line-height:1;
-  opacity:.16;
-  filter:none;
+  opacity:.18;
+  filter:grayscale(1) brightness(1.75) drop-shadow(0 0 12px rgba(150,200,255,.35));
   pointer-events:none;
   z-index:0;
-  /* bazı emojiler VS16 olmadan metin (tek renk) biçiminde çizilir;
-     burada renkli emoji fontu zorlanıyor ki beyaz silüet olarak görünmesin */
-  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif;
-  font-variant-emoji:emoji;
-  -webkit-text-fill-color:initial;
 }
 /* butonun sınırları dışına hiçbir şey taşmasın: köşelerden temiz kesim */
 .app .lang-opt{
@@ -163,6 +158,11 @@ body{
       0 0 52px rgba(var(--lg),.32),
       inset 0 0 20px rgba(var(--lg),.22);
   }
+}
+.app .lang-opt.active .landmark{
+  opacity:.30;
+  filter:none;
+  text-shadow:0 0 10px rgba(var(--lg),.55);
 }
 /* seçili değilken üstüne gelince / basınca da kendi renginde kıvılcım */
 .app .lang-opt:hover{

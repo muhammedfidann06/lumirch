@@ -1,0 +1,73 @@
+{
+    "packageId": "com.lumira.dilkartlari",
+    "host": "SENIN-ALAN-ADIN.github.io",
+    "name": "Lumira | Dil Kartları",
+    "launcherName": "Dil Kartları",
+    "display": "standalone",
+    "themeColor": "#04050A",
+    "themeColorDark": "#04050A",
+    "navigationColor": "#04050A",
+    "navigationColorDark": "#04050A",
+    "navigationDividerColor": "#04050A",
+    "navigationDividerColorDark": "#04050A",
+    "backgroundColor": "#04050A",
+    "enableNotifications": true,
+    "startUrl": "/turkishdeucard/?src=twa",
+    "iconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/icon-512.png",
+    "maskableIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/icon-maskable-512.png",
+    "monochromeIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/icon-monochrome.png",
+    "splashScreenFadeOutDuration": 300,
+    "signingKey": {
+        "path": "./android.keystore",
+        "alias": "android"
+    },
+    "appVersionName": "1.0.0",
+    "appVersionCode": 2,
+    "shortcuts": [
+        {
+            "name": "Kartlara devam et",
+            "shortName": "Kartlar",
+            "url": "/turkishdeucard/?src=shortcut&tab=cards",
+            "chosenIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/sc-cards.png"
+        },
+        {
+            "name": "Hızlı quiz",
+            "shortName": "Quiz",
+            "url": "/turkishdeucard/?src=shortcut&tab=quiz",
+            "chosenIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/sc-quiz.png"
+        },
+        {
+            "name": "Günün kelimesi",
+            "shortName": "Günün kelimesi",
+            "url": "/turkishdeucard/?src=shortcut&action=daily",
+            "chosenIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/sc-word.png"
+        },
+        {
+            "name": "İlerlemem",
+            "shortName": "İlerlemem",
+            "url": "/turkishdeucard/?src=shortcut&tab=personal",
+            "chosenIconUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/sc-stats.png"
+        }
+    ],
+    "generatorApp": "bubblewrap-cli",
+    "webManifestUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/manifest.json",
+    "fallbackType": "customtabs",
+    "features": {
+        "playBilling": {
+            "enabled": true
+        }
+    },
+    "alphaDependencies": {
+        "enabled": false
+    },
+    "enableSiteSettingsShortcut": true,
+    "isChromeOSOnly": false,
+    "isMetaQuest": false,
+    "fullScopeUrl": "https://SENIN-ALAN-ADIN.github.io/turkishdeucard/",
+    "minSdkVersion": 23,
+    "orientation": "portrait",
+    "additionalTrustedOrigins": [],
+    "retainedBundles": [],
+    "protocolHandlers": [],
+    "fileHandlers": []
+}

@@ -6115,31 +6115,3 @@ add("ar","A2","Deyimler","بلا مؤاخذة","gücenmece yok","ifade","بلا 
 // ============================================
 // ALFABE - Arapça Alfabe
 // ============================================
-add("ar","A1","Alfabe","ا","Elif harfi (a sesi)","harf","الأسد قوي.","Aslan güçlüdür.");
-add("ar","A1","Alfabe","ب","Bâ harfi (b sesi)","harf","الباب مفتوح.","Kapı açıktır.");
-add("ar","A1","Alfabe","ت","Tâ harfi (t sesi)","harf","التفاحة حمراء.","Elma kırmızıdır.");
-add("ar","A1","Alfabe","ث","Sâ harfi (peltek s sesi)","harf","الثعلب ذكي.","Tilki zekidir.");
-add("ar","A1","Alfabe","ج","Cim harfi (c sesi)","harf","الجمل في الصحراء.","Deve çölde.");
-add("ar","A1","Alfabe","ح","Ha harfi (gırtlaktan h sesi)","harf","الحصان يجري.","At koşuyor.");
-add("ar","A1","Alfabe","خ","Hı harfi (hırıltılı h sesi)","harf","الخبز طازج.","Ekmek tazedir.");
-add("ar","A1","Alfabe","د","Dal harfi (d sesi)","harf","الدجاجة بيضاء.","Tavuk beyazdır.");
-add("ar","A1","Alfabe","ذ","Zel harfi (peltek z sesi)","harf","الذئب في الغابة.","Kurt ormanda.");
-add("ar","A1","Alfabe","ر","Ra harfi (r sesi)","harf","الرمان لذيذ.","Nar lezzetlidir.");
-add("ar","A1","Alfabe","ز","Ze harfi (z sesi)","harf","الزرافة طويلة.","Zürafa uzundur.");
-add("ar","A1","Alfabe","س","Sin harfi (s sesi)","harf","السمك يسبح.","Balık yüzüyor.");
-add("ar","A1","Alfabe","ش","Şin harfi (ş sesi)","harf","الشمس مشرقة.","Güneş parlıyor.");
-add("ar","A1","Alfabe","ص","Sad harfi (kalın s sesi)","harf","الصقر يطير.","Şahin uçuyor.");
-add("ar","A1","Alfabe","ض","Dad harfi (kalın d sesi)","harf","الضفدع أخضر.","Kurbağa yeşildir.");
-add("ar","A1","Alfabe","ط","Tı harfi (kalın t sesi)","harf","الطائر يغني.","Kuş şarkı söylüyor.");
-add("ar","A1","Alfabe","ظ","Zı harfi (kalın z sesi)","harf","الظل بارد.","Gölge serindir.");
-add("ar","A1","Alfabe","ع","Ayn harfi (gırtlak sesi)","harf","العصفور صغير.","Serçe küçüktür.");
-add("ar","A1","Alfabe","غ","Gayn harfi (gırtlaktan g sesi)","harf","الغزال سريع.","Ceylan hızlıdır.");
-add("ar","A1","Alfabe","ف","Fe harfi (f sesi)","harf","الفيل كبير.","Fil büyüktür.");
-add("ar","A1","Alfabe","ق","Kaf harfi (kalın k sesi)","harf","القطة نائمة.","Kedi uyuyor.");
-add("ar","A1","Alfabe","ك","Kef harfi (k sesi)","harf","الكتاب مفيد.","Kitap faydalıdır.");
-add("ar","A1","Alfabe","ل","Lam harfi (l sesi)","harf","الليمون حامض.","Limon ekşidir.");
-add("ar","A1","Alfabe","م","Mim harfi (m sesi)","harf","المنزل جميل.","Ev güzeldir.");
-add("ar","A1","Alfabe","ن","Nun harfi (n sesi)","harf","النجمة تلمع.","Yıldız parlıyor.");
-add("ar","A1","Alfabe","ه","He harfi (h sesi)","harf","الهلال في السماء.","Hilal gökyüzünde.");
-add("ar","A1","Alfabe","وْ","Vav harfi (v/u/o sesi)","harf","الوردة حمراء.","Gül kırmızıdır.");
-add("ar","A1","Alfabe","ي","Ye harfi (y/i sesi)","harf","اليد نظيفة.","El temizdir.");

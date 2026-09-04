@@ -1,20 +1,214 @@
 {
-  "name": "Kelime Kartları",
-  "short_name": "Kelime Kartları",
-  "start_url": "./",
-  "display": "fullscreen",
-  "background_color": "#050710",
-  "theme_color": "#050710",
+  "id": "./?src=pwa",
+  "name": "Lumira Dil Kartları",
+  "short_name": "Dil Kartları",
+  "description": "6 dilde binlerce kelime kartı, quiz, seslendirme ve kişisel ilerleme takibi. Çevrimdışı çalışır.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./?src=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "portrait",
+  "theme_color": "#04050a",
+  "background_color": "#04050a",
+  "categories": [
+    "education",
+    "books",
+    "productivity"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "edge_side_panel": {
+    "preferred_width": 420
+  },
   "icons": [
     {
-      "src": "img-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "icon-48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "img-512.png",
+      "src": "icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-monochrome.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-1.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Kelime kartları"
+    },
+    {
+      "src": "screenshot-2.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Quiz modu"
+    },
+    {
+      "src": "screenshot-wide.jpg",
+      "sizes": "1920x1080",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Lumira Dil Kartları"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kartlara devam et",
+      "short_name": "Kartlar",
+      "description": "Kaldığın yerden kelime kartlarına devam et",
+      "url": "./?src=shortcut&tab=cards",
+      "icons": [
+        {
+          "src": "sc-cards.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Hızlı quiz",
+      "short_name": "Quiz",
+      "description": "Doğrudan quiz ekranını aç",
+      "url": "./?src=shortcut&tab=quiz",
+      "icons": [
+        {
+          "src": "sc-quiz.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Günün kelimesi",
+      "short_name": "Günün kelimesi",
+      "description": "Bugünün kelimesini göster",
+      "url": "./?src=shortcut&action=daily",
+      "icons": [
+        {
+          "src": "sc-word.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "İlerlemem",
+      "short_name": "İlerlemem",
+      "description": "Kişisel istatistikler ve rozetler",
+      "url": "./?src=shortcut&tab=personal",
+      "icons": [
+        {
+          "src": "sc-stats.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "share_title",
+      "text": "share_text",
+      "url": "share_url"
+    }
+  },
+  "widgets": [
+    {
+      "name": "Günün Kelimesi",
+      "short_name": "Günün Kelimesi",
+      "description": "Her gün yeni bir kelime",
+      "tag": "daily-word",
+      "template": "daily-word",
+      "ms_ac_template": "daily-word.ac.json",
+      "data": "daily-word.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "sc-word.png",
+          "sizes": "96x96",
+          "label": "Günün kelimesi"
+        }
+      ],
+      "icons": [
+        {
+          "src": "sc-word.png",
+          "sizes": "96x96"
+        }
+      ],
+      "auth": false,
+      "update": 86400
     }
   ]
 }

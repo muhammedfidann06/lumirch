@@ -2,39 +2,6 @@
 // RUSÇA KELİME HAZİNESİ - vocab-ru.js (NİHAİ SÜRÜM)
 // Toplam 6160 benzersiz kelime/ifade
 // ============================================
-add("ru","A1","Alfabe","А а","A harfi (a sesi)","harf","Арбуз — это фрукт.","Karpuz bir meyvedir.");
-add("ru","A1","Alfabe","Б б","Be harfi (b sesi)","harf","Барабан громкий.","Davul gürültülüdür.");
-add("ru","A1","Alfabe","В в","Ve harfi (v sesi)","harf","Ветер сильный.","Rüzgar güçlü.");
-add("ru","A1","Alfabe","Г г","Ge harfi (g sesi)","harf","Голубь летает.","Güvercin uçuyor.");
-add("ru","A1","Alfabe","Д д","De harfi (d sesi)","harf","Дом новый.","Ev yeni.");
-add("ru","A1","Alfabe","Е е","Ye harfi (ye sesi)","harf","Еда вкусная.","Yemek lezzetli.");
-add("ru","A1","Alfabe","Ё ё","Yo harfi (yo sesi)","harf","Ёлка зелёная.","Çam ağacı yeşil.");
-add("ru","A1","Alfabe","Ж ж","Je harfi (j sesi)","harf","Жираф высокий.","Zürafa uzundur.");
-add("ru","A1","Alfabe","З з","Ze harfi (z sesi)","harf","Зима холодная.","Kış soğuktur.");
-add("ru","A1","Alfabe","И и","İ harfi (i sesi)","harf","Игра интересная.","Oyun ilginç.");
-add("ru","A1","Alfabe","Й й","Kısa İ harfi","harf","Мой дом здесь.","Evim burada.");
-add("ru","A1","Alfabe","К к","Ka harfi (k sesi)","harf","Кот спит.","Kedi uyuyor.");
-add("ru","A1","Alfabe","Л л","El harfi (l sesi)","harf","Лето тёплое.","Yaz sıcaktır.");
-add("ru","A1","Alfabe","М м","Em harfi (m sesi)","harf","Мама дома.","Anne evde.");
-add("ru","A1","Alfabe","Н н","En harfi (n sesi)","harf","Нитка тонкая.","İplik incedir.");
-add("ru","A1","Alfabe","О о","O harfi (o sesi)","harf","Окно открыто.","Pencere açık.");
-add("ru","A1","Alfabe","П п","Pe harfi (p sesi)","harf","Пример простой.","Örnek basit.");
-add("ru","A1","Alfabe","Р р","Er harfi (r sesi)","harf","Рука болит.","El ağrıyor.");
-add("ru","A1","Alfabe","С с","Es harfi (s sesi)","harf","Сумка новая.","Çanta yeni.");
-add("ru","A1","Alfabe","Т т","Te harfi (t sesi)","harf","Тарелка круглая.","Tabak yuvarlaktır.");
-add("ru","A1","Alfabe","У у","U harfi (u sesi)","harf","Ужин вкусный.","Akşam yemeği lezzetli.");
-add("ru","A1","Alfabe","Ф ф","Ef harfi (f sesi)","harf","Фрукты полезны.","Meyveler faydalıdır.");
-add("ru","A1","Alfabe","Х х","Ha harfi (h sesi)","harf","Хороший день.","İyi bir gün.");
-add("ru","A1","Alfabe","Ц ц","Tse harfi (ts sesi)","harf","Цветок красивый.","Çiçek güzel.");
-add("ru","A1","Alfabe","Ч ч","Çe harfi (ç sesi)","harf","Час прошёл.","Bir saat geçti.");
-add("ru","A1","Alfabe","Ш ш","Şa harfi (ş sesi)","harf","Шар круглый.","Top yuvarlaktır.");
-add("ru","A1","Alfabe","Щ щ","Şça harfi (uzun ş sesi)","harf","Щенок маленький.","Yavru köpek küçük.");
-add("ru","A1","Alfabe","Ъ","Sert işaret (sessiz)","harf","Объект интересный.","Nesne ilginç.");
-add("ru","A1","Alfabe","Ы","Kalın I harfi","harf","Мы дома.","Biz evdeyiz.");
-add("ru","A1","Alfabe","Ь","Yumuşak işaret (sessiz)","harf","Дверь закрыта.","Kapı kapalı.");
-add("ru","A1","Alfabe","Э э","E harfi (e sesi)","harf","Этаж высокий.","Kat yüksek.");
-add("ru","A1","Alfabe","Ю ю","Yu harfi (yu sesi)","harf","Юг тёплый.","Güney sıcaktır.");
-add("ru","A1","Alfabe","Я я","Ya harfi (ya sesi)","harf","Ягода сладкая.","Meyve tatlı.");
 add("ru","A1","Selamlaşma","Привет","merhaba (samimi)","ifade","Привет, давно не виделись!","Merhaba, uzun zamandır görüşmedik!");
 add("ru","A1","Selamlaşma","Здравствуйте","merhaba (resmi)","ifade","Здравствуйте, рад вас видеть.","Merhaba, sizi gördüğüme sevindim.");
 add("ru","A1","Selamlaşma","Доброе утро","günaydın","ifade","Доброе утро, как ты спал?","Günaydın, nasıl uyudun?");

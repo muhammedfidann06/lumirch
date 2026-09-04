@@ -1,0 +1,1148 @@
+/* ============================================================================
+   pwa.css — Lumira | Dil Kartları
+   Uygulama kabuğu: kenardan kenara (edge-to-edge) yerleşim, bildirim/ayar
+   panelleri, toast, güncelleme çubuğu, favori yıldızı ve sayfa geçişleri.
+   theme.css'ten SONRA yüklenir; mevcut tasarımı bozmaz, sadece üstüne ekler.
+   ========================================================================== */
+
+/* ------------------------------------------------- güvenli alanlar (Android 15+/iOS)
+   Android 16 ve sonrasında uygulamalar zorunlu olarak edge-to-edge çizilir;
+   içerik durum çubuğunun ve gezinme çubuğunun altına kaymasın diye padding
+   env() ile veriliyor. */
+body{
+  padding-top:calc(26px + env(safe-area-inset-top)) !important;
+  padding-left:calc(14px + env(safe-area-inset-left)) !important;
+  padding-right:calc(14px + env(safe-area-inset-right)) !important;
+  padding-bottom:calc(170px + env(safe-area-inset-bottom)) !important;
+  overscroll-behavior-y:none;           /* iOS'ta lastik gibi esneme olmasın */
+}
+#splash{
+  padding-top:calc(56px + env(safe-area-inset-top)) !important;
+  padding-bottom:calc(48px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Uygulama modunda (standalone) metin seçimi kapalı: yerel his */
+html.pwa-standalone body{
+  -webkit-user-select:none; user-select:none;
+  -webkit-touch-callout:none;
+}
+html.pwa-standalone input,
+html.pwa-standalone textarea{-webkit-user-select:text; user-select:text;}
+
+/* --------------------------------------------------------------- TOAST */
+#pwa-toasts{
+  position:fixed; left:0; right:0;
+  bottom:calc(18px + env(safe-area-inset-bottom));
+  z-index:10000; pointer-events:none;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:0 16px;
+}
+.pwa-toast{
+  pointer-events:auto;
+  max-width:420px; width:fit-content;
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; border-radius:14px;
+  font-size:13.5px; font-weight:600; line-height:1.4;
+  color:#eef4ff;
+  background:linear-gradient(160deg, rgba(20,27,54,.94), rgba(11,15,32,.94));
+  border:1px solid rgba(140,190,255,.24);
+  box-shadow:0 12px 34px rgba(0,0,0,.5);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  transform:translateY(18px); opacity:0;
+  transition:transform .32s cubic-bezier(.22,1,.36,1), opacity .32s ease;
+}
+.pwa-toast.in{transform:none; opacity:1;}
+.pwa-toast .t-act{
+  margin-left:4px; padding:6px 12px; border-radius:999px; border:0;
+  font:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
+  color:#04050a; background:linear-gradient(120deg,#4fe8ff,#9b7bff);
+}
+.pwa-toast.good{border-color:rgba(61,255,160,.4);}
+.pwa-toast.bad{border-color:rgba(255,95,122,.45);}
+
+/* --------------------------------------------------- YÜZEN AKSİYON BUTONU */
+#pwa-fab{
+  position:fixed; z-index:9000;
+  right:calc(14px + env(safe-area-inset-right));
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  width:46px; height:46px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; cursor:pointer; border:1px solid rgba(140,190,255,.28);
+  background:linear-gradient(160deg, rgba(22,30,60,.82), rgba(10,14,30,.82));
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  box-shadow:0 8px 22px rgba(0,0,0,.45), 0 0 18px rgba(79,232,255,.12);
+  transition:transform .2s cubic-bezier(.22,1.4,.36,1), box-shadow .2s ease;
+  color:#dbe7ff;
+}
+#pwa-fab:active{transform:scale(.9);}
+#pwa-fab.hidden{display:none;}
+#pwa-fab .dotbadge{
+  position:absolute; top:6px; right:6px;
+  width:8px; height:8px; border-radius:50%; background:#ff5fb8;
+  box-shadow:0 0 8px rgba(255,95,184,.9);
+}
+
+/* -------------------------------------------------------- ALT SAYFA (SHEET) */
+.pwa-sheet-backdrop{
+  position:fixed; inset:0; z-index:9500;
+  background:rgba(3,6,16,.62);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  opacity:0; transition:opacity .28s ease;
+}
+.pwa-sheet-backdrop.in{opacity:1;}
+.pwa-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:9600;
+  max-height:86vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  border-radius:22px 22px 0 0;
+  padding:10px 18px calc(26px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, rgba(19,26,52,.97), rgba(8,11,25,.98));
+  border-top:1px solid rgba(140,190,255,.22);
+  box-shadow:0 -18px 50px rgba(0,0,0,.6);
+  transform:translateY(102%);
+  transition:transform .36s cubic-bezier(.22,1,.36,1);
+}
+.pwa-sheet.in{transform:none;}
+.pwa-sheet .grab{
+  width:40px; height:4px; border-radius:99px; margin:6px auto 14px;
+  background:rgba(190,215,255,.28);
+}
+.pwa-sheet h3{
+  margin:0 0 4px; font-size:16px; font-weight:800; color:#eef4ff;
+  display:flex; align-items:center; gap:8px;
+}
+.pwa-sheet .sheet-sub{margin:0 0 16px; font-size:12.5px; color:#8291b3; line-height:1.55;}
+.pwa-row{
+  display:flex; align-items:center; gap:12px;
+  padding:13px 12px; margin-bottom:8px;
+  border-radius:14px; cursor:pointer;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(140,190,255,.14);
+  transition:background .2s ease, border-color .2s ease, transform .16s ease;
+}
+.pwa-row:active{transform:scale(.985); background:rgba(255,255,255,.07);}
+.pwa-row .ic{font-size:18px; width:24px; text-align:center; flex:0 0 auto;}
+.pwa-row .tx{flex:1 1 auto; min-width:0;}
+.pwa-row .tx b{display:block; font-size:13.5px; font-weight:700; color:#eef4ff;}
+.pwa-row .tx span{display:block; font-size:11.5px; color:#8291b3; margin-top:2px;}
+.pwa-row .val{font-size:12px; font-weight:700; color:#4fe8ff; flex:0 0 auto;}
+
+.pwa-switch{
+  position:relative; flex:0 0 auto;
+  width:42px; height:24px; border-radius:99px;
+  background:rgba(255,255,255,.12); transition:background .24s ease;
+}
+.pwa-switch::after{
+  content:''; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%; background:#c9d7f5;
+  transition:transform .24s cubic-bezier(.22,1.4,.36,1), background .24s ease;
+}
+.pwa-switch.on{background:linear-gradient(120deg,#4fe8ff,#9b7bff);}
+.pwa-switch.on::after{transform:translateX(18px); background:#04050a;}
+
+.pwa-progress{
+  height:6px; border-radius:99px; overflow:hidden; margin:10px 2px 4px;
+  background:rgba(255,255,255,.08);
+}
+.pwa-progress i{
+  display:block; height:100%; width:0%;
+  background:linear-gradient(90deg,#4fe8ff,#9b7bff,#ff5fb8);
+  transition:width .3s ease;
+}
+.pwa-note{font-size:11px; color:#5d6b8c; line-height:1.6; margin:14px 2px 0;}
+.pwa-time{
+  font:inherit; font-size:13px; font-weight:700; color:#eef4ff;
+  background:rgba(255,255,255,.06); border:1px solid rgba(140,190,255,.2);
+  border-radius:10px; padding:8px 10px;
+}
+
+/* ---------------------------------------------------------- KURULUM AFİŞİ */
+#pwa-install{
+  position:fixed; z-index:9400;
+  left:12px; right:12px;
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:18px;
+  background:linear-gradient(160deg, rgba(22,30,62,.96), rgba(10,14,30,.96));
+  border:1px solid rgba(155,123,255,.32);
+  box-shadow:0 16px 44px rgba(0,0,0,.55);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  transform:translateY(140%); transition:transform .42s cubic-bezier(.22,1,.36,1);
+}
+#pwa-install.in{transform:none;}
+#pwa-install img{width:42px; height:42px; border-radius:12px; flex:0 0 auto;}
+#pwa-install .txt{flex:1 1 auto; min-width:0;}
+#pwa-install .txt b{display:block; font-size:13.5px; color:#eef4ff;}
+#pwa-install .txt span{display:block; font-size:11.5px; color:#8291b3; margin-top:2px;}
+#pwa-install .go{
+  flex:0 0 auto; border:0; cursor:pointer; font:inherit;
+  font-size:12.5px; font-weight:800; padding:10px 16px; border-radius:999px;
+  color:#04050a; background:linear-gradient(120deg,#4fe8ff,#9b7bff);
+}
+#pwa-install .x{
+  flex:0 0 auto; cursor:pointer; color:#6b7a9c; font-size:17px;
+  padding:2px 4px; background:none; border:0;
+}
+
+/* --------------------------------------------------------- FAVORİ YILDIZI */
+#favBtn{
+  position:absolute; top:10px; left:12px; z-index:6;
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; cursor:pointer; border:1px solid rgba(255,210,59,.28);
+  background:rgba(10,14,32,.42);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:transform .2s cubic-bezier(.22,1.4,.36,1), box-shadow .2s ease;
+  color:#ffd23b;
+}
+#favBtn:active{transform:scale(.86);}
+#favBtn.on{
+  box-shadow:0 0 14px rgba(255,210,59,.55), inset 0 0 12px rgba(255,210,59,.2);
+  border-color:rgba(255,210,59,.7);
+  animation:favPop .42s cubic-bezier(.22,1.4,.36,1);
+}
+@keyframes favPop{0%{transform:scale(1);}45%{transform:scale(1.3) rotate(12deg);}100%{transform:scale(1);}}
+
+.fav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 12px; margin-bottom:7px; border-radius:12px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(140,190,255,.12);
+}
+.fav-item .w{flex:1 1 auto; min-width:0;}
+.fav-item .w b{display:block; font-size:14px; color:#eef4ff;}
+.fav-item .w span{display:block; font-size:11.5px; color:#8291b3; margin-top:2px;}
+.fav-item .fl{font-size:16px; flex:0 0 auto;}
+.fav-item .rm{
+  flex:0 0 auto; border:0; background:none; cursor:pointer;
+  color:#6b7a9c; font-size:16px; padding:4px 6px;
+}
+.pwa-empty{text-align:center; color:#5d6b8c; font-size:12.5px; padding:26px 10px;}
+
+/* --------------------------------------------------- SAYFA GEÇİŞLERİ */
+.pwa-fade-in{animation:pwaFade .34s cubic-bezier(.22,1,.36,1);}
+@keyframes pwaFade{
+  from{opacity:0; transform:translateY(10px) scale(.995);}
+  to{opacity:1; transform:none;}
+}
+::view-transition-old(root){animation:pwaVtOut .22s ease forwards;}
+::view-transition-new(root){animation:pwaVtIn .3s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes pwaVtOut{to{opacity:0; transform:translateY(-6px);}}
+@keyframes pwaVtIn{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+
+/* ------------------------------------------------------ çevrimdışı rozeti */
+/* Gizliyken SADECE yukarı kaydırmak yetmiyordu: iOS'ta çentik boşluğu
+   (safe-area-inset-top ~59px) yüzünden rozet ekranın en üstünde görünmeye
+   devam ediyordu. Artık gerçekten gizleniyor. */
+#pwa-offline{
+  position:fixed; z-index:9300;
+  top:calc(8px + env(safe-area-inset-top)); left:50%;
+  transform:translate(-50%,-14px);
+  opacity:0; visibility:hidden;
+  padding:7px 14px; border-radius:999px;
+  font-size:11.5px; font-weight:800; letter-spacing:.03em;
+  color:#ffd7dd; background:rgba(60,12,26,.9);
+  border:1px solid rgba(255,95,122,.45);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  transition:transform .36s cubic-bezier(.22,1,.36,1),
+             opacity .28s ease, visibility .28s;
+}
+#pwa-offline.in{
+  transform:translate(-50%,0);
+  opacity:1; visibility:visible;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .pwa-toast,.pwa-sheet,#pwa-install,#pwa-offline{transition:none !important;}
+  .pwa-fade-in,#favBtn.on{animation:none !important;}
+}
+
+/* ============================================================================
+   SPLASH — Lumira marka bloğu
+   Logo · ışık halkası · gradyan "LUMIRA" yazısı · ince çizgili "DİL KARTLARI"
+   ========================================================================== */
+.splash-brand{
+  display:flex; flex-direction:column; align-items:center;
+  margin-bottom:22px;
+  animation:brandIn 1.05s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes brandIn{
+  from{opacity:0; transform:translateY(18px) scale(.94); filter:blur(6px);}
+  to{opacity:1; transform:none; filter:none;}
+}
+
+/* ---- logo ve arkasındaki ışık ---- */
+.brand-mark-wrap{
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:26px;               /* büyüyen yıldıza yer aç */
+}
+.brand-mark{
+  position:relative; z-index:3;
+  width:min(150px, 42vw); height:auto;
+  /* Logo orijinal hâliyle: kırpma, maske veya kenar yumuşatma YOK. */
+  border-radius:0; box-shadow:none;
+  filter:drop-shadow(0 12px 28px rgba(0,0,0,.5));
+  animation:brandFloat 5.6s ease-in-out infinite;
+}
+@keyframes brandFloat{
+  0%,100%{transform:translateY(0) rotate(0deg);}
+  50%{transform:translateY(-7px) rotate(-.6deg);}
+}
+/* NOT: Logonun arkasındaki bulanık ışık hâlesi (.brand-halo) kaldırıldı —
+   kenarları yumuşatılmış gibi gösteriyordu. Logo artık net duruyor. */
+
+/* ---- LUMIRA yazısı ---- */
+.brand-name{
+  position:relative; margin:0; overflow:visible;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:clamp(38px, 12.5vw, 54px);
+  font-weight:800; letter-spacing:.15em; line-height:1;
+  padding-left:.15em;                       /* letter-spacing dengesi */
+  background:linear-gradient(100deg,#5fd8ff 0%,#7fb0ff 26%,#9b7bff 52%,#c874ff 74%,#ff7ad0 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 16px rgba(120,180,255,.45)) drop-shadow(0 0 42px rgba(155,123,255,.30));
+  animation:brandShimmer 6s ease-in-out infinite;
+}
+@keyframes brandShimmer{
+  0%,100%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+}
+/* Yıldız, yazının İÇİNDE bir öğe DEĞİL: mutlak konumlu.
+   Böylece "LUMİRA" tek bir metin olarak kalır ve gradyan tüm harflerde aynı
+   anda, aynı hızda akar. (Harfi ayrı bir <span> içine almak, Safari'de o harfe
+   ayrı bir gradyan kutusu verdiği için farklı renkte/hızda görünmesine yol
+   açıyordu.) Yatay konumu pwa.js ölçerek veriyor — göz kararı değil. */
+.brand-spark{
+  position:absolute; top:-.60em; left:57%;   /* yatay konumu pwa.js ölçer */
+  transform:translateX(-50%);
+  font-size:.60em; font-style:normal; line-height:1;
+  /* Yazının GRADYANININ AYNISI + aynı süreli animasyon.
+     pwa.js ayrıca gradyanı yazıyla piksel piksel hizalar, böylece yıldız her
+     an "I" harfiyle birebir aynı rengi gösterir. */
+  background:linear-gradient(100deg,#5fd8ff 0%,#7fb0ff 26%,#9b7bff 52%,#c874ff 74%,#ff7ad0 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 12px rgba(150,170,255,.5))
+         drop-shadow(0 0 30px rgba(155,123,255,.32));
+  animation:brandShimmer 6s ease-in-out infinite;
+  pointer-events:none;
+}
+/* pwa.js ölçümü yaptığında bu animasyona geçilir: piksel hassasiyetinde hizalı */
+.brand-spark.aligned{
+  animation:sparkAligned 6s ease-in-out infinite;
+}
+@keyframes sparkAligned{
+  0%,100%{background-position-x:var(--sp-a,0px);}
+  50%    {background-position-x:var(--sp-b,0px);}
+}
+/* Gradyanlı metni desteklemeyen tarayıcılarda düz renk */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .brand-spark{color:#a98cff; -webkit-text-fill-color:#a98cff;}
+}
+
+/* ---- "DİL KARTLARI" çizgili alt başlık ---- */
+.brand-rule{
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  margin-top:16px; width:min(300px, 78vw);
+}
+.brand-rule i{
+  flex:1 1 auto; height:1px; display:block;
+  background:linear-gradient(90deg, transparent, rgba(150,200,255,.55));
+}
+.brand-rule i:last-child{
+  background:linear-gradient(90deg, rgba(200,140,255,.55), transparent);
+}
+.brand-rule span{
+  flex:0 0 auto;
+  font-size:11.5px; font-weight:800; letter-spacing:.34em;
+  color:#cfe0ff; text-transform:uppercase;
+  text-shadow:0 0 12px rgba(120,180,255,.6);
+  padding-left:.34em;
+}
+
+@media (max-width:360px){
+  .brand-mark{width:122px;}
+  .brand-rule span{letter-spacing:.26em; font-size:10.5px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .splash-brand,.brand-mark,.brand-halo,.brand-name{
+    animation:none !important;
+  }
+}
+
+/* --------------------------------------------------- kayan yıldız (sky.js yerine)
+   "Sonraki" düğmesine basınca ekranın üstünden ince bir ışık çizgisi geçer. */
+.pwa-shoot{
+  position:fixed; z-index:3; pointer-events:none;
+  width:2px; height:2px; border-radius:50%;
+  background:#eaf6ff;
+  box-shadow:0 0 8px 2px rgba(200,230,255,.9), 0 0 22px 6px rgba(120,180,255,.45);
+  animation:pwaShoot 1.05s cubic-bezier(.2,.6,.3,1) forwards;
+}
+.pwa-shoot::after{
+  content:''; position:absolute; right:2px; top:50%;
+  width:110px; height:1.4px; transform:translateY(-50%);
+  background:linear-gradient(90deg, transparent, rgba(190,225,255,.85));
+  border-radius:99px;
+}
+@keyframes pwaShoot{
+  0%{opacity:0; transform:translate(0,0) rotate(18deg) scale(.6);}
+  12%{opacity:1;}
+  100%{opacity:0; transform:translate(320px,120px) rotate(18deg) scale(1);}
+}
+@media (prefers-reduced-motion:reduce){ .pwa-shoot{display:none !important;} }
+
+/* ============================================================================
+   KAYDIRMA VE YAKINLAŞTIRMA DÜZELTMELERİ
+   Bu blok en sonda durmalı: diğer tüm kuralları bilinçli olarak ezer.
+   ========================================================================== */
+
+/* --- 1) Metin kendiliğinden büyümesin --------------------------------------
+   iOS Safari, dar sütunlarda yazıyı otomatik şişirir ("text inflation").
+   Sayfanın kendiliğinden büyümesinin baş sebebi budur. */
+html{
+  -webkit-text-size-adjust:100%;
+  -moz-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+/* --- 2) Gövde kaydırmayı kilitlemesin --------------------------------------
+   body üzerindeki overflow-x:hidden, iOS'ta gövdeyi ayrı bir kaydırma kabına
+   çevirip dikey kaydırmayı zorlaştırıyordu. clip, kaydırma kabı oluşturmaz. */
+html{overflow-x:hidden;}
+body{
+  overflow:visible;                 /* body'de overflow YOK: kaydırma serbest */
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+}
+/* Kapalı açılış ekranı dokunmaları yakalamasın */
+#splash.hidden{pointer-events:none !important;}
+
+/* --- 3) Alanlara dokununca yakınlaştırma olmasın ---------------------------
+   iOS, yazı boyutu 16px'in altındaki alanlara odaklanınca sayfayı büyütür ve
+   geri küçültmez. 16px bunu tamamen engeller. */
+input, select, textarea{font-size:16px !important;}
+
+/* --- 4) Çift dokunma yakınlaştırması yalnızca düğmelerde kapalı ------------
+   Böylece parmakla yakınlaştırma (ve gerekirse küçültme) serbest kalır. */
+button, a, .chip, .opt, .tab, .level-opt, .lang-opt, .ctrl,
+.card, .speak-icon-btn, .sound-btn, .cat-trigger, .cat-close,
+#favBtn, #pwa-fab, .pwa-row, .lb-row{
+  touch-action:manipulation;
+}
+
+/* --- 5) Kaydırma akıcılığı -------------------------------------------------
+   Arka planı bulanıklaştıran (backdrop-filter) katmanlar telefonda her karede
+   yeniden hesaplanır ve kaydırmayı tutuklaştırır. Küçük öğelerden tamamen
+   kaldırıldı, büyük panellerde bulanıklık düşürüldü. */
+.chip, .opt, .ctrl, .score-pill, .tab, .level-opt{
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+  background-color:rgba(13,17,34,.42);
+}
+.face,
+#quizView .quiz-card,
+.quiz-card{
+  -webkit-backdrop-filter:blur(9px) !important;
+          backdrop-filter:blur(9px) !important;
+}
+
+/* NOT: Kaydırma sırasında bulanıklığı kapatma / animasyonları duraklatma
+   denemesi geri alındı — kelebekler donuyor, kart tamamen saydamlaşıyordu
+   (theme.css'te .face arka planı zaten "transparent !important" olduğu için
+   bulanıklık kalkınca geriye hiçbir şey kalmıyordu). Akıcılık artışı, aşağıda
+   kalıcı hâle getirilen bulanıklık azaltmasından geliyor. */
+
+/* --- 6) Sabit katmanlar dokunmayı yutmasın -------------------------------- */
+#pwa-offline, #pwa-toasts, #grade, #grain, #scene-bg, #fg-desk, #sky-fx{
+  pointer-events:none;
+}
+
+/* ============================================================================
+   KATEGORİ PANELİ — kaydırma düzeltmesi
+   Panel sabit (fixed) bir katmanın içinde olduğu için iOS'ta kaydırma yalnızca
+   uygun dokunma kuralları verildiğinde çalışıyor. Ayrıca 68vh, iOS'ta tarayıcı
+   çubuklarını hesaba katmadığından panelin alt kısmı ekranın dışında kalıyor
+   ve içerik ulaşılamaz görünüyordu.
+   ========================================================================== */
+.cat-overlay{
+  align-items:flex-end;
+  overscroll-behavior:contain;
+}
+.cat-panel{
+  max-height:72vh;
+  max-height:72dvh;                    /* iOS: çubuklar hariç gerçek yükseklik */
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;    /* iOS'ta ivmeli kaydırma */
+  overscroll-behavior:contain;         /* kaydırma arkadaki sayfaya taşmasın */
+  touch-action:pan-y;                  /* dikey kaydırma her zaman serbest */
+  padding-bottom:calc(26px + env(safe-area-inset-bottom)) !important;
+  scrollbar-width:thin;
+}
+/* Başlık kaydırırken kaybolmasın */
+.cat-panel-header{
+  position:sticky; top:-18px; z-index:2;
+  background:linear-gradient(180deg, rgba(14,19,40,.98) 70%, rgba(14,19,40,0));
+  margin:-18px -16px 12px !important;
+  padding:18px 16px 10px !important;
+}
+/* Çipler kaydırmayı yutmasın: dokunma dikey kaydırmaya izin versin */
+.cat-grid{touch-action:pan-y;}
+.cat-grid .chip{touch-action:manipulation;}
+
+/* Aynı sorun bilgi panellerinde de olmasın */
+.info-card{
+  max-height:80dvh; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y;
+}
+
+/* ---------------------------------------- sıralama tablosu: yüklenme iskeleti
+   Firebase cevap verene kadar boş kutu yerine hafifçe parlayan satırlar. */
+.lb-row.lb-skel{
+  height:34px; margin-bottom:6px; border-radius:10px;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,.045) 25%,
+    rgba(255,255,255,.10) 42%,
+    rgba(255,255,255,.045) 60%);
+  background-size:220% 100%;
+  animation:lbShimmer 1.25s ease-in-out infinite;
+  border:1px solid rgba(140,190,255,.10);
+}
+@keyframes lbShimmer{
+  0%{background-position:120% 0;}
+  100%{background-position:-20% 0;}
+}
+@media (prefers-reduced-motion:reduce){
+  .lb-row.lb-skel{animation:none;}
+}
+
+/* ============================================================================
+   PERFORMANS — kalıcı iyileştirmeler
+   ========================================================================== */
+
+/* Kelebeklerin üzerindeki drop-shadow, kanatlar her 0.1 sn'de bir hareket
+   ettiği için gölgenin SÜREKLİ yeniden hesaplanmasına yol açıyordu. Gölge
+   kaldırıldı, kanat çırpışı da biraz yavaşlatıldı: görüntü neredeyse aynı,
+   maliyet çok daha düşük. */
+.flutter{filter:none !important;}
+.flutter .wing{animation-duration:.16s !important;}
+
+/* Kart yüzeyi ve quiz paneli dışındaki bulanıklıklar kaldırıldı */
+.info-overlay{-webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+              background:rgba(2,3,8,.90) !important;}
+.cat-panel{-webkit-backdrop-filter:blur(10px) !important; backdrop-filter:blur(10px) !important;}
+
+/* ============================ HAFİF MOD (html.lite) ======================
+   Zayıf cihazlarda otomatik açılır, ayarlardan elle de açılıp kapatılabilir.
+   Hiçbir işlev kaybolmaz; yalnızca pahalı süslemeler devre dışı kalır. */
+html.lite .flutter,
+html.lite #grain,
+html.lite #sky-fx{display:none !important;}
+
+html.lite .face,
+html.lite .quiz-card,
+html.lite #quizView .quiz-card,
+html.lite .cat-panel,
+html.lite .pwa-sheet,
+html.lite .pwa-sheet-backdrop,
+html.lite .pwa-toast,
+html.lite #pwa-fab,
+html.lite #pwa-install,
+html.lite #pwa-offline,
+html.lite .info-overlay{
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+}
+/* Bulanıklık kalkınca arkası boş kalmasın diye gerçek bir zemin veriliyor
+   (theme.css'te .face zemini "transparent !important" olduğu için burada da
+   !important ve daha yüksek özgüllük şart). */
+html.lite .face{background-color:rgba(11,16,36,.90) !important;}
+html.lite .quiz-card,
+html.lite #quizView .quiz-card{background-color:rgba(11,16,36,.90) !important;}
+html.lite .cat-panel{background-color:rgba(12,17,38,.97) !important;}
+html.lite .pwa-sheet-backdrop{background:rgba(3,6,16,.80) !important;}
+
+/* Nefes alan/animasyonlu gölgeler her karede yeniden boyanır */
+html.lite .app .lang-opt.active{animation:none !important;}
+html.lite .steam path{animation:none !important; opacity:.25;}
+html.lite .brand-mark{animation:none !important;}
+html.lite .brand-name{animation:none !important;}
+html.lite .brand-spark{animation:none !important;}
+html.lite #scene-bg{will-change:auto !important; transform:none !important;}
+html.lite .tf-ripple{display:none !important;}
+html.lite .face .word,
+html.lite .face .tag,
+html.lite .face .pos,
+html.lite .face .example{text-shadow:none !important;}
+
+/* --------------------------------- sıralama kutusunun altın ışığı
+   Eskiden box-shadow ve border-color doğrudan animasyonluydu: yanıp sönüyor
+   ve her karede yeniden boyama gerektiriyordu. Artık ışık ayrı bir katmanda
+   duruyor ve yalnızca SAYDAMLIĞI değişiyor — hem yumuşak bir nefes alıp verme
+   hissi veriyor hem de ekran kartında çalıştığı için bedava. */
+.splash-lb{
+  animation:none !important;
+  position:relative;
+  border-color:rgba(255,210,59,.40) !important;
+  box-shadow:0 0 16px rgba(255,210,59,.18),
+             inset 0 0 12px rgba(255,210,59,.05) !important;
+}
+.splash-lb::after{
+  content:''; position:absolute; inset:-1px;
+  border-radius:inherit; pointer-events:none;
+  border:1px solid rgba(255,210,59,.85);
+  box-shadow:0 0 24px rgba(255,210,59,.5),
+             0 0 46px rgba(255,210,59,.26),
+             inset 0 0 16px rgba(255,210,59,.13);
+  opacity:.2;
+  animation:lbBreath 5s ease-in-out infinite;
+  will-change:opacity;
+}
+@keyframes lbBreath{
+  0%,100%{opacity:.16;}
+  50%    {opacity:.85;}
+}
+html.lite .splash-lb::after{animation:none; opacity:.4;}
+@media (prefers-reduced-motion:reduce){
+  .splash-lb::after{animation:none; opacity:.4;}
+}
+
+/* Hafif modda kar tuvali de kapansın */
+html.lite #snowCanvas{display:none !important;}
+
+/* ------------------- sürekli yeniden boyanan gölge animasyonları
+   box-shadow'u doğrudan canlandırmak, öğenin bulunduğu bölgeyi HER KARE
+   yeniden boyatır — üstelik bu üç öğe de arka planı bulanıklaştıran
+   katmanların üzerinde duruyor, yani bulanıklık da her karede yeniden
+   hesaplanıyordu. Aynı görüntü, ayrı bir katmanın saydamlığı canlandırılarak
+   elde ediliyor: ekran kartında çalışır, boyama yapmaz. */
+
+/* aktif sekme */
+.tab.active{
+  animation:none !important;
+  position:relative;
+  box-shadow:0 0 22px rgba(79,232,255,.42),
+             0 0 44px rgba(155,123,255,.26),
+             inset 0 0 12px rgba(255,255,255,.14) !important;
+}
+.tab.active::after{
+  content:''; position:absolute; inset:-1px;
+  border-radius:inherit; pointer-events:none;
+  box-shadow:0 0 32px rgba(79,232,255,.72),
+             0 0 58px rgba(155,123,255,.46),
+             inset 0 0 18px rgba(255,255,255,.26);
+  opacity:0;
+  animation:glowBreath 3s ease-in-out infinite;
+  will-change:opacity;
+}
+
+/* seçili dil kartı — bu öğede overflow:hidden var, bu yüzden dış ışık
+   sabit kalıyor, nefes alan kısım iç parıltı */
+.app .lang-opt.active{
+  animation:none !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--lg),.50),
+    0 0 18px rgba(var(--lg),.44),
+    0 0 40px rgba(var(--lg),.24),
+    inset 0 0 16px rgba(var(--lg),.15) !important;
+}
+.app .lang-opt.active::after{
+  content:''; position:absolute; inset:0;
+  border-radius:inherit; pointer-events:none; z-index:1;
+  background:radial-gradient(120% 90% at 50% 110%,
+             rgba(var(--lg),.42), rgba(var(--lg),0) 70%);
+  opacity:0;
+  animation:glowBreath 2.8s ease-in-out infinite;
+  will-change:opacity;
+}
+
+@keyframes glowBreath{
+  0%,100%{opacity:0;}
+  50%    {opacity:1;}
+}
+html.lite .tab.active::after,
+html.lite .app .lang-opt.active::after{animation:none !important; opacity:.45;}
+@media (prefers-reduced-motion:reduce){
+  .tab.active::after,
+  .app .lang-opt.active::after{animation:none !important; opacity:.5;}
+}
+
+/* ============================================================================
+   ANDROID / DAR EKRAN DÜZELTMELERİ
+   ========================================================================== */
+
+/* Dil kutuları: esnek sarma yerine sabit 3'lü ızgara.
+   flex-wrap ile, cihazın yazı boyutu büyükse satıra 3 yerine 2 düşüyordu —
+   Android'de düzenin farklı görünmesinin sebeplerinden biri buydu. */
+.lang-box{
+  display:grid !important;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:8px;
+}
+.app .lang-opt{min-width:0 !important; flex:none !important;}
+.app .lang-opt .lname{font-size:clamp(10px, 3vw, 12px);}
+@media (max-width:328px){
+  .lang-box{grid-template-columns:repeat(2, minmax(0, 1fr));}
+}
+
+/* Seviye ve sekme satırları da taşmasın */
+.level-box{flex-wrap:wrap;}
+.app .tab{min-width:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;}
+
+
+/* Ayar düğmesi: özgün konum ve boyutunda bırakıldı. Yukarı alma denemesi
+   Android'de sekme satırıyla çakışıp düğmeyi kullanılamaz hâle getirmişti. */
+#pwa-fab{
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  right:calc(14px + env(safe-area-inset-right));
+  width:46px; height:46px; font-size:19px;
+  z-index:9999;
+}
+
+/* ============================================================================
+   HAFİF MOD — ek kazanımlar
+   ========================================================================== */
+
+/* a) Ekranı kaplayan sabit fotoğraf yerine düz degrade.
+      Sabit (fixed) tam ekran bir fotoğraf, her kaydırmada yeniden birleştirilen
+      en pahalı katmanlardan biridir. Renkler manzaranın tonlarından alındı,
+      böylece arayüzün kontrastı ve okunurluğu aynı kalıyor. */
+html.lite #scene-bg{
+  background-image:none !important;
+  background:
+    radial-gradient(120% 70% at 50% 0%, #123a72 0%, #0b2350 38%, #071634 68%, #040a1e 100%) !important;
+  transform:none !important;
+  will-change:auto !important;
+}
+html.lite #scene-bg::after{background:none !important;}
+html.lite #grade{background:none !important;}
+html.lite #fg-desk{display:none !important;}
+
+/* b) Geçişler kısaltılır — arayüz "daha çevik" hissettirir ve her geçiş
+      daha az kare boyunca hesaplanır. */
+html.lite *,
+html.lite *::before,
+html.lite *::after{
+  transition-duration:.12s !important;
+  animation-duration:.2s;
+}
+/* Kart çevirme sadeleşir: 3B döndürme yerine yumuşak geçiş */
+html.lite .card{transition:transform .18s ease !important;}
+html.lite .face{transition:none !important;}
+html.lite .tf-press{animation:none !important;}
+html.lite .app h1,
+html.lite .app .eyebrow,
+html.lite .app .lang-pair,
+html.lite .app .sub,
+html.lite .app .tf-progress,
+html.lite .app .lang-opt .lname,
+html.lite .app .level-opt,
+html.lite .app .tab,
+html.lite .app .chip{text-shadow:none !important;}
+
+/* ------------------------------------- profil ve yönetici form öğeleri */
+.pwa-field{
+  display:block; margin:0 2px 12px;
+}
+.pwa-field > span{
+  display:block; font-size:11.5px; color:#8291b3; margin-bottom:6px;
+}
+.pwa-input{
+  width:100%; box-sizing:border-box;
+  font:inherit; font-size:16px;            /* 16px: iOS odaklanınca yakınlaştırmasın */
+  color:#eef4ff;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(140,190,255,.22);
+  border-radius:12px; padding:12px 13px;
+  -webkit-appearance:none; appearance:none;
+}
+.pwa-input:focus{
+  outline:none;
+  border-color:rgba(79,232,255,.55);
+  box-shadow:0 0 0 3px rgba(79,232,255,.13);
+}
+.pwa-btn{
+  width:100%; display:block; margin:4px 2px 6px;
+  font:inherit; font-size:14px; font-weight:800; cursor:pointer;
+  color:#04050a; border:0; border-radius:13px; padding:13px 16px;
+  background:linear-gradient(120deg,#4fe8ff,#9b7bff);
+  box-shadow:0 8px 22px rgba(79,232,255,.20);
+  transition:transform .16s cubic-bezier(.22,1.4,.36,1), opacity .2s ease;
+}
+.pwa-btn:active{transform:scale(.98);}
+.pwa-btn[disabled]{opacity:.55; cursor:default;}
+.pwa-btn.ghost{
+  background:rgba(255,255,255,.06);
+  color:#c9d7f5;
+  border:1px solid rgba(140,190,255,.2);
+  box-shadow:none;
+}
+
+/* ============================================================================
+   DESTEK OL · ROZETLER · PDF · KİLİT
+   ========================================================================== */
+.credit-sub{
+  display:block; margin-top:5px;
+  font-size:10px; color:#5d6b8c; line-height:1.6;
+}
+.support-wrap{
+  display:flex; justify-content:center;
+  margin:14px 0 calc(6px + env(safe-area-inset-bottom));
+  position:relative; z-index:3;
+}
+.support-btn{
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.02em;
+  cursor:pointer; padding:11px 22px; border-radius:999px;
+  color:#ffd7ea; background:rgba(30,12,28,.55);
+  border:1px solid rgba(255,95,184,.55);
+  box-shadow:0 0 16px rgba(255,95,184,.22), inset 0 0 14px rgba(255,95,184,.10);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:transform .18s cubic-bezier(.22,1.4,.36,1), box-shadow .22s ease;
+}
+.support-btn:active{transform:scale(.96);}
+.support-btn:hover{box-shadow:0 0 24px rgba(255,95,184,.42), inset 0 0 18px rgba(255,95,184,.18);}
+html.lite .support-btn{-webkit-backdrop-filter:none; backdrop-filter:none;}
+
+/* --- bağış kutuları --- */
+.sup-grid{
+  display:grid; grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:9px; margin:2px 2px 4px;
+}
+.sup-item{
+  font:inherit; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:14px 6px 11px; border-radius:14px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(140,190,255,.18);
+  transition:transform .16s cubic-bezier(.22,1.4,.36,1), border-color .2s ease, background .2s ease;
+}
+.sup-item:active{transform:scale(.96);}
+.sup-item:hover{border-color:rgba(255,95,184,.45); background:rgba(255,95,184,.08);}
+.sup-item.owned{
+  border-color:rgba(61,255,160,.5);
+  background:rgba(61,255,160,.09);
+}
+.sup-amount{font-size:16px; font-weight:800; color:#eef4ff;}
+.sup-eur{font-size:9.5px; font-weight:600; color:#8fa0c2; margin-top:-2px;}
+.sup-badge{font-size:20px; line-height:1.1;}
+.sup-xp{font-size:10.5px; font-weight:700; color:#4fe8ff;}
+.sup-desc{
+  margin:16px 2px 0; font-size:12px; line-height:1.75; color:#8fa0c2;
+  text-align:center;
+}
+@media (max-width:340px){ .sup-grid{grid-template-columns:repeat(2, minmax(0,1fr));} }
+
+/* --- kilit uyarısı --- */
+.lock-msg{
+  margin:4px 2px 6px; font-size:13.5px; line-height:1.8; color:#c9d7f5;
+  background:rgba(255,210,59,.07);
+  border:1px solid rgba(255,210,59,.28);
+  border-radius:14px; padding:16px 16px;
+}
+.lock-msg b{color:#ffd23b;}
+
+/* --- PDF seçim satırları --- */
+.pdf-row{margin:0 2px 14px;}
+.pdf-lbl{display:block; font-size:11.5px; color:#8291b3; margin-bottom:8px;}
+.pdf-chips{display:flex; flex-wrap:wrap; gap:7px;}
+.pdf-chip{
+  font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
+  padding:9px 13px; border-radius:11px; color:#c9d7f5;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(140,190,255,.18);
+  transition:transform .14s ease, border-color .2s ease, background .2s ease, color .2s ease;
+}
+.pdf-chip:active{transform:scale(.95);}
+.pdf-chip.on{
+  color:#04050a; border-color:transparent;
+  background:linear-gradient(120deg,#4fe8ff,#9b7bff);
+}
+
+/* ============================================================================
+   SIRALAMA TABLOSU — isimler kısalmasın
+   Kutu, ekranın izin verdiği kadar genişler (üst sınır 480px). İsimler artık
+   üç noktayla kesilmiyor; sığmazsa iki satıra iniyor. Sütunlar destekleyen
+   ekranlarda yan yana kalıyor, yalnızca gerçekten dar cihazlarda alt alta.
+   ========================================================================== */
+.splash-lb{
+  max-width:min(480px, calc(100vw - 26px)) !important;
+  padding:15px 13px 10px !important;
+}
+
+/* İsim: normalde tek satırda tam görünür. Süre metni kısaltıldığı için
+   ("4s +") isme çok daha fazla yer kalıyor; yalnızca gerçekten uzun
+   isimlerde ikinci satıra iniyor ve kelime ortadan bölünmüyor. */
+.lb-name{
+  white-space:normal !important;
+  text-overflow:clip !important;
+  overflow:hidden;
+  line-height:1.22;
+  word-break:normal;          /* kelimeyi ortadan bölme */
+  overflow-wrap:break-word;   /* yalnızca sığmıyorsa böl */
+  hyphens:none;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.splash-lb-col .lb-name{font-size:11.5px !important;}
+.splash-lb-col .lb-time{font-size:10.5px !important;}
+
+/* Satırlar iki satırlık isimde de düzgün hizalansın */
+.lb-row{
+  align-items:center;
+  gap:7px !important;
+  padding:8px 9px !important;
+  min-height:38px;
+}
+/* Süre alanı sabit ve dar: isim sütunu geniş kalsın */
+.lb-time{
+  flex:0 0 auto;
+  min-width:46px;
+  text-align:right;
+  white-space:nowrap;
+}
+
+/* Sütun aralığı biraz açıldı, ayraç görünür kalsın */
+.splash-lb-cols{gap:11px !important;}
+
+/* Yan yana düzen daha geniş bir aralıkta korunuyor:
+   eskiden 370px altında alt alta iniyordu, artık 330px altında. */
+@media (min-width:331px){
+  .splash-lb-cols{flex-direction:row !important;}
+  .splash-lb-col-divider{display:block !important;}
+}
+@media (max-width:330px){
+  .splash-lb-cols{flex-direction:column !important;}
+  .splash-lb-col-divider{display:none !important;}
+  .lb-name{-webkit-line-clamp:1;}
+}
+
+/* Geniş ekranlarda (tablet, bilgisayar) yazılar biraz büyüsün */
+@media (min-width:520px){
+  .splash-lb-col .lb-name{font-size:12.5px !important;}
+  .splash-lb-col .lb-time{font-size:11.5px !important;}
+}
+
+/* ---------------------------------------- açılış ekranı: dikey yerleşim
+   Instagram bağlantısı sıralama tablosunun altına taşındı. Boşalan yerden
+   yararlanarak tablo yukarı çekildi ve nefes payları yeniden dengelendi. */
+#splash .goethe-note{
+  margin-top:16px !important;
+  margin-bottom:0 !important;
+}
+#splash .splash-lb{
+  margin-top:18px !important;   /* eskiden 28px */
+}
+#splash .ig-link{
+  margin-top:18px !important;
+  margin-bottom:4px !important;
+}
+#splash .splash-sub{
+  margin-bottom:2px !important;
+}
+
+/* ============================================================================
+   HOŞ GELDİN KARTI · YÖNETİCİ PANELİ · PANEL KAPATMA
+   ========================================================================== */
+
+/* --------------------------------------------------- hoş geldin kartı */
+#lumira-welcome{
+  position:fixed; inset:0; z-index:9700;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  background:rgba(3,5,14,.55);
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  opacity:0; transition:opacity .38s ease;
+}
+#lumira-welcome.in{opacity:1;}
+html.lite #lumira-welcome{-webkit-backdrop-filter:none; backdrop-filter:none;}
+
+.wc-card{
+  position:relative; width:min(400px, 100%);
+  padding:26px 26px 24px; border-radius:22px;
+  background:linear-gradient(160deg, rgba(18,14,34,.97), rgba(9,8,20,.98));
+  border:1px solid rgba(155,123,255,.30);
+  box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 44px rgba(155,123,255,.16);
+  transform:translateY(16px) scale(.97);
+  transition:transform .48s cubic-bezier(.22,1,.36,1);
+  overflow:hidden;
+}
+#lumira-welcome.in .wc-card{transform:none;}
+.wc-card::after{               /* köşedeki yumuşak mor ışık */
+  content:''; position:absolute; right:-40px; top:-40px;
+  width:180px; height:180px; border-radius:50%;
+  background:radial-gradient(circle, rgba(155,123,255,.30), transparent 70%);
+  pointer-events:none;
+}
+.wc-mark{
+  display:block; font-size:17px; opacity:.75; margin-bottom:14px;
+  filter:drop-shadow(0 0 10px rgba(155,123,255,.7));
+}
+.wc-hi{font-size:19px; color:#e8eeff; font-weight:600; line-height:1.2;}
+.wc-name{
+  font-size:29px; font-weight:800; line-height:1.15; margin-top:2px;
+  background:linear-gradient(100deg,#a78bff,#c9a4ff);
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+}
+.wc-lines{margin-top:16px; display:flex; flex-direction:column; gap:7px;}
+.wc-line{font-size:13px; color:#9fb0d2; line-height:1.5;}
+.wc-line b{color:#dbe6ff; font-weight:700;}
+.wc-fly{
+  position:absolute; right:24px; bottom:20px;
+  font-size:34px; opacity:.5;
+  filter:drop-shadow(0 0 16px rgba(155,123,255,.75));
+  animation:wcFly 3.4s ease-in-out infinite;
+}
+@keyframes wcFly{
+  0%,100%{transform:translate(0,0) rotate(-6deg);}
+  50%{transform:translate(-8px,-10px) rotate(8deg);}
+}
+@media (prefers-reduced-motion:reduce){ .wc-fly{animation:none;} }
+html.lite .wc-fly{animation:none;}
+
+/* ------------------------------------------ panellerdeki kapatma butonu */
+.pwa-sheet-x{
+  position:absolute; top:12px; right:14px; z-index:3;
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font:inherit; font-size:13px; line-height:1; cursor:pointer;
+  color:rgba(200,215,245,.55);
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(140,190,255,.16);
+  transition:color .2s ease, background .2s ease, transform .16s ease;
+}
+.pwa-sheet-x:hover{color:#eef4ff; background:rgba(255,255,255,.1);}
+.pwa-sheet-x:active{transform:scale(.9);}
+.pwa-sheet{position:fixed;}   /* buton konumu için */
+.pwa-sheet h3{padding-right:38px;}
+
+/* ------------------------------------------------- yönetici istatistik */
+.adm-cards{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:2px 2px 6px;}
+.adm-card{
+  background:rgba(255,255,255,.04); border:1px solid rgba(140,190,255,.16);
+  border-radius:13px; padding:12px 8px; text-align:center;
+}
+.adm-card .t{display:block; font-size:10px; color:#8291b3; letter-spacing:.02em;}
+.adm-card b{display:block; font-size:20px; color:#eef4ff; margin:3px 0 1px;}
+.adm-card .s{display:block; font-size:9.5px; color:#5d6b8c;}
+
+.adm-h{
+  font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:#8fa6d0; margin:20px 2px 9px; font-weight:700;
+}
+.adm-bars{
+  display:flex; align-items:flex-end; gap:6px; height:96px;
+  padding:0 2px;
+}
+.adm-bar{flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+.adm-bar i{
+  display:block; width:100%; border-radius:6px 6px 3px 3px;
+  background:linear-gradient(180deg,#4fe8ff,#9b7bff);
+  min-height:4px;
+}
+.adm-bar b{font-size:10.5px; color:#cfe0ff; margin-top:5px;}
+.adm-bar span{font-size:9px; color:#5d6b8c;}
+
+.adm-funnel{display:flex; flex-direction:column; gap:8px; margin:0 2px;}
+.adm-fn{display:flex; align-items:center; gap:9px; font-size:12px; color:#a8b6d2;}
+.adm-fn > span:first-child{flex:0 0 108px;}
+.adm-fn .bar{flex:1 1 auto; height:9px; border-radius:99px; background:rgba(255,255,255,.07); overflow:hidden;}
+.adm-fn .bar i{display:block; height:100%; background:linear-gradient(90deg,#4fe8ff,#9b7bff);}
+.adm-fn b{flex:0 0 auto; color:#eef4ff; font-size:12px; min-width:36px; text-align:right;}
+
+.adm-list{display:flex; flex-direction:column; gap:7px; margin:0 2px;}
+.adm-item{display:flex; align-items:center; gap:9px; font-size:12px;}
+.adm-item .n{flex:0 0 118px; color:#a8b6d2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.adm-item .track{flex:1 1 auto; height:8px; border-radius:99px; background:rgba(255,255,255,.07); overflow:hidden;}
+.adm-item .track i{display:block; height:100%; background:linear-gradient(90deg,#9b7bff,#ff5fb8);}
+.adm-item b{flex:0 0 auto; color:#eef4ff; min-width:44px; text-align:right;}
+
+/* hafif modda açılış yazısı sabit renkte dursun (yanıp sönmesin) */
+html.lite .splash-sub{
+  animation:none !important;
+  opacity:.92 !important;
+  text-shadow:0 0 10px rgba(79,232,255,.45) !important;
+}
+
+/* ============================================================================
+   PERFORMANS — ikinci tur (iOS / Android)
+   Görüntüyü değiştirmeyen, yalnızca tarayıcının işini azaltan düzenlemeler.
+   ========================================================================== */
+
+/* Ekranı kaplayan sabit fotoğraf sürekli bir "değişecek" katmanı olarak
+   işaretliyordu; bu, telefonlarda kalıcı olarak yüksek bellek ayırıyor.
+   Görsel sabit olduğu için buna gerek yok. */
+#scene-bg{will-change:auto !important;}
+
+/* Uzun listelerde ekran dışında kalan satırlar hiç çizilmesin.
+   Kişisel moddaki tekrar listesi, quiz hataları ve kategori ızgarası
+   yüzlerce öğeye ulaşabiliyor; bu tek satır orada belirgin fark yaratır. */
+.fav-item,
+.cat-grid .chip,
+#mistakesView .mistake-item{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 46px;
+}
+
+/* Dokunma vurgusu ve seçim işaretçisi: her dokunuşta ek boyama yapıyordu */
+*{-webkit-tap-highlight-color:transparent;}
+
+/* Küçük yüzen öğelerdeki arka plan bulanıklığı kaldırıldı — üzerlerinde
+   zaten koyu bir zemin var, gözle fark edilmiyor ama her karede
+   hesaplanıyordu. */
+#pwa-fab,
+.pwa-toast,
+#pwa-offline{
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+}
+#pwa-fab{background:linear-gradient(160deg, rgba(22,30,60,.94), rgba(10,14,30,.94));}
+.pwa-toast{background:linear-gradient(160deg, rgba(20,27,54,.97), rgba(11,15,32,.97));}
+#pwa-offline{background:rgba(60,12,26,.96);}
+
+/* Kart yüzeyindeki bulanıklık bir kademe daha düşürüldü (9px → 7px).
+   iOS'ta bulanıklık maliyeti yarıçapla birlikte hızla artıyor. */
+.face,
+#quizView .quiz-card,
+.quiz-card{
+  -webkit-backdrop-filter:blur(7px) !important;
+          backdrop-filter:blur(7px) !important;
+}
+
+/* Kart çevirme: katman hazırlığı önceden yapılsın.
+   NOT: Görünmeyen yüzü "visibility:hidden" ile gizleme denemesi geri alındı —
+   sınıf anında değiştiği için dönüşün ortasında yüzlerden biri birden
+   kayboluyor, animasyon sıçramış gibi görünüyordu. */
+.card{will-change:transform;}
+
+/* ============================================================================
+   iOS'ta KAYDIRMA SIRASINDA ANİMASYON SIÇRAMASI
+   Sabit (position:fixed) katmanlar iOS'ta sayfa kaydırılırken yeniden
+   konumlandırılıyor; üzerlerinde animasyon varsa bu "gidip gelme" olarak
+   görünüyor. Katmanları kendi çizim bağlamına almak (contain + translateZ)
+   bunu belirgin biçimde azaltır.
+   ========================================================================== */
+#sky-fx,
+#scene-bg,
+#grain,
+#grade,
+#fg-desk{
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  contain:layout paint;
+  pointer-events:none;
+}
+
+/* Kaydırma iOS'ta kendi ivmesiyle aksın */
+html{-webkit-overflow-scrolling:touch;}
+
+
+/* Kaydırma sürerken sabit katmanlar iOS'ta geriden gelip sonra yerine
+   oturuyor. Bu sırada tuvale yeni kare basmak sıçrama gibi görünüyordu; artık
+   çizim kısa süreliğine duruyor (theme.js ve kar betiği içinde).
+   NOT: Burada bir de saydamlaştırma denenmişti — kaydırınca efektlerin
+   solması gözle fark ediliyor ve daha rahatsız ediciydi, kaldırıldı.
+   Görüntüde hiçbir değişiklik yok; yalnızca hareket bir an duruyor. */

@@ -81,10 +81,37 @@
     var flies = [], shots = [], t0 = performance.now();
     var nextShot = performance.now() + 4000;
 
+    /* Ateş böceğinin ışıması her karede yeniden hesaplanıyordu:
+       böcek başına iki adet createRadialGradient() → 18 böcekte saniyede
+       ~2000 gradyan nesnesi. Işıma artık BİR KEZ küçük bir tuvale çizilip
+       sonra sadece kopyalanıyor; görüntü aynı, maliyet neredeyse sıfır. */
+    var glowCache = {};
+    function glowSprite(r) {
+      var key = Math.round(r * 4) / 4;
+      if (glowCache[key]) return glowCache[key];
+      var R = Math.ceil(key * 9);
+      var size = R * 2 + 2;
+      var c = document.createElement('canvas');
+      c.width = c.height = size;
+      var x = c.getContext('2d');
+      var cx = size / 2;
+      var g = x.createRadialGradient(cx, cx, 0, cx, cx, R);
+      g.addColorStop(0, 'rgba(255,232,150,0.95)');
+      g.addColorStop(0.30, 'rgba(255,196,86,0.42)');
+      g.addColorStop(1, 'rgba(255,180,70,0)');
+      x.fillStyle = g;
+      x.beginPath(); x.arc(cx, cx, R, 0, 6.2832); x.fill();
+      /* çekirdek nokta */
+      x.fillStyle = 'rgba(255,246,206,1)';
+      x.beginPath(); x.arc(cx, cx, key, 0, 6.2832); x.fill();
+      glowCache[key] = { img: c, half: size / 2 };
+      return glowCache[key];
+    }
+
     function seedFlies() {
       flies.length = 0;
-      /* az sayıda: telefonda ~7, geniş ekranda en fazla 9 */
-      var n = Math.max(6, Math.round(Math.min(9, W / 95 + 3)));
+      /* iki katına çıkarıldı: telefonda ~14, geniş ekranda en fazla 18 */
+      var n = Math.max(12, Math.round(Math.min(18, (W / 95 + 3) * 2)));
       for (var i = 0; i < n; i++) {
         flies.push({
           x: Math.random() * W,
@@ -177,23 +204,54 @@
         b = Math.pow(b, 2.2) * f.bs;                 /* keskin yanıp sönme */
         if (b < 0.02) continue;
 
-        var gg = ctx.createRadialGradient(fxp, fyp, 0, fxp, fyp, f.r * 9);
-        gg.addColorStop(0, 'rgba(255,232,150,' + (b * 0.95).toFixed(3) + ')');
-        gg.addColorStop(0.30, 'rgba(255,196,86,' + (b * 0.42).toFixed(3) + ')');
-        gg.addColorStop(1, 'rgba(255,180,70,0)');
-        ctx.fillStyle = gg;
-        ctx.beginPath(); ctx.arc(fxp, fyp, f.r * 9, 0, 6.2832); ctx.fill();
-
-        ctx.fillStyle = 'rgba(255,246,206,' + Math.min(1, b * 1.5).toFixed(3) + ')';
-        ctx.beginPath(); ctx.arc(fxp, fyp, f.r, 0, 6.2832); ctx.fill();
+        var sp = glowSprite(f.r);
+        ctx.globalAlpha = Math.min(1, b);
+        ctx.drawImage(sp.img, fxp - sp.half, fyp - sp.half);
+        ctx.globalAlpha = 1;
       }
 
-      raf = requestAnimationFrame(frame);
     }
 
+    /* NOT: Buraya bir zamanlar 30 fps sınırı konmuştu. 120 Hz ekranlarda
+       (iPhone Pro modelleri gibi) 33 ms eşiği ekranın 8,3 ms'lik ritmine tam
+       oturmadığı için kareler düzensiz aralıklarla düşüyor ve animasyon
+       "gidip geliyor" gibi görünüyordu. Çizim artık hazır dokularla
+       yapıldığından sınıra gerek yok; ekranın kendi hızında akıyor. */
+    /* Kaydırma sürerken çizmeyi bırak.
+       iOS'ta sabit katmanlar kaydırma boyunca geriden geliyor; bu sırada
+       tuvale yeni kare basmak, ateş böceklerinin sıçrayarak yer değiştirmesi
+       gibi görünüyor. Kaydırma boyunca son kare olduğu gibi kalıyor, parmak
+       kalkınca hareket kaldığı yerden sürüyor — zaman tabanlı olduğu için
+       konumlar kaymıyor. */
+    var scrolling = false, scrollTimer = 0;
+    function onScroll() {
+      if (!scrolling) {
+        scrolling = true;
+        document.documentElement.classList.add('scrolling');
+      }
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function () {
+        scrolling = false;
+        document.documentElement.classList.remove('scrolling');
+      }, 140);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('touchmove', onScroll, { passive: true });
+
     var raf = 0;
-    function start() { if (!raf) raf = requestAnimationFrame(frame); }
+    function loop(now) {
+      raf = requestAnimationFrame(loop);
+      if (scrolling) return;          /* kaydırma bitene kadar bekle */
+      frame(now);
+    }
+    function start() { if (!raf) raf = requestAnimationFrame(loop); }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+
+    /* Sekme arka plandayken boşuna çizmesin */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stop();
+      else if (!reduce) start();
+    });
 
     /* Konsoldan denemek için:
          THEME_shoot()  → hemen bir kayan yıldız gönderir
@@ -342,13 +400,12 @@
       '</svg>';
   }
 
+  /* 4 kelebek: 2 mavi, 1 mor, 1 turuncu.
+     (Önceden 6 taneydi; her biri sürekli dönen bir animasyon katmanı olduğu
+     için kaydırma akıcılığını düşürüyordu.) */
+  /* Tek bir mavi kelebek. */
   var FLIES = [
-    { c: 'f1', x: 52, y: 13.0, w: 30, a: '#41c8ff', b: '#1f7ce0', d: '#0c2246' },
-    { c: 'f2', x: 10, y: 25.5, w: 24, a: '#57d2ff', b: '#2a8de8', d: '#0c2246' },
-    { c: 'f3', x: 41, y: 26.5, w: 20, a: '#8ee6ff', b: '#49a8f0', d: '#0c2246' },
-    { c: 'f4', x: 6,  y: 39.0, w: 22, a: '#c08bff', b: '#7a3ee0', d: '#1a0d33' },
-    { c: 'f5', x: 86, y: 39.5, w: 40, a: '#ff9d3c', b: '#e2621a', d: '#2a1206' },
-    { c: 'f6', x: 80, y: 84.0, w: 30, a: '#4bcdff', b: '#2181e2', d: '#0c2246' }
+    { c: 'f1', x: 52, y: 13.0, w: 30, a: '#41c8ff', b: '#1f7ce0', d: '#0c2246' }
   ];
 
   function buildFlies() {
@@ -409,8 +466,8 @@
 
   /* ================================================ 6. ülke silueti (neon yok) */
   var LANDMARK = {
-    de: '🏛️', en: '🕰️', ar: '🕌\uFE0F', fr: '🗼\uFE0F', es: '⛪\uFE0F', ru: '🏰\uFE0F',
-    it: '🏟️', pt: '⛲\uFE0F', nl: '🌷\uFE0F', ja: '⛩️', zh: '🏯', ko: '🏯'
+    de: '🏛️', en: '🕰️', ar: '🕌', fr: '🗼', es: '⛪', ru: '🏰',
+    it: '🏟️', pt: '⛲', nl: '🌷', ja: '⛩️', zh: '🏯', ko: '🏯'
   };
 
   function decorateLangs() {
@@ -464,23 +521,29 @@
 
   /* ------------------------------------------------------------------ init */
   function init() {
-    parallax(sceneLayer());
+    /* Her adım izole: biri hata verirse (ör. tarayıcıya özgü bir API sorunu)
+       diğer dekorasyonlar (kelebekler, ateş böcekleri vb.) yine de çalışsın. */
+    function safe(fn, label) { try { fn(); } catch (e) { try { console.warn('theme.js', label, e); } catch (e2) {} } }
 
-    fx = FX();
-    fx.mount();
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) fx.pause(); else fx.resume();
-    });
+    safe(function () { parallax(sceneLayer()); }, 'parallax');
+    safe(function () { fx = FX(); fx.mount(); }, 'fx.mount');
+    safe(function () {
+      document.addEventListener('visibilitychange', function () {
+        if (!fx) return;
+        if (document.hidden) fx.pause(); else fx.resume();
+      });
+    }, 'visibilitychange');
+    safe(buildDesk, 'buildDesk');
+    safe(buildFlies, 'buildFlies');
+    safe(mergeProgress, 'mergeProgress');
+    safe(goldCount, 'goldCount');
+    safe(decorateLangs, 'decorateLangs');
+    safe(tapFeedback, 'tapFeedback');
 
-    buildDesk();
-    buildFlies();
-    mergeProgress();
-    goldCount();
-    decorateLangs();
-    tapFeedback();
-
-    var box = document.getElementById('langBox');
-    if (box) new MutationObserver(decorateLangs).observe(box, { childList: true });
+    safe(function () {
+      var box = document.getElementById('langBox');
+      if (box) new MutationObserver(decorateLangs).observe(box, { childList: true });
+    }, 'observer');
   }
 
   if (document.readyState === 'loading') {

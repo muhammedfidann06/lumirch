@@ -6430,29 +6430,3 @@ add("en","A2","Deyimler","Don't take it so seriously","bunu bu kadar ciddiye alm
 // ============================================
 // ALFABE - English Alphabet
 // ============================================
-add("en","A1","Alfabe","A a","A harfi (ey sesi)","letter","The apple is red.","Elma kırmızıdır.");
-add("en","A1","Alfabe","B b","Bi harfi (b sesi)","letter","The ball is round.","Top yuvarlaktır.");
-add("en","A1","Alfabe","C c","Si harfi (k/s sesi)","letter","The cat is small.","Kedi küçüktür.");
-add("en","A1","Alfabe","D d","Di harfi (d sesi)","letter","The dog runs fast.","Köpek hızlı koşuyor.");
-add("en","A1","Alfabe","E e","İ harfi (i sesi)","letter","The egg is white.","Yumurta beyazdır.");
-add("en","A1","Alfabe","F f","Ef harfi (f sesi)","letter","The fish swims.","Balık yüzüyor.");
-add("en","A1","Alfabe","G g","Ci harfi (g/c sesi)","letter","The garden is green.","Bahçe yeşildir.");
-add("en","A1","Alfabe","H h","Eyç harfi (h sesi)","letter","The house is big.","Ev büyüktür.");
-add("en","A1","Alfabe","I i","Ay harfi (ay/i sesi)","letter","The ice is cold.","Buz soğuktur.");
-add("en","A1","Alfabe","J j","Cey harfi (c sesi)","letter","The juice is sweet.","Meyve suyu tatlıdır.");
-add("en","A1","Alfabe","K k","Key harfi (k sesi)","letter","The key opens the door.","Anahtar kapıyı açar.");
-add("en","A1","Alfabe","L l","El harfi (l sesi)","letter","The lamp is bright.","Lamba parlaktır.");
-add("en","A1","Alfabe","M m","Em harfi (m sesi)","letter","The moon is bright.","Ay parlaktır.");
-add("en","A1","Alfabe","N n","En harfi (n sesi)","letter","The nose is small.","Burun küçüktür.");
-add("en","A1","Alfabe","O o","O harfi (o sesi)","letter","The orange is sweet.","Portakal tatlıdır.");
-add("en","A1","Alfabe","P p","Pi harfi (p sesi)","letter","The park is green.","Park yeşildir.");
-add("en","A1","Alfabe","Q q","Kyu harfi (kv sesi)","letter","The queen wears a crown.","Kraliçe taç takıyor.");
-add("en","A1","Alfabe","R r","Ar harfi (r sesi)","letter","The rain falls.","Yağmur yağıyor.");
-add("en","A1","Alfabe","S s","Es harfi (s sesi)","letter","The sun shines.","Güneş parlıyor.");
-add("en","A1","Alfabe","T t","Ti harfi (t sesi)","letter","The table is new.","Masa yenidir.");
-add("en","A1","Alfabe","U u","Yu harfi (yu sesi)","letter","The umbrella is useful.","Şemsiye faydalıdır.");
-add("en","A1","Alfabe","V v","Vi harfi (v sesi)","letter","The van is fast.","Van hızlıdır.");
-add("en","A1","Alfabe","W w","Dabılyu harfi (v sesi)","letter","The water is cold.","Su soğuktur.");
-add("en","A1","Alfabe","X x","Eks harfi (ks sesi)","letter","The box is heavy.","Kutu ağırdır.");
-add("en","A1","Alfabe","Y y","Vay harfi (y sesi)","letter","Yellow is bright.","Sarı parlaktır.");
-add("en","A1","Alfabe","Z z","Zed harfi (z sesi)","letter","The zebra runs fast.","Zebra hızlı koşar.");

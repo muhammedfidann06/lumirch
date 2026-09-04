@@ -3,34 +3,6 @@
 // Toplam 5962 benzersiz kelime/ifade
 // Rusça dosyasından (6160 kelime) çevrilmiştir
 // ============================================
-add("es","A1","Alfabe","A harfi (a sesi)","A harfi (a sesi)","harf","Ala kelimesi A ile başlar.","Ala kelimesi A ile başlar.");
-add("es","A1","Alfabe","Be harfi (b sesi)","Be harfi (b sesi)","harf","Bola kelimesi B ile başlar.","Bola kelimesi B ile başlar.");
-add("es","A1","Alfabe","Ce harfi (s/k sesi)","Ce harfi (s/k sesi)","harf","Casa kelimesi C ile başlar.","Casa kelimesi C ile başlar.");
-add("es","A1","Alfabe","Che harfi (ç sesi)","Che harfi (ç sesi)","harf","Chico kelimesi CH ile başlar.","Chico kelimesi CH ile başlar.");
-add("es","A1","Alfabe","De harfi (d sesi)","De harfi (d sesi)","harf","Dedo kelimesi D ile başlar.","Dedo kelimesi D ile başlar.");
-add("es","A1","Alfabe","E harfi (e sesi)","E harfi (e sesi)","harf","Elefante kelimesi E ile başlar.","Elefante kelimesi E ile başlar.");
-add("es","A1","Alfabe","Efe harfi (f sesi)","Efe harfi (f sesi)","harf","Foto kelimesi F ile başlar.","Foto kelimesi F ile başlar.");
-add("es","A1","Alfabe","Ge harfi (g/h sesi)","Ge harfi (g/h sesi)","harf","Gato kelimesi G ile başlar.","Gato kelimesi G ile başlar.");
-add("es","A1","Alfabe","Hache harfi (sessiz h)","Hache harfi (sessiz h)","harf","Hola kelimesi H ile başlar.","Hola kelimesi H ile başlar.");
-add("es","A1","Alfabe","I harfi (i sesi)","I harfi (i sesi)","harf","Isla kelimesi I ile başlar.","Isla kelimesi I ile başlar.");
-add("es","A1","Alfabe","Jota harfi (h sesi)","Jota harfi (h sesi)","harf","Jardín kelimesi J ile başlar.","Jardín kelimesi J ile başlar.");
-add("es","A1","Alfabe","Ka harfi (k sesi)","Ka harfi (k sesi)","harf","Kilo kelimesi K ile başlar.","Kilo kelimesi K ile başlar.");
-add("es","A1","Alfabe","Ele harfi (l sesi)","Ele harfi (l sesi)","harf","Libro kelimesi L ile başlar.","Libro kelimesi L ile başlar.");
-add("es","A1","Alfabe","Eme harfi (m sesi)","Eme harfi (m sesi)","harf","Mesa kelimesi M ile başlar.","Mesa kelimesi M ile başlar.");
-add("es","A1","Alfabe","Ene harfi (n sesi)","Ene harfi (n sesi)","harf","Noche kelimesi N ile başlar.","Noche kelimesi N ile başlar.");
-add("es","A1","Alfabe","Eñe harfi (ny sesi)","Eñe harfi (ny sesi)","harf","Niño kelimesi Ñ harfi içerir.","Niño kelimesi Ñ harfi içerir.");
-add("es","A1","Alfabe","O harfi (o sesi)","O harfi (o sesi)","harf","Oso kelimesi O ile başlar.","Oso kelimesi O ile başlar.");
-add("es","A1","Alfabe","Pe harfi (p sesi)","Pe harfi (p sesi)","harf","Perro kelimesi P ile başlar.","Perro kelimesi P ile başlar.");
-add("es","A1","Alfabe","Cu harfi (k sesi, sadece que/qui)","Cu harfi (k sesi, sadece que/qui)","harf","Queso kelimesi Q ile başlar.","Queso kelimesi Q ile başlar.");
-add("es","A1","Alfabe","Erre harfi (r sesi)","Erre harfi (r sesi)","harf","Ratón kelimesi R ile başlar.","Ratón kelimesi R ile başlar.");
-add("es","A1","Alfabe","Ese harfi (s sesi)","Ese harfi (s sesi)","harf","Sol kelimesi S ile başlar.","Sol kelimesi S ile başlar.");
-add("es","A1","Alfabe","Te harfi (t sesi)","Te harfi (t sesi)","harf","Taza kelimesi T ile başlar.","Taza kelimesi T ile başlar.");
-add("es","A1","Alfabe","U harfi (u sesi)","U harfi (u sesi)","harf","Uva kelimesi U ile başlar.","Uva kelimesi U ile başlar.");
-add("es","A1","Alfabe","Ve harfi (v sesi)","Ve harfi (v sesi)","harf","Vaso kelimesi V ile başlar.","Vaso kelimesi V ile başlar.");
-add("es","A1","Alfabe","Doble ve harfi (w sesi)","Doble ve harfi (w sesi)","harf","Washington kelimesi W ile başlar.","Washington kelimesi W ile başlar.");
-add("es","A1","Alfabe","Equis harfi (ks sesi)","Equis harfi (ks sesi)","harf","Xilófono kelimesi X ile başlar.","Xilófono kelimesi X ile başlar.");
-add("es","A1","Alfabe","Ye harfi (y sesi)","Ye harfi (y sesi)","harf","Yo kelimesi Y ile başlar.","Yo kelimesi Y ile başlar.");
-add("es","A1","Alfabe","Zeta harfi (s sesi)","Zeta harfi (s sesi)","harf","Zapato kelimesi Z ile başlar.","Zapato kelimesi Z ile başlar.");
 add("es","A1","Günler","lunes","pazartesi","isim","El lunes empieza la semana.","Pazartesi hafta başlar.");
 add("es","A1","Günler","martes","salı","isim","El martes tengo clase.","Salı günü dersim var.");
 add("es","A1","Günler","miércoles","çarşamba","isim","El miércoles es el día medio.","Çarşamba ortadaki gündür.");

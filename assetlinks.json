@@ -1,0 +1,18 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.lumira.dilkartlari",
+      "sha256_cert_fingerprints": [
+        "2A:E9:B5:D5:44:EE:EB:1D:A4:08:52:45:DB:B2:EE:4B:03:D8:61:74:FF:57:F6:46:AD:C6:8E:22:DD:4C:72:39",
+        "20:4E:79:87:8F:B6:FB:2B:3B:50:D3:9F:A9:21:46:4C:96:D0:C5:99:AC:E1:AD:E2:6D:8A:3E:A3:18:77:34:C2",
+        "D8:39:48:3D:FF:1F:F5:74:87:89:D1:F8:BD:C4:50:92:10:11:80:88:51:91:6C:D7:D9:6C:BA:9B:4D:F9:73:13",
+        "40:4A:1B:B3:2C:7F:54:EE:E3:FD:20:F5:4F:7C:8E:2F:51:FB:EB:CB:CE:58:92:0F:3D:0E:94:7C:F3:02:22:14"
+      ]
+    }
+  }
+]

@@ -1,0 +1,31 @@
+# Netlify yapılandırması — Lumira · Dil Kartları
+# .well-known klasörünün doğru içerik tipiyle sunulmasını garantiler.
+
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Access-Control-Allow-Origin = "*"
+
+# Service Worker asla önbelleğe alınmasın: güncellemeler anında insin
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# /privacy → /privacy/ (sondaki eğik çizgi olmadan da açılsın)
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy/"
+  status = 301
+
+# Eski tekil dosya adıyla gelenler de doğru sayfaya gitsin
+[[redirects]]
+  from = "/privacy.html"
+  to = "/privacy/"
+  status = 301

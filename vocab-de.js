@@ -6470,33 +6470,3 @@ add("de","A2","Deyimler","Man kann nie wissen","hiç belli olmaz","Ausdruck","Ma
 // ============================================
 // ALFABE - Deutsches Alphabet
 // ============================================
-add("de","A1","Alfabe","A a","A harfi (a sesi)","Buchstabe","Der Apfel ist rot.","Elma kırmızıdır.");
-add("de","A1","Alfabe","B b","Be harfi (b sesi)","Buchstabe","Der Ball ist rund.","Top yuvarlaktır.");
-add("de","A1","Alfabe","C c","Tse harfi (ts/k sesi)","Buchstabe","Der Computer ist neu.","Bilgisayar yenidir.");
-add("de","A1","Alfabe","D d","De harfi (d sesi)","Buchstabe","Das Dach ist hoch.","Çatı yüksektir.");
-add("de","A1","Alfabe","E e","E harfi (e sesi)","Buchstabe","Der Elefant ist groß.","Fil büyüktür.");
-add("de","A1","Alfabe","F f","Ef harfi (f sesi)","Buchstabe","Der Fisch schwimmt.","Balık yüzüyor.");
-add("de","A1","Alfabe","G g","Ge harfi (g sesi)","Buchstabe","Der Garten ist grün.","Bahçe yeşildir.");
-add("de","A1","Alfabe","H h","Ha harfi (h sesi)","Buchstabe","Das Haus ist groß.","Ev büyüktür.");
-add("de","A1","Alfabe","I i","İ harfi (i sesi)","Buchstabe","Die Insel ist klein.","Ada küçüktür.");
-add("de","A1","Alfabe","J j","Yot harfi (y sesi)","Buchstabe","Die Jacke ist warm.","Ceket sıcaktır.");
-add("de","A1","Alfabe","K k","Ka harfi (k sesi)","Buchstabe","Die Katze schläft.","Kedi uyuyor.");
-add("de","A1","Alfabe","L l","El harfi (l sesi)","Buchstabe","Die Lampe leuchtet.","Lamba parlıyor.");
-add("de","A1","Alfabe","M m","Em harfi (m sesi)","Buchstabe","Die Maus ist klein.","Fare küçüktür.");
-add("de","A1","Alfabe","N n","En harfi (n sesi)","Buchstabe","Die Nase ist klein.","Burun küçüktür.");
-add("de","A1","Alfabe","O o","O harfi (o sesi)","Buchstabe","Der Ofen ist heiß.","Fırın sıcaktır.");
-add("de","A1","Alfabe","P p","Pe harfi (p sesi)","Buchstabe","Der Park ist grün.","Park yeşildir.");
-add("de","A1","Alfabe","Q q","Ku harfi (kv sesi)","Buchstabe","Die Qualität ist wichtig.","Kalite önemlidir.");
-add("de","A1","Alfabe","R r","Er harfi (r sesi)","Buchstabe","Der Regen fällt.","Yağmur yağıyor.");
-add("de","A1","Alfabe","S s","Es harfi (s/z sesi)","Buchstabe","Die Sonne scheint.","Güneş parlıyor.");
-add("de","A1","Alfabe","T t","Te harfi (t sesi)","Buchstabe","Der Tisch ist neu.","Masa yenidir.");
-add("de","A1","Alfabe","U u","U harfi (u sesi)","Buchstabe","Die Uhr tickt.","Saat tık tık ediyor.");
-add("de","A1","Alfabe","V v","Fau harfi (f/v sesi)","Buchstabe","Der Vogel fliegt.","Kuş uçuyor.");
-add("de","A1","Alfabe","W w","Ve harfi (v sesi)","Buchstabe","Das Wasser ist kalt.","Su soğuktur.");
-add("de","A1","Alfabe","X x","Iks harfi (ks sesi)","Buchstabe","Das Xylophon klingt schön.","Ksilofon güzel çalıyor.");
-add("de","A1","Alfabe","Y y","Üpsilon harfi (ü/y sesi)","Buchstabe","Yoga entspannt.","Yoga rahatlatıyor.");
-add("de","A1","Alfabe","Z z","Tset harfi (ts sesi)","Buchstabe","Der Zug fährt schnell.","Tren hızlı gidiyor.");
-add("de","A1","Alfabe","Ä ä","Umlaut A harfi (e sesi)","Buchstabe","Die Äpfel sind süß.","Elmalar tatlıdır.");
-add("de","A1","Alfabe","Ö ö","Umlaut O harfi (ö sesi)","Buchstabe","Das Öl ist wichtig.","Yağ önemlidir.");
-add("de","A1","Alfabe","Ü ü","Umlaut U harfi (ü sesi)","Buchstabe","Er geht über die Brücke.","Köprüden geçiyor.");
-add("de","A1","Alfabe","ß","Eszett harfi (ss sesi)","Buchstabe","Die Straße ist lang.","Cadde uzundur.");

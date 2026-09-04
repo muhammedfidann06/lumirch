@@ -2,23 +2,77 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>M HAMZA | Dil Kartları</title>
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+<title>Lumira | Dil Kartları</title>
+<meta name="description" content="6 dilde binlerce kelime kartı, quiz, seslendirme ve kişisel ilerleme takibi. Çevrimdışı çalışır.">
+<meta name="application-name" content="Lumira Dil Kartları">
+<meta name="author" content="Lumira">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
 
-<link rel="manifest" href="manifest.json">
-
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-
-<meta name="theme-color" content="#050710">
-
+<!-- ===================== PWA · MANIFEST ===================== -->
 <link rel="manifest" href="./manifest.json">
+
+<!-- ===================== İKONLAR ===================== -->
+<link rel="icon" href="./favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+
+<!-- ===================== DURUM / GEZİNME ÇUBUĞU ===================== -->
 <meta name="theme-color" content="#04050a">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#04050a">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#04050a">
+<meta name="background-color" content="#04050a">
+<meta name="msapplication-TileColor" content="#04050a">
+<meta name="msapplication-TileImage" content="./icon-144.png">
+<meta name="msapplication-navbutton-color" content="#04050a">
+
+<!-- ===================== ANDROID / CHROME ===================== -->
 <meta name="mobile-web-app-capable" content="yes">
+
+<!-- ===================== iOS PWA ===================== -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kelime Kartları">
+<meta name="apple-mobile-web-app-title" content="Dil Kartları">
+<link rel="apple-touch-startup-image" href="splash-1290x2796.jpg" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1179x2556.jpg" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1284x2778.jpg" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1170x2532.jpg" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1125x2436.jpg" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1242x2688.jpg" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-828x1792.jpg" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-750x1334.jpg" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1620x2160.jpg" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1668x2388.jpg" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-2048x2732.jpg" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="splash-1536x2048.jpg" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 
+<!-- ===================== PAYLAŞIM ÖNİZLEMESİ ===================== -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lumira">
+<meta property="og:title" content="Lumira | Dil Kartları">
+<meta property="og:description" content="6 dilde kelime kartları, quiz ve seslendirme — çevrimdışı da çalışır.">
+<meta property="og:image" content="./icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ===================== HIZ ===================== -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="dns-prefetch" href="https://www.gstatic.com">
+<link rel="preload" as="image" href="./scene-bg.jpg">
+<link rel="preload" as="image" href="./icon-192.png">
+
+<!-- Firebase SDK'sı erkenden indirilsin: sıralama tablosu ilk ziyarette
+     gecikmesin. preload, tarayıcıya üçünü paralel indirtir. -->
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" crossorigin>
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin>
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" crossorigin>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -169,6 +223,7 @@
   }
 
   .lang-box{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  body.pm-active #langBox,body.pm-active #langPair,body.pm-active #levelBox,body.pm-active #chips{display:none !important;}
   .lang-opt{
     flex:1 1 27%;min-width:78px;text-align:center;padding:12px 4px;border-radius:16px;cursor:pointer;
     background:var(--panel);border:1px solid rgba(255,255,255,0.06);transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
@@ -228,11 +283,20 @@
   }
   .cat-overlay.open{display:flex;}
   .cat-panel{
-    width:100%;max-width:480px;max-height:68vh;overflow-y:auto;
+    width:100%;max-width:480px;max-height:68vh;min-height:0;overflow-y:auto;
     background:linear-gradient(160deg, var(--panel-2), var(--panel));
     -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
     border:1px solid rgba(79,232,255,0.3);border-top-left-radius:22px;border-top-right-radius:22px;
     padding:18px 16px 26px;box-shadow:0 -10px 44px rgba(0,0,0,0.55);
+  }
+  /* masaüstünde fare tekerleğiyle kaydırılabildiği belli olsun diye görünür ince scrollbar */
+  .cat-panel::-webkit-scrollbar{width:7px;}
+  .cat-panel::-webkit-scrollbar-track{background:transparent;}
+  .cat-panel::-webkit-scrollbar-thumb{background:rgba(79,232,255,0.35);border-radius:4px;}
+  .cat-panel::-webkit-scrollbar-thumb:hover{background:rgba(79,232,255,0.55);}
+  @media (min-width:720px){
+    .cat-overlay{ align-items:center; }
+    .cat-panel{ max-height:70vh; border-radius:22px; }
   }
   .cat-panel-header{
     display:flex;justify-content:space-between;align-items:center;
@@ -293,16 +357,28 @@
       filter:drop-shadow(0 0 4px rgba(155,123,255,0.35));
     }
   }
+  .speak-controls{display:flex;justify-content:center;gap:26px;margin-top:10px;}
+  .speak-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .speak-lbl{font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--muted);}
   .speak-icon-btn{
-    width:30px;height:30px;border-radius:999px;font-size:14px;line-height:1;
-    background:rgba(79,232,255,0.14);border:1px solid rgba(79,232,255,0.3);
+    width:48px;height:48px;border-radius:999px;font-size:21px;line-height:1;
+    background:rgba(155,123,255,0.16);border:1px solid rgba(155,123,255,0.4);
     display:flex;align-items:center;justify-content:center;cursor:pointer;
     -webkit-tap-highlight-color:transparent;
+    box-shadow:0 0 18px rgba(155,123,255,0.28), inset 0 0 12px rgba(155,123,255,0.12);
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  .speak-icon-btn:hover{transform:translateY(-1px);box-shadow:0 0 12px rgba(79,232,255,0.35);}
-  .speak-icon-btn:active{opacity:.6;transform:scale(.92);}
-  #turtleBtn{background:rgba(155,123,255,0.14);border-color:rgba(155,123,255,0.3);}
+  #rabbitBtn ~ .speak-lbl{color:#c7b8ff;}
+  #turtleBtn ~ .speak-lbl{color:#8ff2c2;}
+  .speak-icon-btn:hover{transform:translateY(-1px);}
+  #rabbitBtn:hover{box-shadow:0 0 26px rgba(155,123,255,0.5), inset 0 0 12px rgba(155,123,255,0.15);}
+  .speak-icon-btn:active{opacity:.7;transform:scale(.92);}
+  #turtleBtn{background:rgba(61,255,160,0.14);border-color:rgba(61,255,160,0.36);
+    box-shadow:0 0 18px rgba(61,255,160,0.24), inset 0 0 12px rgba(61,255,160,0.10);}
+  #turtleBtn:hover{box-shadow:0 0 26px rgba(61,255,160,0.45), inset 0 0 12px rgba(61,255,160,0.14);}
+  .card-bg-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:185px;line-height:1;opacity:0.06;pointer-events:none;z-index:0;user-select:none;-webkit-user-select:none;}
+  .face-front .tag,.face-front .word,.face-front .pos,.face-front .example,.face-front .speak-controls,.face-front .speak-caption,
+  .face-back .tag,.face-back .word,.face-back .pos,.face-back .example{position:relative;z-index:1;}
   .word{font-size:29px;font-weight:700;line-height:1.25;font-family:Georgia,'Iowan Old Style',serif;}
   .word[dir="rtl"]{font-family:'Segoe UI',Tahoma,sans-serif;}
   .pos{font-size:12px;color:var(--muted);margin-top:8px;}
@@ -443,11 +519,11 @@
 
   /* ===== LİDERLİK TABLOSU (giriş ekranının altında sabit) ===== */
   .splash-lb{
-    margin-top:28px;width:100%;max-width:360px;
+    margin-top:28px;width:100%;max-width:440px;
     background:rgba(13,17,34,0.72);
     border:1px solid rgba(255,210,59,0.45);
     border-radius:16px;
-    padding:14px 14px 8px;
+    padding:14px 10px 8px;
     max-height:none;overflow:visible;touch-action:none;
     box-shadow:0 0 18px rgba(255,210,59,0.3), inset 0 0 14px rgba(255,210,59,0.1);
     animation:lbGoldPulse 2.6s ease-in-out infinite;
@@ -462,7 +538,7 @@
     text-shadow:0 0 10px rgba(255,210,59,0.6);
   }
   /* İki sütun: sol = süre, sağ = seviye. Dar ekranlarda medya sorgusuyla alt alta düşer. */
-  .splash-lb-cols{display:flex;align-items:stretch;gap:9px;}
+  .splash-lb-cols{display:flex;align-items:stretch;gap:6px;}
   .splash-lb-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;}
   .splash-lb-col-divider{width:1px;flex-shrink:0;align-self:stretch;background:linear-gradient(180deg,transparent,rgba(255,210,59,0.4),transparent);}
   .splash-lb-subtitle{
@@ -473,7 +549,7 @@
   .splash-lb-subtitle.level{color:var(--violet);text-shadow:0 0 8px rgba(155,123,255,0.55);}
   .splash-lb-list{display:flex;flex-direction:column;gap:6px;padding-bottom:6px;}
   .splash-lb-col .lb-row{padding:6px 6px;gap:5px;border-radius:9px;}
-  .splash-lb-col .lb-rank{width:15px;font-size:10.5px;}
+  .splash-lb-col .lb-rank{flex:0 0 16px;width:16px;max-width:16px;font-size:10.5px;overflow:hidden;}
   .splash-lb-col .lb-name{font-size:10.5px;}
   .splash-lb-col .lb-time{font-size:9.5px;}
   .lb-row{
@@ -481,8 +557,8 @@
     background:rgba(255,255,255,0.03);border:1px solid transparent;
   }
   .lb-row.me{background:rgba(255,210,59,0.14);border-color:rgba(255,210,59,0.4);}
-  .lb-rank{width:20px;text-align:center;font-weight:800;font-size:12px;color:var(--muted);}
-  .lb-name{flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+  .lb-rank{width:20px;flex-shrink:0;text-align:center;font-weight:800;font-size:12px;color:var(--muted);}
+  .lb-name{flex:1 1 0%;min-width:0;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap !important;word-break:keep-all !important;overflow-wrap:normal !important;text-align:left;}
   .lb-time{font-size:11px;color:var(--cyan-soft);font-weight:700;white-space:nowrap;}
   .lb-empty{text-align:center;color:var(--muted);font-size:10.5px;padding:10px 4px;line-height:1.4;}
 
@@ -593,10 +669,55 @@
     animation:pmNeonShift 4s ease-in-out infinite;
   }
 </style>
-<link rel="stylesheet" href="sky.css">
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=1.7.27">
+<link rel="stylesheet" href="pwa.css?v=1.7.27">
 </head>
 <body>
+<!-- Açılış ekranı (splash.js yönetir; kritik stil satır içi, anında boyanır) -->
+<div id="lumSplash" aria-hidden="true">
+  <div class="lms-words"></div>
+  <div class="lms-core">
+    <div class="lms-glow"></div>
+    <img class="lms-logo" src="splash-logo.png" alt="Lumira" width="128" height="128">
+    <div class="lms-name">Lumira</div>
+    <div class="lms-tag">6 dil · 36.702 kart</div>
+  </div>
+  <div class="lms-load"><i></i></div>
+</div>
+<style>
+/* SPLASH — kendi kendine yeten kritik stil (splash.js gecikse/eskise bile bozulmaz) */
+#lumSplash{position:fixed;inset:0;z-index:99999;color:#eef2f8;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 38%, #12192a 0%, #0a0d14 62%);
+  display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 22px) 22px calc(env(safe-area-inset-bottom) + 22px);
+  opacity:1;transition:opacity .42s ease;}
+#lumSplash.lms-out{opacity:0;pointer-events:none;}
+#lumSplash .lms-words{position:absolute;inset:0;z-index:0;pointer-events:none;}
+#lumSplash .lms-word{position:absolute;font-family:-apple-system,system-ui,"Segoe UI",Arial,sans-serif;
+  font-size:14px;font-weight:500;opacity:0;white-space:nowrap;text-shadow:0 0 12px currentColor;}
+#lumSplash .lms-bfly{position:absolute;z-index:1;width:34px;height:30px;pointer-events:none;
+  filter:drop-shadow(0 0 10px rgba(155,123,255,.55));}
+#lumSplash .lms-bfly .wg{transform-origin:50% 50%;animation:lbFlap .34s ease-in-out infinite;}
+#lumSplash .lms-bfly .wgR{animation-delay:.02s;}
+#lumSplash .lms-core{position:relative;z-index:3;text-align:center;}
+#lumSplash .lms-glow{position:absolute;left:50%;top:44px;width:220px;height:220px;transform:translateX(-50%);
+  background:radial-gradient(circle, rgba(109,155,255,.20), rgba(109,155,255,0) 68%);z-index:-1;
+  opacity:0;animation:lbGlow 1.2s ease .2s forwards;}
+#lumSplash .lms-logo{width:128px;height:128px;border-radius:28px;display:block;margin:0 auto;opacity:0;transform:scale(.86);animation:lbLogo 1050ms cubic-bezier(.2,.7,.2,1) forwards, lbFloat 4s ease-in-out 1050ms infinite;}
+#lumSplash .lms-name{margin-top:22px;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#eef2f8;opacity:0;animation:lbUp .6s ease .5s forwards;}
+#lumSplash .lms-tag{margin-top:7px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;letter-spacing:.32em;text-transform:uppercase;color:#8791a3;opacity:0;animation:lbUp .6s ease .66s forwards;}
+#lumSplash .lms-load{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 42px);transform:translateX(-50%);width:132px;height:2px;background:#232c3b;border-radius:2px;overflow:hidden;}
+#lumSplash .lms-load i{display:block;height:100%;width:38%;background:#6d9bff;border-radius:2px;animation:lbBar 1.3s ease-in-out infinite;}
+@keyframes lbDrift{0%{opacity:0;transform:translateY(16px) scale(.96)}20%{opacity:.42}80%{opacity:.42}100%{opacity:0;transform:translateY(-16px) scale(1.02)}}
+@keyframes lbFlap{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.52)}}
+@keyframes lbFly{0%{transform:translate(0,0) rotate(-6deg)}25%{transform:translate(46px,-34px) rotate(8deg)}50%{transform:translate(14px,-64px) rotate(-4deg)}75%{transform:translate(-40px,-30px) rotate(6deg)}100%{transform:translate(0,0) rotate(-6deg)}}
+@keyframes lbGlow{to{opacity:1}}
+@keyframes lbLogo{0%{opacity:0;transform:scale(.86)}60%{opacity:1;transform:scale(1.045)}100%{opacity:1;transform:scale(1)}}
+@keyframes lbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes lbUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes lbBar{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+@media(prefers-reduced-motion:reduce){#lumSplash .lms-word,#lumSplash .lms-bfly{animation:none!important;opacity:.32!important}#lumSplash .lms-logo{animation:none!important;opacity:1!important;transform:none!important}#lumSplash .lms-name,#lumSplash .lms-tag{animation:none!important;opacity:1!important}}
+</style>
 
 <!-- ===== SAHNE: manzara + efektler theme.css / theme.js tarafından kurulur ===== -->
 <div id="grade" aria-hidden="true"></div>
@@ -623,12 +744,14 @@
 <div id="splash">
   <canvas id="snowCanvas"></canvas>
   <div class="splash-content">
-    <h1 class="splash-name">DİL KARTLARI</h1>
+    <div class="splash-brand">
+      <div class="brand-mark-wrap">
+        <img class="brand-mark" src="splash-logo.png" alt="Lumira" width="300" height="300" fetchpriority="high">
+      </div>
+      <h1 class="brand-name">LUMIRA<i class="brand-spark" aria-hidden="true">✦</i></h1>
+      <div class="brand-rule"><i></i><span>DİL KARTLARI</span><i></i></div>
+    </div>
     <div class="splash-sub">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
-    <a class="ig-link" id="igLink" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
-      muhammedf.fdn
-    </a>
     <div class="goethe-note">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
 
     <div class="splash-lb" id="splashLb">
@@ -645,13 +768,18 @@
         </div>
       </div>
     </div>
+
+    <a class="ig-link" id="igLink" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+      muhammedf.fdn
+    </a>
   </div>
 </div>
 
 <div class="app" id="mainApp">
   <div class="top-row">
     <div>
-      <div class="eyebrow">Kelime Kartları</div>
+      <div class="eyebrow">LUMIRA</div>
       <h1>Dil Kartları</h1>
     </div>
     <div class="top-btn-row">
@@ -712,18 +840,26 @@
     <div class="stage">
       <div class="card" id="card">
         <div class="face face-front">
+          <div class="card-bg-emoji" id="frontBgEmoji" aria-hidden="true"></div>
           <div class="level-badge" id="levelBadgeFront">A1</div>
           <div class="tag" id="tagFront">Deutsch</div>
           <div class="word" id="frontWord">Hallo</div>
           <div class="pos" id="frontPos">ünlem</div>
           <div class="example" id="frontExample"></div>
           <div class="speak-controls">
-            <button type="button" class="speak-icon-btn" id="rabbitBtn" title="Hızlı dinle">🐰</button>
-            <button type="button" class="speak-icon-btn" id="turtleBtn" title="Yavaş dinle">🐢</button>
+            <div class="speak-item">
+              <button type="button" class="speak-icon-btn" id="rabbitBtn" title="Normal hızda dinle">🔊</button>
+              <span class="speak-lbl">Normal</span>
+            </div>
+            <div class="speak-item">
+              <button type="button" class="speak-icon-btn" id="turtleBtn" title="Yavaş dinle">🐢</button>
+              <span class="speak-lbl">Yavaş</span>
+            </div>
           </div>
           <div class="speak-caption">Dinlemek İçin Tıkla</div>
         </div>
         <div class="face face-back">
+          <div class="card-bg-emoji" id="backBgEmoji" aria-hidden="true"></div>
           <div class="level-badge" id="levelBadgeBack">A1</div>
           <div class="tag">Türkçe</div>
           <div class="word" id="trWord">Merhaba</div>
@@ -787,8 +923,8 @@
     <div class="info-card">
       <button class="info-close" id="infoCloseBtn">✕</button>
       <div class="info-scroll">
-        <div class="info-title">M HAMZA | Dil Kartları</div>
-        <p class="info-lead">M HAMZA | Dil Kartları web uygulaması, yabancı dil kelime bilginizi modern, etkileşimli ve estetik bir arayüzle geliştirmeniz için özel olarak tasarlandı.</p>
+        <div class="info-title">Lumira | Dil Kartları</div>
+        <p class="info-lead">Lumira | Dil Kartları web uygulaması, yabancı dil kelime bilginizi modern, etkileşimli ve estetik bir arayüzle geliştirmeniz için özel olarak tasarlandı.</p>
 
         <h3 class="info-h3">🌟 Öne Çıkan Özellikler</h3>
 
@@ -825,7 +961,7 @@
         <p class="info-closing">Günümüzde böyle uygulamalar genelde yüksek ücretler talep ederler, biz sizin için ücretsiz ve diğer tüm uygulamalardan daha ulaşılabilir bir web sitesi sunuyoruz. Tek kazancımız ise bu hizmetten faydalanmanız ve bizim bunu görerek mutlu olmamızdır.</p>
 
         <div class="info-footer">
-          <a class="info-cta" href="https://muhammedfidann06.github.io/turkishdeucard/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
+          <a class="info-cta" href="https://lumira-tr.com/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
           <a class="info-support" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
             Destek Ve Önerileriniz İçin: @muhammedf.fdn
@@ -879,7 +1015,7 @@
         <p>⚪️ Hata yaptığınız kelimeleri görün, tekrar edin. Kaç defa karşınıza çıktığını ve kaç defa hata yaptığınızı kendi gözlerinizle görün.</p>
 
         <div class="info-footer">
-          <a class="info-cta" href="https://muhammedfidann06.github.io/turkishdeucard/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
+          <a class="info-cta" href="https://lumira-tr.com/" target="_blank" rel="noopener">Öğrenmek İçin Tıklayın ↖</a>
           <a class="info-support" href="https://www.instagram.com/muhammedf.fdn" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
             Destek Ve Önerileriniz İçin: @muhammedf.fdn
@@ -894,17 +1030,124 @@
   <div class="my-rank-box" id="myRankBox">
     <div class="my-rank-empty">🏅 Sıralamanı görmek için giriş yap</div>
   </div>
-  <div class="credit">İsim hakları <b>Muhammed</b>'e aittir</div>
+  <div class="credit">
+    © 2026 <b>Lumira</b> · Tüm hakları saklıdır<br>
+    <span class="credit-sub">Lumira ve Lumira | Dil Kartları adları ile logosu tescilli markalardır.</span>
+  </div>
+
+  <!-- ============================ DESTEK OL ============================ -->
+  <div class="support-wrap">
+    <button type="button" class="support-btn" id="supportBtn">❤️ Lumira'yı Destekle ⭐</button>
+  </div>
 </div>
 
 <script src="vocab-core.js"></script>
+<!-- Açılışta SADECE Almanca yükleniyor. Diğer beş dil, kullanıcı o dile
+     geçtiği anda pwa.js tarafından indiriliyor. Önceden altı dosyanın altısı
+     birden (5,2 MB) her açılışta ayrıştırılıyordu; telefonlarda donmanın en
+     büyük sebebi buydu. -->
 <script src="vocab-de.js"></script>
-<script src="vocab-en.js"></script>
-<script src="vocab-ar.js"></script>
-<script src="vocab-fr.js"></script>
-<script src="vocab-es.js"></script>
-<script src="vocab-ru.js"></script>
-<script src="leaderboard.js"></script>
+<script>
+/* ===================== SÖZLÜKLERİN İHTİYAÇ ANINDA YÜKLENMESİ =============
+   Bu kod BİLEREK index.html'in içinde: sözlük etiketlerini kaldıran dosya ile
+   onları geri getiren kod aynı yerde dursun ki ikisi asla birbirinden ayrı
+   sürümde kalmasın. (Ayrı dosyada dururken, tarayıcıda eski sürüm önbellekte
+   kalınca diller boş görünüyordu.) */
+window.VOCAB_LOADED = { de: true };
+(function(){
+  var loading = {};
+  var NAMES = { de:'Almanca', en:'İngilizce', ar:'Arapça', fr:'Fransızca', es:'İspanyolca', ru:'Rusça' };
+
+  function ensure(lang){
+    if(window.VOCAB_LOADED[lang]) return Promise.resolve(true);
+    if(loading[lang]) return loading[lang];
+    loading[lang] = new Promise(function(res, rej){
+      var sc = document.createElement('script');
+      sc.src = 'vocab-' + lang + '.js';
+      sc.async = false;
+      sc.onload = function(){ window.VOCAB_LOADED[lang] = true; delete loading[lang]; res(true); };
+      sc.onerror = function(){ delete loading[lang]; rej(new Error(lang)); };
+      document.head.appendChild(sc);
+    });
+    return loading[lang];
+  }
+  window.ensureVocab = ensure;
+
+  /* --- Arka planda sessiz tamamlama -----------------------------------
+     Açılışta hız için yalnızca Almanca yükleniyor. Ama "Kişisel" sekmesindeki
+     istatistikler, hata listesi ve öğrenilen kelimeler tüm kelime verisini
+     tarayarak çalışıyor; eksik dil varken bu ekranlar BOŞ görünüyor (veri
+     duruyor, sadece eşleşecek kelime bulunamıyor). Bu yüzden açılıştan
+     birkaç saniye sonra, kullanıcı hiçbir şey fark etmeden kalan diller de
+     arka planda yükleniyor. Açılış hızı korunuyor, hiçbir ekran eksik
+     kalmıyor. */
+  var REST = ['en','ar','fr','es','ru'];
+  function preloadRest(){
+    var i = 0;
+    (function next(){
+      if(i >= REST.length) return;
+      var lang = REST[i++];
+      if(window.VOCAB_LOADED[lang]) return next();
+      ensure(lang).then(function(){
+        /* Ekranda açık olan liste varsa tazelensin */
+        try{ if(typeof applyFilter === 'function' && window.VOCAB_LOADED[lang]) {} }catch(e){}
+        setTimeout(next, 400);          /* aralık bırak: arayüz takılmasın */
+      }).catch(function(){ setTimeout(next, 1500); });
+    })();
+  }
+
+  function startPreload(){
+    if(navigator.onLine === false) return;
+    if(window.requestIdleCallback) requestIdleCallback(preloadRest, { timeout: 6000 });
+    else setTimeout(preloadRest, 2500);
+  }
+  if(document.readyState === 'complete') setTimeout(startPreload, 2500);
+  else window.addEventListener('load', function(){ setTimeout(startPreload, 2500); });
+
+  /* Kişisel sekmesine geçilirse beklemeden tamamla */
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('#tabPersonal') : null;
+    if(t) preloadRest();
+  }, true);
+
+  function note(msg){
+    if(window.PWA && window.PWA.toast) return window.PWA.toast(msg);
+    return function(){};
+  }
+
+  /* Yakalama aşaması: uygulamanın kendi dil işleyicisinden ÖNCE çalışır */
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('.lang-opt') : null;
+    if(!el) return;
+    var lang = el.getAttribute('data-lang');
+    if(!lang || window.VOCAB_LOADED[lang]) return;      /* hazırsa karışma */
+
+    e.preventDefault();
+    e.stopPropagation();
+    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+    if(el.dataset.loading === '1') return;
+    el.dataset.loading = '1';
+    el.style.opacity = '.55';
+    var close = note('⏳ ' + (NAMES[lang] || lang) + ' sözlüğü yükleniyor…');
+
+    ensure(lang).then(function(){
+      el.dataset.loading = '';
+      el.style.opacity = '';
+      if(typeof close === 'function') close();
+      el.click();                                        /* artık normal akış */
+    }).catch(function(){
+      el.dataset.loading = '';
+      el.style.opacity = '';
+      if(typeof close === 'function') close();
+      note(navigator.onLine === false
+        ? '📴 Bu dil için önce internet gerekli'
+        : '⚠️ Sözlük yüklenemedi, tekrar dene');
+    });
+  }, true);
+})();
+</script>
+<script src="leaderboard.js?v=1.7.27"></script>
 <script>
 /* ================================================================
    ŞİFRE GÖSTER/GİZLE — Maymun emoji animasyonu (sadece görsel, saf UI)
@@ -932,8 +1175,9 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 <script>
-/* Kelime verisi artık vocab-core.js / vocab-de.js / vocab-en.js / vocab-ar.js /
-   vocab-fr.js / vocab-es.js / vocab-ru.js dosyalarından yükleniyor
+/* Kelime verisi vocab-core.js + vocab-<dil>.js dosyalarından geliyor.
+   Açılışta yalnızca vocab-de.js yükleniyor; diğer diller o dile geçildiğinde
+   pwa.js tarafından indiriliyor
    (bkz. yukarıdaki <script src> etiketleri). fr/es/ru şu an boş iskelettir. */
 /* ======================= CONFIG ======================= */
 const LANGS = {
@@ -1453,6 +1697,19 @@ function applyFilter(){
 }
 
 /* ======================= CARD RENDER ======================= */
+var CAT_EMOJI = {
+  'Aile':'👨‍👩‍👧','Alışveriş':'🛍️','Aylar':'📅','Bahçe':'🌷','Bayramlar':'🎉','Bağlaçlar':'🔗',
+  'Deyimler':'💬','Doğa':'🌿','Duygular':'😊','Duygu':'😊','Edatlar':'🔤','Ev Eşyaları':'🪑','Ev İşleri':'🧹',
+  'Ev':'🏠','Eylemler':'🏃','Fiiller':'🏃','Eğitim':'📚','Genel':'🗂️','Giysi':'👕','Günler':'📆','Hava Durumu':'🌤️',
+  'Hayvanlar':'🐾','Hobiler':'🎨','Kişilik':'🧑','Malzeme':'🧱','Meslekler':'👔','Meslek':'👔','Mevsimler':'🍂',
+  'Meyve ve Sebze':'🍎','Mutfak':'🍳','Okul':'🏫','Renkler':'🎨','Renk':'🎨','Sanat':'🎭','Sayılar':'🔢',
+  'Sağlık':'🏥','Selamlaşma':'👋','Sinema ve Televizyon':'🎬','Sorular':'❓','Spor':'⚽','Sıfatlar':'🏷️','Sıfat':'🏷️',
+  'Teknoloji':'💻','Toplum':'🏙️','Ulaşım':'🚗','Ekonomi':'💰','Bilim':'🔬','Seyahat':'✈️','Yemek':'🍽️',
+  'Gıda':'🍽️','Yiyecek':'🍽️','İçecek':'🥤','İş Dünyası':'💼','İş':'💼','Müzik':'🎵','Vücut':'💪','Zaman':'⏰',
+  'Şehir':'🏙️','Ülkeler':'🌍','Coğrafya':'🗺️','Tarih':'📜','Din':'🕌','Hukuk':'⚖️','Siyaset':'🏛️',
+  'Matematik':'➗','Gramer':'🔤','Zamirler':'🔤','Zarflar':'🔤','İletişim':'📞','Para':'💰','Bankacılık':'🏦',
+  'İnternet':'🌐','Oyun':'🎮','Kitaplar':'📕','Yön':'🧭','Ölçü':'📏','Araçlar':'🔧','Bitkiler':'🌱'
+};
 function renderCard(){
   if(deck.length===0){
      document.getElementById('frontWord').textContent = "Kelime Yok";
@@ -1466,7 +1723,7 @@ function renderCard(){
   const frontWordEl = document.getElementById('frontWord');
   frontWordEl.textContent = v.w;
   frontWordEl.setAttribute('dir', L.dir);
-  document.getElementById('frontPos').textContent = v.pos;
+  document.getElementById('frontPos').textContent = v.cat || v.pos;
   document.getElementById('tagFront').textContent = L.native;
   document.getElementById('trWord').textContent = v.tr;
 
@@ -1483,6 +1740,10 @@ function renderCard(){
   document.getElementById('cardBar').style.width = `${((idx+1)/deck.length)*100}%`;
   document.getElementById('levelBadgeFront').textContent = v.level;
   document.getElementById('levelBadgeBack').textContent = v.level;
+  /* kategoriye uygun soluk arka plan emojisi (her iki yüz) */
+  var _catE = (CAT_EMOJI[v.cat] || '📖');
+  var _fbg = document.getElementById('frontBgEmoji'); if(_fbg) _fbg.textContent = _catE;
+  var _bbg = document.getElementById('backBgEmoji'); if(_bbg) _bbg.textContent = _catE;
   document.getElementById('card').classList.remove('flipped');
   flipped = false;
 }
@@ -1563,6 +1824,11 @@ function buildQuizDeck(){
   document.getElementById('doneView').style.display = 'none';
   document.getElementById('mistakesView').style.display = 'none';
   if(quizTabActive){ document.getElementById('quizView').style.display = 'block'; }
+  try{
+    renderQuiz._done = false;
+    if(window.LUMIRA_TRACK) window.LUMIRA_TRACK('started_quiz');
+    if(window.LUMIRA_TRACK_FUNNEL) window.LUMIRA_TRACK_FUNNEL('quiz_started');
+  }catch(e){}
   renderQuiz();
 }
 
@@ -1571,6 +1837,14 @@ function renderQuiz(){
   if(quizDeck.length===0) return;
   if(qIdx >= quizDeck.length){
     const answeredCount = quizAnswers.filter(a=>a).length;
+    /* huni ölçümü: quizi bitirenler */
+    try{
+      if(!renderQuiz._done){
+        renderQuiz._done = true;
+        if(window.LUMIRA_TRACK) window.LUMIRA_TRACK('finished_quiz');
+        if(window.LUMIRA_TRACK_FUNNEL) window.LUMIRA_TRACK_FUNNEL('quiz_finished');
+      }
+    }catch(e){}
     if(quizTabActive){
       document.getElementById('quizView').style.display = 'none';
       document.getElementById('doneView').style.display = 'block';
@@ -1593,7 +1867,7 @@ function renderQuiz(){
   const qWordEl = document.getElementById('quizWord');
   qWordEl.textContent = v.w;
   qWordEl.setAttribute('dir', LANGS[v.lang].dir);
-  document.getElementById('quizPos').textContent = v.pos;
+  document.getElementById('quizPos').textContent = v.cat || v.pos;
   document.getElementById('quizCount').textContent = `Soru ${qIdx+1} / ${quizDeck.length}`;
   document.getElementById('quizBar').style.width = `${((qIdx+1)/quizDeck.length)*100}%`;
   document.getElementById('scorePill').textContent = `${score} doğru`;
@@ -1627,9 +1901,18 @@ function renderQuiz(){
 
   answered = false;
   let opts = [v.tr];
-  let pool = poolForLevel().filter(x => x.tr !== v.tr);
+  /* Çeldiriciler artık sorunun KATEGORİSİNDEN seçiliyor — kategori yeterince
+     kalabalık değilse seviyeye, o da yetmezse dile geri düşülür. Amaç:
+     kelimeyi bilmeyen biri "hangisi tanıdık" diye rastgele doğru cevaba
+     basamasın, gerçekten anlamı bilmesi gereksin. */
+  let pool = VOCAB.filter(x => x.lang===activeLang && x.cat===v.cat && x.tr !== v.tr);
   if(pool.length < 3){
-    pool = VOCAB.filter(x => x.lang===activeLang && x.tr !== v.tr);
+    let fallback = poolForLevel().filter(x => x.tr !== v.tr && !pool.some(p=>p.tr===x.tr));
+    pool = pool.concat(fallback);
+  }
+  if(pool.length < 3){
+    let fallback2 = VOCAB.filter(x => x.lang===activeLang && x.tr !== v.tr && !pool.some(p=>p.tr===x.tr));
+    pool = pool.concat(fallback2);
   }
   for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
   opts = opts.concat(pool.slice(0,3).map(x=>x.tr));
@@ -1658,6 +1941,8 @@ function selectAnswer(chosen, correct, btnEl, opts){
 
   if(chosen===correct) {
     score++;
+    /* Her doğru cevap +1 XP */
+    try{ if(typeof window.PR_addXp === 'function') window.PR_addXp(1); }catch(e){}
   } else {
     mistakes.push({ word: v.w, correct: correct, given: chosen });
   }
@@ -1710,6 +1995,7 @@ function setDisplay(id, val){ const el = $(id); if(el) el.style.display = val; }
 function toggleActive(id, on){ const el = $(id); if(el) el.classList.toggle('active', on); }
 
 function deactivateAllTabs(){
+  try{document.body.classList.remove('pm-active');}catch(e){}
   toggleActive('tabCards', false);
   toggleActive('tabQuiz', false);
   toggleActive('tabPersonal', false);
@@ -1728,11 +2014,15 @@ if($('tabCards')) $('tabCards').onclick = () => {
   deactivateAllTabs();
   toggleActive('tabCards', true);
   setDisplay('cardsView', 'block');
+  setDisplay('langBox', '');       /* dil butonları Kartlar'da görünür */
+  setDisplay('langPair', '');
 };
 if($('tabQuiz')) $('tabQuiz').onclick = () => {
   deactivateAllTabs();
   toggleActive('tabQuiz', true);
   setDisplay('quizView', 'block');
+  setDisplay('langBox', '');       /* dil butonları Quiz'de görünür */
+  setDisplay('langPair', '');
   buildQuizDeck();
 };
 if($('tabPersonal')) $('tabPersonal').onclick = () => {
@@ -1741,6 +2031,8 @@ if($('tabPersonal')) $('tabPersonal').onclick = () => {
   setDisplay('personalView', 'block');
   setDisplay('levelBox', 'none');
   setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');    /* Kişisel ayrı sayfa: dil butonları gizli */
+  setDisplay('langPair', 'none');
   if(window.PM_open) window.PM_open();
 };
 
@@ -1752,87 +2044,172 @@ applyFilter();
 
 /* ======================= SNOW / CRYSTAL EFFECT ======================= */
 (function(){
+  /* Hafif mod açıksa kar efekti hiç çalıştırılmaz. Bu betik pwa.js'ten önce
+     çalıştığı için tercih doğrudan depodan okunuyor. */
+  /* Hafif mod SADECE kullanıcı açtıysa true olur. Depoda değer yoksa ya da
+     'false' ise kar normal şekilde yağar. */
+  /* Hafif mod yalnızca kullanıcı ayarlardan açtığında etkin. Bu betik
+     pwa.js'ten önce çalıştığı için tercih doğrudan depodan okunuyor. */
+  let liteOn = false;
+  try{
+    var raw = localStorage.getItem('pwa_lite');
+    liteOn = (raw === 'true');   /* yalnızca kullanıcı açtıysa */
+    if(liteOn) document.documentElement.classList.add('lite');
+  }catch(e){ liteOn = false; }
+
   const canvas = document.getElementById('snowCanvas');
+  if(liteOn){ canvas.style.display = 'none'; }
   const ctx = canvas.getContext('2d');
-  let w, h, flakes, running = true, windPhase = 0;
+  let w, h, flakes, running = !liteOn, windPhase = 0;
 
   function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
   window.addEventListener('resize', resize);
   resize();
 
-  function makeFlakes(n){
-    return Array.from({length:n}, () => ({
-      x: Math.random()*w,
-      y: Math.random()*h,
-      r: Math.random()*9 + 4,
-      speedY: Math.random()*1.6 + 0.7,
-      speedX: Math.random()*1.0 - 0.5,
-      rot: Math.random()*Math.PI*2,
-      rotSpeed: (Math.random()*0.05 - 0.025),
-      drift: Math.random()*Math.PI*2,
-      driftSpeed: Math.random()*0.03 + 0.015,
-      opacity: Math.random()*0.5 + 0.55,
-      hue: Math.random() < 0.5 ? "190,235,255" : "210,220,255"
-    }));
-  }
-  
-  flakes = makeFlakes(62);
-
-  function drawCrystal(f){
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.rotate(f.rot);
-    ctx.globalAlpha = f.opacity;
-    ctx.strokeStyle = `rgba(${f.hue},1)`;
-    ctx.fillStyle = `rgba(${f.hue},1)`;
-    ctx.lineWidth = Math.max(0.6, f.r*0.09);
-    
-    for(let i=0;i<6;i++){
-      ctx.save();
-      ctx.rotate((Math.PI/3)*i);
-      ctx.beginPath();
-      ctx.moveTo(0,0);
-      ctx.lineTo(0, f.r);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, f.r*0.45);
-      ctx.lineTo(f.r*0.22, f.r*0.62);
-      ctx.moveTo(0, f.r*0.45);
-      ctx.lineTo(-f.r*0.22, f.r*0.62);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, f.r*0.75);
-      ctx.lineTo(f.r*0.16, f.r*0.88);
-      ctx.moveTo(0, f.r*0.75);
-      ctx.lineTo(-f.r*0.16, f.r*0.88);
-      ctx.stroke();
-      ctx.restore();
+  /* --- Kar taneleri: her kare yeniden ÇİZİLMİYOR, bir kez resme dönüştürülüp
+     sonra sadece kopyalanıyor.
+     Eskiden her tane için 6 kol × 3 çizgi = kare başına ~1100 stroke() çağrısı
+     yapılıyordu; açılış ekranındaki donmanın sebebi buydu. Şimdi tane başına
+     tek bir drawImage var. Görüntü birebir aynı. */
+  function makeSprite(r, hue){
+    const pad = 3;
+    const size = Math.ceil(r * 2 + pad * 2);
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const x = c.getContext('2d');
+    x.translate(size / 2, size / 2);
+    x.strokeStyle = `rgba(${hue},1)`;
+    x.fillStyle = `rgba(${hue},1)`;
+    x.lineWidth = Math.max(0.6, r * 0.09);
+    x.lineCap = 'round';
+    for(let i = 0; i < 6; i++){
+      x.save();
+      x.rotate((Math.PI / 3) * i);
+      x.beginPath();
+      x.moveTo(0, 0);
+      x.lineTo(0, r);
+      x.stroke();
+      x.beginPath();
+      x.moveTo(0, r * 0.45);
+      x.lineTo(r * 0.22, r * 0.62);
+      x.moveTo(0, r * 0.45);
+      x.lineTo(-r * 0.22, r * 0.62);
+      x.stroke();
+      x.beginPath();
+      x.moveTo(0, r * 0.75);
+      x.lineTo(r * 0.16, r * 0.88);
+      x.moveTo(0, r * 0.75);
+      x.lineTo(-r * 0.16, r * 0.88);
+      x.stroke();
+      x.restore();
     }
-    ctx.beginPath();
-    ctx.arc(0,0,f.r*0.14,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+    x.beginPath();
+    x.arc(0, 0, r * 0.14, 0, Math.PI * 2);
+    x.fill();
+    return c;
   }
 
-  function tick(){
+  /* Aynı yarıçapı defalarca çizmemek için küçük bir önbellek */
+  const spriteCache = {};
+  function spriteFor(r, hue){
+    const key = Math.round(r) + '|' + hue;
+    if(!spriteCache[key]) spriteCache[key] = makeSprite(Math.round(r), hue);
+    return spriteCache[key];
+  }
+
+  function flakeCount(){
+    if(document.documentElement.classList.contains('lite')) return 0;
+    const small = Math.min(window.innerWidth, window.innerHeight) < 430;
+    return small ? 34 : 56;
+  }
+
+  function makeFlakes(n){
+    return Array.from({length:n}, () => {
+      const r = Math.random()*9 + 4;
+      const hue = Math.random() < 0.5 ? "190,235,255" : "210,220,255";
+      return {
+        x: Math.random()*w,
+        y: Math.random()*h,
+        r, hue,
+        sprite: spriteFor(r, hue),
+        speedY: Math.random()*1.6 + 0.7,
+        speedX: Math.random()*1.0 - 0.5,
+        rot: Math.random()*Math.PI*2,
+        rotSpeed: (Math.random()*0.05 - 0.025),
+        drift: Math.random()*Math.PI*2,
+        driftSpeed: Math.random()*0.03 + 0.015,
+        opacity: Math.random()*0.5 + 0.55
+      };
+    });
+  }
+
+  flakes = liteOn ? [] : makeFlakes(flakeCount());
+
+  /* Ayarlardan hafif mod açılırsa kar anında dursun */
+  window.__snowStop = function(){ running = false; try{ ctx.clearRect(0,0,w,h); canvas.style.display='none'; }catch(e){} };
+
+  /* Hareket ZAMANA bağlı hesaplanıyor.
+     Önceden sabit bir kare hızı varsayılıyor ve 30 fps sınırı konuyordu;
+     120 Hz ekranlarda (iPhone Pro modelleri) bu sınır ekranın ritmine
+     oturmadığı için kar tanelerinin hızı dalgalanıyor, animasyon "gidip
+     geliyor" gibi görünüyordu. Artık iki kare arasındaki gerçek süre
+     ölçülüyor: hangi ekranda olursa olsun aynı hızda ve akıcı. */
+  let prevTime = 0;
+
+  /* Açılış ekranı da kaydırılabiliyor; kar taneleri kaydırma sırasında
+     aynı sıçramayı yapıyordu. Parmak ekrandayken çizim duruyor. */
+  let scrollingNow = false, scrollT = 0;
+  function markScroll(){
+    if(!scrollingNow){
+      scrollingNow = true;
+      document.documentElement.classList.add('scrolling');
+    }
+    clearTimeout(scrollT);
+    scrollT = setTimeout(()=>{
+      scrollingNow = false;
+      document.documentElement.classList.remove('scrolling');
+      prevTime = 0;                 /* zaman farkı sıçramasın */
+    }, 140);
+  }
+  window.addEventListener('scroll', markScroll, { passive:true });
+  window.addEventListener('touchmove', markScroll, { passive:true });
+
+  function tick(now){
     if(!running) return;
+    requestAnimationFrame(tick);
+    if(scrollingNow) return;
+
+    if(!prevTime) prevTime = now;
+    /* saniye cinsinden fark; sekme arka plandan dönerse sıçramasın diye sınırlı */
+    let dt = Math.min((now - prevTime) / 1000, 0.05);
+    prevTime = now;
+    const k = dt * 60;                   /* 60 fps'e göre ölçek */
+
     ctx.clearRect(0,0,w,h);
-    windPhase += 0.012;
+    windPhase += 0.012 * k;
     const gust = Math.sin(windPhase) * 0.6;
-    flakes.forEach(f=>{
-      f.drift += f.driftSpeed;
-      f.rot += f.rotSpeed;
-      f.y += f.speedY;
-      f.x += f.speedX + gust + Math.sin(f.drift)*0.6;
+
+    for(let i = 0; i < flakes.length; i++){
+      const f = flakes[i];
+      f.drift += f.driftSpeed * k;
+      f.rot += f.rotSpeed * k;
+      f.y += f.speedY * k;
+      f.x += (f.speedX + gust + Math.sin(f.drift)*0.6) * k;
       if(f.y > h + 12){ f.y = -12; f.x = Math.random()*w; }
       if(f.x > w + 12) f.x = -12;
       if(f.x < -12) f.x = w + 12;
-      drawCrystal(f);
-    });
+
+      const s = f.sprite;
+      ctx.globalAlpha = f.opacity;
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rot);
+      ctx.drawImage(s, -s.width/2, -s.height/2);
+      ctx.restore();
+    }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(tick);
   }
-  tick();
+  if(!liteOn) requestAnimationFrame(tick);
 
   const splash = document.getElementById('splash');
   const mainApp = document.getElementById('mainApp');
@@ -1848,31 +2225,33 @@ applyFilter();
   }, { once:true });
 })();
 </script>
-<script src="progress.js"></script>
+<script src="progress.js?v=1.7.27"></script>
 
-<script>
-/* ======================= PWA SERVICE WORKER ======================= */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .then(registration => {
-        console.log("Kelime Kartları PWA aktif:", registration.scope);
-      })
-      .catch(error => {
-        console.error("PWA Service Worker hatası:", error);
-      });
-  });
-}
-</script>
+<!-- Service Worker kaydı, güncelleme kontrolü, bildirimler ve geri tuşu
+     yönetimi artık pwa.js içinde (sayfanın en altında yükleniyor). -->
 
 
 <!-- ===== HAREKET KATMANI =====
      GSAP ve Lenis isteğe bağlıdır: yüklenmezlerse arayüz aynen çalışır,
      sadece giriş koreografisi CSS ile yapılır. -->
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
-<script defer src="voice.js"></script>
-<script defer src="motion.js"></script>
-<script defer src="theme.js"></script>
+<!-- GSAP ve Lenis kaldırıldı: projede hiçbir yerde kullanılmıyordu ama her
+     açılışta indirilip ayrıştırılıyordu (~130 KB). -->
+<script defer src="voice.js?v=1.7.27"></script>
+<script defer src="theme.js?v=1.7.27"></script>
+
+<!-- ===================== LUMIRA · PWA KATMANI =====================
+     Service Worker, çevrimdışı paket, bildirimler, geri tuşu, kısayollar,
+     deep link, favoriler, yedekleme ve güncelleme yönetimi. -->
+<script defer src="pwa.js?v=1.7.27"></script>
+
+<!-- Destek rozetleri, seviye kilitleri ve PDF dışa aktarma -->
+<script defer src="support-badges.js?v=1.7.27"></script>
+
+<!-- Kullanım ölçümü (yönetici panelinde görüntülenir) -->
+<script defer src="splash.js?v=1.7.27"></script>
+<script defer src="analytics.js?v=1.7.27"></script>
+
+<!-- Yönetici paneli (yalnızca yetkili hesapta açılır) -->
+<script defer src="admin.js?v=1.7.27"></script>
 </body>
 </html>
