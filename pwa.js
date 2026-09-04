@@ -1317,6 +1317,93 @@ function bigButton(text) {
 }
 
 /* ------------------------------- PROFİLİM ------------------------------- */
+/* ============================================== DİL AYARI (native/hedef) === */
+function openLanguageSettings() {
+  sheet('🌐 Dil', 'Hangi dili konuştuğunu ve hangi dili öğrenmek istediğini değiştir.', function (b, api) {
+    var NATIVE_OPTS = [
+      { c: 'tr', t: '🇹🇷 Türkçe' }, { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' },
+      { c: 'ar', t: '🇸🇦 العربية' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }
+    ];
+    var TARGET_OPTS = [
+      { c: 'de', t: '🇩🇪 Almanca' }, { c: 'en', t: '🇬🇧 İngilizce' }, { c: 'ar', t: '🇸🇦 Arapça' },
+      { c: 'fr', t: '🇫🇷 Fransızca' }, { c: 'es', t: '🇪🇸 İspanyolca' }, { c: 'ru', t: '🇷🇺 Rusça' }, { c: 'tr', t: '🇹🇷 Türkçe' }
+    ];
+    var native = window.NATIVE_LANG || 'tr';
+    var target = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
+
+    var nativeWrap = document.createElement('div');
+    nativeWrap.className = 'pwa-row'; nativeWrap.style.display = 'block'; nativeWrap.style.cursor = 'default';
+    nativeWrap.innerHTML = '<b style="display:block;margin-bottom:10px;">Hangi dili konuşuyorsun?</b>';
+    var nativeChips = document.createElement('div');
+    nativeChips.className = 'pdf-chips';
+    nativeWrap.appendChild(nativeChips);
+    b.appendChild(nativeWrap);
+
+    var targetWrap = document.createElement('div');
+    targetWrap.className = 'pwa-row'; targetWrap.style.display = 'block'; targetWrap.style.cursor = 'default';
+    targetWrap.innerHTML = '<b style="display:block;margin-bottom:10px;margin-top:6px;">Ne öğrenmek istiyorsun?</b>';
+    var targetChips = document.createElement('div');
+    targetChips.className = 'pdf-chips';
+    targetWrap.appendChild(targetChips);
+    b.appendChild(targetWrap);
+
+    function drawNative() {
+      nativeChips.innerHTML = '';
+      NATIVE_OPTS.forEach(function (o) {
+        var c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'pdf-chip' + (o.c === native ? ' on' : '');
+        c.textContent = o.t;
+        c.onclick = function () {
+          native = o.c;
+          if (target === native) target = (native === 'tr') ? 'de' : 'tr'; /* çakışma olursa otomatik düzelt */
+          drawNative(); drawTarget();
+        };
+        nativeChips.appendChild(c);
+      });
+    }
+    function drawTarget() {
+      targetChips.innerHTML = '';
+      TARGET_OPTS.filter(function (o) { return o.c !== native && (o.c !== 'tr' || native !== 'tr'); }).forEach(function (o) {
+        var c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'pdf-chip' + (o.c === target ? ' on' : '');
+        c.textContent = o.t;
+        c.onclick = function () { target = o.c; drawTarget(); };
+        targetChips.appendChild(c);
+      });
+    }
+    drawNative(); drawTarget();
+
+    var go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'pwa-btn';
+    go.style.marginTop = '18px';
+    go.textContent = 'Kaydet ve uygula';
+    go.onclick = function () {
+      go.disabled = true; go.textContent = 'Uygulanıyor…';
+      var p = window.setLangPair ? window.setLangPair(native, target) : Promise.resolve();
+      p.then(function () {
+        try {
+          document.querySelectorAll('.lang-opt').forEach(function (o) { o.classList.toggle('active', o.dataset.lang === target); });
+          if (window.renderLangPair) window.renderLangPair();
+          if (window.rebuildLevelBox) window.rebuildLevelBox();
+          if (window.rebuildChips) window.rebuildChips();
+          if (window.applyFilter) window.applyFilter();
+          if (document.querySelector('.pm-root') && window.PM_open) window.PM_open();
+        } catch (e) { logError(e); }
+        toast('🌐 Dil ayarı güncellendi', { kind: 'good' });
+        settingsOpen && settingsOpen.close && settingsOpen.close();
+        api.close();
+      }).catch(function () {
+        go.disabled = false; go.textContent = 'Kaydet ve uygula';
+        toast('⚠️ Sözlük yüklenemedi, tekrar dene', { kind: 'bad' });
+      });
+    };
+    b.appendChild(go);
+  });
+}
+
 function openProfile() {
   var u = fbUser();
   sheet('👤 Profilim', u ? 'Giriş yapıldı' : 'Bu bölüm için önce giriş yapman gerekiyor.', function (b) {
@@ -1920,6 +2007,15 @@ function openSettings() {
     /* --- Profil (en altta) ------------------------------------------- */
     b.insertAdjacentHTML('beforeend',
       '<p class="pwa-note" style="margin:20px 2px 8px">Hesap</p>');
+
+    var curNative = window.NATIVE_LANG || 'tr';
+    var curTarget = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
+    var NATIVE_NAMES = { tr:'Türkçe', de:'Deutsch', en:'English', ar:'العربية', ru:'Русский', fr:'Français', es:'Español' };
+    var TARGET_NAMES = { tr:'Türkçe', de:'Almanca', en:'İngilizce', ar:'Arapça', fr:'Fransızca', es:'İspanyolca', ru:'Rusça' };
+    var langRow = row('🌐', 'Dil', (NATIVE_NAMES[curNative]||curNative) + ' konuşuyorsun · ' + (TARGET_NAMES[curTarget]||curTarget) + ' öğreniyorsun');
+    langRow.onclick = function () { openLanguageSettings(); };
+    b.appendChild(langRow);
+
     var prof = row('👤', 'Profilim', 'Adını ve şifreni değiştir · 3. seviye gerekir');
     prof.onclick = function () {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.level(3, 'Profilim')) return;

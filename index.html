@@ -1116,12 +1116,17 @@ window.VOCAB_LOADED = { de: true };
     return function(){};
   }
 
-  /* Yakalama aşaması: uygulamanın kendi dil işleyicisinden ÖNCE çalışır */
+  /* Yakalama aşaması: uygulamanın kendi dil işleyicisinden ÖNCE çalışır.
+     "tr" (Türkçe) SANAL bir seçenektir — kendi vocab-tr.js dosyası YOKTUR,
+     çünkü Türkçe öğrenmek isteyen biri kendi ana dilinin sözlüğünü (örn.
+     vocab-en.js) ters yönde kullanır. Bu yüzden "tr" için dosya yüklemeye
+     ÇALIŞILMAZ — aksi hâlde 404 alınıp "sözlük yüklenemedi" hatası çıkar.
+     Gerçek dosya yükleme ihtiyacı setLangPair() içinde ayrıca ele alınır. */
   document.addEventListener('click', function(e){
     var el = e.target && e.target.closest ? e.target.closest('.lang-opt') : null;
     if(!el) return;
     var lang = el.getAttribute('data-lang');
-    if(!lang || window.VOCAB_LOADED[lang]) return;      /* hazırsa karışma */
+    if(!lang || lang === 'tr' || window.VOCAB_LOADED[lang]) return;      /* hazırsa veya sanalsa karışma */
 
     e.preventDefault();
     e.stopPropagation();
@@ -1284,6 +1289,7 @@ function setLangPair(native, target){
   try { localStorage.setItem('lumira_native_lang', NATIVE_LANG); } catch(e){}
   try { localStorage.setItem('lumira_target_lang', TARGET_LANG); } catch(e){}
   window.NATIVE_LANG = NATIVE_LANG;
+  window.TARGET_LANG = TARGET_LANG;
   REVERSED_MODE = (NATIVE_LANG !== 'tr' && TARGET_LANG === 'tr');
   IS_CROSS = (NATIVE_LANG !== 'tr' && TARGET_LANG !== 'tr' && TARGET_LANG !== NATIVE_LANG);
   activeLang = REVERSED_MODE ? NATIVE_LANG : TARGET_LANG;
