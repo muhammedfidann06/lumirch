@@ -1181,6 +1181,291 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 <script>
+/* ======================= I18N — ARAYÜZ ÇEVİRİSİ =======================
+   Ana dil Türkçe DIŞINDA seçildiğinde (örn. English), uygulamanın kendisi
+   (menüler, butonlar, onboarding, ayarlar, Kişisel Mod) de o dile döner.
+   Kelime kartlarının içeriği (VOCAB verisi) bu sistemin dışındadır —
+   onu FRONT_W/BACK_W zaten yönetiyor.
+   Kullanım: t('anahtar')  → NATIVE_LANG'e göre çeviri döner, yoksa Türkçe
+   metne, o da yoksa anahtarın kendisine düşer. Asla boş/undefined dönmez. */
+const I18N = {
+tr:{
+  tab_cards:"Kartlar", tab_quiz:"Quiz", tab_personal:"🎯 Kişisel",
+  main_sub_full:"Seviye, dil ve kategori seç — kartına dokun, dinle, öğren",
+  level_all:"TÜMÜ", cat_all:"Tümü", cat_pick:"Kategori Seç",
+  tap_to_listen:"Dinlemek İçin Tıkla", tap_to_flip:"Çevirmek için karta dokun",
+  normal_speed:"Normal", slow_speed:"Yavaş",
+  quiz_prompt:"Bu kelimenin anlamı nedir?", fill_blank:"Boşluğu doldur",
+  settings_title:"⚙️ Ayarlar", account:"Hesap", language_row:"Dil", profile_row:"Profilim",
+  profile_desc:"Adını ve şifreni değiştir · 3. seviye gerekir",
+  save:"Kaydet", save_apply:"Kaydet ve uygula", cancel:"İptal", close:"Kapat", continue_btn:"Devam",
+  applying:"Uygulanıyor…",
+  onb_native_title:"Hangi dili konuşuyorsun?", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · Dil Kartları",
+  onb_welcome_h1a:"Hoş geldin.", onb_welcome_h1b:"Yeni bir dile", onb_welcome_h1c:"başla.",
+  onb_welcome_p:"Altı dilde 36.702 kelime kartı, örnek cümleleri ve karşılıklarıyla. Günde on dakika yeter.",
+  onb_start:"Başlayalım",
+  onb_target_title:"Ne öğrenmek istiyorsun?",
+  onb_level_title:"Seviyen nedir?",
+  onb_lite_title:"Hafif mod",
+  onb_lite_p:"Kar taneleri, ışıltı ve arka plan süslemelerini kapatır; uygulama daha akıcı ve daha az pil harcar. Sözlük ve quiz aynen çalışır.",
+  onb_lite_off:"Kapalı kalsın", onb_lite_on:"Evet, aç",
+  onb_lite_warn:"Telefonun düşük performanslı değilse açman önerilmez.",
+  onb_lite_note:"İstediğin zaman Ayarlar › Hafif mod\u2019dan değiştirebilirsin.",
+  onb_ready_eyebrow:"Hazırsın", onb_ready_h1a:"Öğrenme yolculuğun", onb_ready_h1b:"şimdi başlıyor.",
+  onb_ready_p:"Seçtiğin dille ilk kartına birazdan bakacaksın. Dili ve seviyeni dilediğinde değiştirebilirsin.",
+  onb_ready_cta:"Lumira\u2019ya Başla",
+  step_of:function(n){ return "Adım "+n+" / 5"; },
+    set_app_title:"⚙️ Uygulama", set_lite_row:"Hafif mod", set_notif_row:"Günlük hatırlatma",
+  set_notif_time_row:"Hatırlatma saati", set_notif_test_row:"Test bildirimi gönder",
+  set_offline_row:"Çevrimdışı paketi indir", set_storage_row:"Kullanılan alan",
+  set_favs_row:"Favorilerim", set_check_row:"Verilerim duruyor mu?",
+  set_export_row:"İlerlememi yedekle", set_import_row:"Yedekten geri yükle",
+  set_share_row:"Uygulamayı paylaş", set_install_row:"Ana ekrana ekle",
+  set_update_row:"Güncellemeleri denetle", set_admin_row:"Yönetici",
+  pm_home_title:function(name){ return "👤 "+name+"\u2019e Özel"; },
+  pm_known:"Öğrendiğin Kelimeler", pm_weak:"Zayıf Kelimeler", pm_streak:"Seri", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return native+" konuşuyorsun · "+target+" öğreniyorsun"; }
+},
+en:{
+  tab_cards:"Cards", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
+  main_sub_full:"Choose level, language and category — tap a card, listen, learn",
+  level_all:"ALL", cat_all:"All", cat_pick:"Choose Category",
+  tap_to_listen:"Tap to Listen", tap_to_flip:"Tap the card to flip",
+  normal_speed:"Normal", slow_speed:"Slow",
+  quiz_prompt:"What does this word mean?", fill_blank:"Fill in the blank",
+  settings_title:"⚙️ Settings", account:"Account", language_row:"Language", profile_row:"My Profile",
+  profile_desc:"Change your name and password · Level 3 required",
+  save:"Save", save_apply:"Save and apply", cancel:"Cancel", close:"Close", continue_btn:"Continue",
+  applying:"Applying…",
+  onb_native_title:"Which language do you speak?", onb_native_sub:"Hangi dili konuşuyorsun?",
+  onb_welcome_eyebrow:"Lumira · Language Cards",
+  onb_welcome_h1a:"Welcome.", onb_welcome_h1b:"Start a", onb_welcome_h1c:"new language.",
+  onb_welcome_p:"36,702 word cards in six languages, with example sentences and translations. Ten minutes a day is enough.",
+  onb_start:"Let's begin",
+  onb_target_title:"What do you want to learn?",
+  onb_level_title:"What's your level?",
+  onb_lite_title:"Lite mode",
+  onb_lite_p:"Turns off snowflakes, glow and background decorations; the app runs smoother and uses less battery. The dictionary and quiz work exactly the same.",
+  onb_lite_off:"Keep it off", onb_lite_on:"Yes, turn on",
+  onb_lite_warn:"Not recommended unless your phone is low-performance.",
+  onb_lite_note:"You can change this anytime in Settings › Lite mode.",
+  onb_ready_eyebrow:"You're ready", onb_ready_h1a:"Your learning journey", onb_ready_h1b:"starts now.",
+  onb_ready_p:"You'll see your first card in the language you picked in a moment. You can change the language and level anytime.",
+  onb_ready_cta:"Start Lumira",
+  step_of:function(n){ return "Step "+n+" of 5"; },
+    set_app_title:"⚙️ App", set_lite_row:"Lite mode", set_notif_row:"Daily reminder",
+  set_notif_time_row:"Reminder time", set_notif_test_row:"Send test notification",
+  set_offline_row:"Download offline pack", set_storage_row:"Storage used",
+  set_favs_row:"My Favorites", set_check_row:"Is my data safe?",
+  set_export_row:"Back up my progress", set_import_row:"Restore from backup",
+  set_share_row:"Share the app", set_install_row:"Add to home screen",
+  set_update_row:"Check for updates", set_admin_row:"Admin",
+  pm_home_title:function(name){ return "👤 "+name+"\u2019s Space"; },
+  pm_known:"Words You've Learned", pm_weak:"Weak Words", pm_streak:"Streak", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return "You speak "+native+" · learning "+target; }
+},
+de:{
+  tab_cards:"Karten", tab_quiz:"Quiz", tab_personal:"🎯 Persönlich",
+  main_sub_full:"Stufe, Sprache und Kategorie wählen — Karte antippen, hören, lernen",
+  level_all:"ALLE", cat_all:"Alle", cat_pick:"Kategorie wählen",
+  tap_to_listen:"Zum Anhören tippen", tap_to_flip:"Zum Umdrehen antippen",
+  normal_speed:"Normal", slow_speed:"Langsam",
+  quiz_prompt:"Was bedeutet dieses Wort?", fill_blank:"Lücke ausfüllen",
+  settings_title:"⚙️ Einstellungen", account:"Konto", language_row:"Sprache", profile_row:"Mein Profil",
+  profile_desc:"Name und Passwort ändern · Stufe 3 erforderlich",
+  save:"Speichern", save_apply:"Speichern und anwenden", cancel:"Abbrechen", close:"Schließen", continue_btn:"Weiter",
+  applying:"Wird angewendet…",
+  onb_native_title:"Welche Sprache sprichst du?", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · Sprachkarten",
+  onb_welcome_h1a:"Willkommen.", onb_welcome_h1b:"Beginne eine", onb_welcome_h1c:"neue Sprache.",
+  onb_welcome_p:"36.702 Wortkarten in sechs Sprachen mit Beispielsätzen und Übersetzungen. Zehn Minuten am Tag genügen.",
+  onb_start:"Los geht\u2019s",
+  onb_target_title:"Was möchtest du lernen?",
+  onb_level_title:"Was ist dein Niveau?",
+  onb_lite_title:"Leichter Modus",
+  onb_lite_p:"Schaltet Schneeflocken, Leuchteffekte und Hintergrunddekoration aus; die App läuft flüssiger und spart Akku. Wörterbuch und Quiz funktionieren genauso.",
+  onb_lite_off:"Ausgeschaltet lassen", onb_lite_on:"Ja, aktivieren",
+  onb_lite_warn:"Nicht empfohlen, außer dein Handy ist leistungsschwach.",
+  onb_lite_note:"Du kannst das jederzeit in Einstellungen › Leichter Modus ändern.",
+  onb_ready_eyebrow:"Du bist bereit", onb_ready_h1a:"Deine Lernreise", onb_ready_h1b:"beginnt jetzt.",
+  onb_ready_p:"Gleich siehst du deine erste Karte in der gewählten Sprache. Sprache und Niveau kannst du jederzeit ändern.",
+  onb_ready_cta:"Lumira starten",
+  step_of:function(n){ return "Schritt "+n+" von 5"; },
+    set_app_title:"⚙️ App", set_lite_row:"Leichter Modus", set_notif_row:"Tägliche Erinnerung",
+  set_notif_time_row:"Erinnerungszeit", set_notif_test_row:"Testbenachrichtigung senden",
+  set_offline_row:"Offline-Paket herunterladen", set_storage_row:"Belegter Speicher",
+  set_favs_row:"Meine Favoriten", set_check_row:"Sind meine Daten sicher?",
+  set_export_row:"Fortschritt sichern", set_import_row:"Aus Backup wiederherstellen",
+  set_share_row:"App teilen", set_install_row:"Zum Startbildschirm hinzufügen",
+  set_update_row:"Nach Updates suchen", set_admin_row:"Admin",
+  pm_home_title:function(name){ return "👤 Für "+name; },
+  pm_known:"Gelernte Wörter", pm_weak:"Schwache Wörter", pm_streak:"Serie", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return "Du sprichst "+native+" · lernst "+target; }
+},
+ar:{
+  tab_cards:"البطاقات", tab_quiz:"اختبار", tab_personal:"🎯 شخصي",
+  main_sub_full:"اختر المستوى واللغة والفئة — اضغط على البطاقة، استمع، تعلّم",
+  level_all:"الكل", cat_all:"الكل", cat_pick:"اختر الفئة",
+  tap_to_listen:"اضغط للاستماع", tap_to_flip:"اضغط على البطاقة لقلبها",
+  normal_speed:"عادي", slow_speed:"بطيء",
+  quiz_prompt:"ما معنى هذه الكلمة؟", fill_blank:"املأ الفراغ",
+  settings_title:"⚙️ الإعدادات", account:"الحساب", language_row:"اللغة", profile_row:"ملفي الشخصي",
+  profile_desc:"غيّر اسمك وكلمة مرورك · يتطلب المستوى 3",
+  save:"حفظ", save_apply:"حفظ وتطبيق", cancel:"إلغاء", close:"إغلاق", continue_btn:"متابعة",
+  applying:"جارٍ التطبيق…",
+  onb_native_title:"ما اللغة التي تتحدثها؟", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · بطاقات اللغة",
+  onb_welcome_h1a:"أهلاً بك.", onb_welcome_h1b:"ابدأ بتعلّم", onb_welcome_h1c:"لغة جديدة.",
+  onb_welcome_p:"36,702 بطاقة كلمة بست لغات، مع جمل توضيحية وترجمات. عشر دقائق يومياً تكفي.",
+  onb_start:"لنبدأ",
+  onb_target_title:"ماذا تريد أن تتعلم؟",
+  onb_level_title:"ما مستواك؟",
+  onb_lite_title:"الوضع الخفيف",
+  onb_lite_p:"يوقف رقاقات الثلج والتوهج وزخارف الخلفية؛ يعمل التطبيق بسلاسة أكبر ويستهلك بطارية أقل. القاموس والاختبار يعملان كالمعتاد.",
+  onb_lite_off:"إبقاؤه مغلقاً", onb_lite_on:"نعم، تفعيله",
+  onb_lite_warn:"لا يُنصح به إلا إذا كان هاتفك ضعيف الأداء.",
+  onb_lite_note:"يمكنك تغيير هذا لاحقاً من الإعدادات › الوضع الخفيف.",
+  onb_ready_eyebrow:"أنت جاهز", onb_ready_h1a:"رحلة تعلّمك", onb_ready_h1b:"تبدأ الآن.",
+  onb_ready_p:"ستشاهد بطاقتك الأولى باللغة التي اخترتها بعد قليل. يمكنك تغيير اللغة والمستوى في أي وقت.",
+  onb_ready_cta:"ابدأ Lumira",
+  step_of:function(n){ return "الخطوة "+n+" من 5"; },
+    set_app_title:"⚙️ التطبيق", set_lite_row:"الوضع الخفيف", set_notif_row:"تذكير يومي",
+  set_notif_time_row:"وقت التذكير", set_notif_test_row:"إرسال إشعار تجريبي",
+  set_offline_row:"تنزيل الحزمة دون اتصال", set_storage_row:"المساحة المستخدمة",
+  set_favs_row:"مفضلتي", set_check_row:"هل بياناتي محفوظة؟",
+  set_export_row:"نسخ احتياطي لتقدمي", set_import_row:"استعادة من نسخة احتياطية",
+  set_share_row:"مشاركة التطبيق", set_install_row:"إضافة إلى الشاشة الرئيسية",
+  set_update_row:"التحقق من التحديثات", set_admin_row:"المسؤول",
+  pm_home_title:function(name){ return "👤 خاص بـ "+name; },
+  pm_known:"الكلمات التي تعلمتها", pm_weak:"الكلمات الضعيفة", pm_streak:"التتابع", pm_xp:"نقاط الخبرة",
+  lang_change_sub:function(native,target){ return "تتحدث "+native+" · تتعلّم "+target; }
+},
+fr:{
+  tab_cards:"Cartes", tab_quiz:"Quiz", tab_personal:"🎯 Personnel",
+  main_sub_full:"Choisis le niveau, la langue et la catégorie — touche une carte, écoute, apprends",
+  level_all:"TOUT", cat_all:"Tout", cat_pick:"Choisir la catégorie",
+  tap_to_listen:"Toucher pour écouter", tap_to_flip:"Toucher la carte pour la retourner",
+  normal_speed:"Normal", slow_speed:"Lent",
+  quiz_prompt:"Que signifie ce mot ?", fill_blank:"Complète le vide",
+  settings_title:"⚙️ Paramètres", account:"Compte", language_row:"Langue", profile_row:"Mon profil",
+  profile_desc:"Modifier ton nom et mot de passe · Niveau 3 requis",
+  save:"Enregistrer", save_apply:"Enregistrer et appliquer", cancel:"Annuler", close:"Fermer", continue_btn:"Continuer",
+  applying:"Application en cours…",
+  onb_native_title:"Quelle langue parles-tu ?", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · Cartes de langue",
+  onb_welcome_h1a:"Bienvenue.", onb_welcome_h1b:"Commence une", onb_welcome_h1c:"nouvelle langue.",
+  onb_welcome_p:"36 702 cartes de mots en six langues, avec phrases d\u2019exemple et traductions. Dix minutes par jour suffisent.",
+  onb_start:"Commençons",
+  onb_target_title:"Que veux-tu apprendre ?",
+  onb_level_title:"Quel est ton niveau ?",
+  onb_lite_title:"Mode léger",
+  onb_lite_p:"Désactive les flocons, les lueurs et les décors d\u2019arrière-plan ; l\u2019appli est plus fluide et économise la batterie. Le dictionnaire et le quiz fonctionnent normalement.",
+  onb_lite_off:"Laisser désactivé", onb_lite_on:"Oui, activer",
+  onb_lite_warn:"Non recommandé sauf si ton téléphone est peu performant.",
+  onb_lite_note:"Tu peux changer cela à tout moment dans Paramètres › Mode léger.",
+  onb_ready_eyebrow:"Tu es prêt", onb_ready_h1a:"Ton parcours d\u2019apprentissage", onb_ready_h1b:"commence maintenant.",
+  onb_ready_p:"Tu verras bientôt ta première carte dans la langue choisie. Tu peux changer la langue et le niveau à tout moment.",
+  onb_ready_cta:"Démarrer Lumira",
+  step_of:function(n){ return "Étape "+n+" sur 5"; },
+    set_app_title:"⚙️ Application", set_lite_row:"Mode léger", set_notif_row:"Rappel quotidien",
+  set_notif_time_row:"Heure du rappel", set_notif_test_row:"Envoyer une notification test",
+  set_offline_row:"Télécharger le pack hors ligne", set_storage_row:"Espace utilisé",
+  set_favs_row:"Mes favoris", set_check_row:"Mes données sont-elles sûres ?",
+  set_export_row:"Sauvegarder ma progression", set_import_row:"Restaurer une sauvegarde",
+  set_share_row:"Partager l\u2019appli", set_install_row:"Ajouter à l\u2019écran d\u2019accueil",
+  set_update_row:"Vérifier les mises à jour", set_admin_row:"Admin",
+  pm_home_title:function(name){ return "👤 Espace de "+name; },
+  pm_known:"Mots appris", pm_weak:"Mots faibles", pm_streak:"Série", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return "Tu parles "+native+" · tu apprends "+target; }
+},
+es:{
+  tab_cards:"Tarjetas", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
+  main_sub_full:"Elige nivel, idioma y categoría — toca una tarjeta, escucha, aprende",
+  level_all:"TODOS", cat_all:"Todo", cat_pick:"Elegir categoría",
+  tap_to_listen:"Toca para escuchar", tap_to_flip:"Toca la tarjeta para girarla",
+  normal_speed:"Normal", slow_speed:"Lento",
+  quiz_prompt:"¿Qué significa esta palabra?", fill_blank:"Completa el espacio",
+  settings_title:"⚙️ Ajustes", account:"Cuenta", language_row:"Idioma", profile_row:"Mi perfil",
+  profile_desc:"Cambia tu nombre y contraseña · Requiere nivel 3",
+  save:"Guardar", save_apply:"Guardar y aplicar", cancel:"Cancelar", close:"Cerrar", continue_btn:"Continuar",
+  applying:"Aplicando…",
+  onb_native_title:"¿Qué idioma hablas?", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · Tarjetas de idiomas",
+  onb_welcome_h1a:"Bienvenido.", onb_welcome_h1b:"Empieza un", onb_welcome_h1c:"nuevo idioma.",
+  onb_welcome_p:"36.702 tarjetas de palabras en seis idiomas, con frases de ejemplo y traducciones. Diez minutos al día bastan.",
+  onb_start:"Empecemos",
+  onb_target_title:"¿Qué quieres aprender?",
+  onb_level_title:"¿Cuál es tu nivel?",
+  onb_lite_title:"Modo ligero",
+  onb_lite_p:"Desactiva los copos de nieve, brillos y decoraciones de fondo; la app va más fluida y gasta menos batería. El diccionario y el quiz funcionan igual.",
+  onb_lite_off:"Dejarlo apagado", onb_lite_on:"Sí, activarlo",
+  onb_lite_warn:"No se recomienda salvo que tu teléfono sea de bajo rendimiento.",
+  onb_lite_note:"Puedes cambiarlo cuando quieras en Ajustes › Modo ligero.",
+  onb_ready_eyebrow:"Estás listo", onb_ready_h1a:"Tu viaje de aprendizaje", onb_ready_h1b:"empieza ahora.",
+  onb_ready_p:"Verás tu primera tarjeta en el idioma elegido en un momento. Puedes cambiar el idioma y el nivel cuando quieras.",
+  onb_ready_cta:"Iniciar Lumira",
+  step_of:function(n){ return "Paso "+n+" de 5"; },
+    set_app_title:"⚙️ Aplicación", set_lite_row:"Modo ligero", set_notif_row:"Recordatorio diario",
+  set_notif_time_row:"Hora del recordatorio", set_notif_test_row:"Enviar notificación de prueba",
+  set_offline_row:"Descargar paquete sin conexión", set_storage_row:"Espacio usado",
+  set_favs_row:"Mis favoritos", set_check_row:"¿Mis datos están a salvo?",
+  set_export_row:"Respaldar mi progreso", set_import_row:"Restaurar desde copia",
+  set_share_row:"Compartir la app", set_install_row:"Añadir a inicio",
+  set_update_row:"Buscar actualizaciones", set_admin_row:"Admin",
+  pm_home_title:function(name){ return "👤 Espacio de "+name; },
+  pm_known:"Palabras aprendidas", pm_weak:"Palabras débiles", pm_streak:"Racha", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return "Hablas "+native+" · aprendes "+target; }
+},
+ru:{
+  tab_cards:"Карточки", tab_quiz:"Тест", tab_personal:"🎯 Личный",
+  main_sub_full:"Выбери уровень, язык и категорию — коснись карточки, слушай, учись",
+  level_all:"ВСЕ", cat_all:"Все", cat_pick:"Выбрать категорию",
+  tap_to_listen:"Нажми, чтобы послушать", tap_to_flip:"Нажми на карточку, чтобы перевернуть",
+  normal_speed:"Обычно", slow_speed:"Медленно",
+  quiz_prompt:"Что означает это слово?", fill_blank:"Заполни пропуск",
+  settings_title:"⚙️ Настройки", account:"Аккаунт", language_row:"Язык", profile_row:"Мой профиль",
+  profile_desc:"Изменить имя и пароль · Требуется 3 уровень",
+  save:"Сохранить", save_apply:"Сохранить и применить", cancel:"Отмена", close:"Закрыть", continue_btn:"Далее",
+  applying:"Применяется…",
+  onb_native_title:"На каком языке ты говоришь?", onb_native_sub:"What language do you speak?",
+  onb_welcome_eyebrow:"Lumira · Языковые карточки",
+  onb_welcome_h1a:"Добро пожаловать.", onb_welcome_h1b:"Начни изучать", onb_welcome_h1c:"новый язык.",
+  onb_welcome_p:"36 702 карточки слов на шести языках, с примерами предложений и переводами. Достаточно десяти минут в день.",
+  onb_start:"Начнём",
+  onb_target_title:"Что ты хочешь выучить?",
+  onb_level_title:"Какой у тебя уровень?",
+  onb_lite_title:"Лёгкий режим",
+  onb_lite_p:"Отключает снежинки, свечение и фоновые украшения; приложение работает плавнее и экономит батарею. Словарь и тест работают так же.",
+  onb_lite_off:"Оставить выключенным", onb_lite_on:"Да, включить",
+  onb_lite_warn:"Не рекомендуется, если твой телефон не слабый.",
+  onb_lite_note:"Ты можешь изменить это в любое время в Настройках › Лёгкий режим.",
+  onb_ready_eyebrow:"Ты готов", onb_ready_h1a:"Твой путь изучения языка", onb_ready_h1b:"начинается сейчас.",
+  onb_ready_p:"Скоро ты увидишь свою первую карточку на выбранном языке. Язык и уровень можно менять в любое время.",
+  onb_ready_cta:"Запустить Lumira",
+  step_of:function(n){ return "Шаг "+n+" из 5"; },
+    set_app_title:"⚙️ Приложение", set_lite_row:"Лёгкий режим", set_notif_row:"Ежедневное напоминание",
+  set_notif_time_row:"Время напоминания", set_notif_test_row:"Отправить тестовое уведомление",
+  set_offline_row:"Скачать офлайн-пакет", set_storage_row:"Используемое место",
+  set_favs_row:"Мои избранные", set_check_row:"Мои данные в безопасности?",
+  set_export_row:"Резервная копия прогресса", set_import_row:"Восстановить из копии",
+  set_share_row:"Поделиться приложением", set_install_row:"Добавить на главный экран",
+  set_update_row:"Проверить обновления", set_admin_row:"Админ",
+  pm_home_title:function(name){ return "👤 Пространство "+name; },
+  pm_known:"Изученные слова", pm_weak:"Слабые слова", pm_streak:"Серия", pm_xp:"XP",
+  lang_change_sub:function(native,target){ return "Говоришь на "+native+" · учишь "+target; }
+}
+};
+function t(key){
+  var lang = (window.NATIVE_LANG || 'tr');
+  var dict = I18N[lang] || I18N.tr;
+  var v = (dict && Object.prototype.hasOwnProperty.call(dict,key)) ? dict[key] : undefined;
+  if(v===undefined) v = (I18N.tr && I18N.tr[key]);
+  return (v===undefined) ? key : v;
+}
+window.t = t; window.I18N = I18N;
+</script>
+<script>
 /* Kelime verisi vocab-core.js + vocab-<dil>.js dosyalarından geliyor.
    Açılışta yalnızca vocab-de.js yükleniyor; diğer diller o dile geçildiğinde
    pwa.js tarafından indiriliyor
@@ -1304,7 +1589,8 @@ function setLangPair(native, target){
     o.classList.toggle('active', o.dataset.lang === TARGET_LANG);
   });
   if (lb) lb.style.display = '';
-  if (sb) sb.textContent = 'Seviye, dil ve kategori seç — kartına dokun, dinle, öğren';
+  if (sb) sb.textContent = t('main_sub_full');
+  applyUIChrome();
 
   const need = [];
   if(!IS_CROSS){
@@ -1318,6 +1604,28 @@ function setLangPair(native, target){
   });
 }
 window.setLangPair = setLangPair;
+
+/* Statik arayüz metinlerini (sekmeler, kart başlıkları, quiz sorusu vb.)
+   NATIVE_LANG'e göre günceller. Kelime kartlarının İÇERİĞİNE (vocab verisi,
+   kategori adları) DOKUNMAZ — o Türkçe kalır, sadece arayüz kabuğu değişir. */
+function applyUIChrome(){
+  try {
+    document.documentElement.setAttribute('lang', NATIVE_LANG);
+    document.documentElement.setAttribute('dir', NATIVE_LANG==='ar' ? 'rtl' : 'ltr');
+    const $$ = (id)=>document.getElementById(id);
+    if($$('tabCards')) $$('tabCards').textContent = t('tab_cards');
+    if($$('tabQuiz')) $$('tabQuiz').textContent = t('tab_quiz');
+    if($$('tabPersonal')) $$('tabPersonal').textContent = t('tab_personal');
+    document.querySelectorAll('.speak-caption').forEach(el=>el.textContent=t('tap_to_listen'));
+    const hint = document.querySelector('.hint'); if(hint) hint.textContent = t('tap_to_flip');
+    document.querySelectorAll('.speak-lbl').forEach((el,i)=>{ el.textContent = (i%2===0)?t('normal_speed'):t('slow_speed'); });
+    const quizTag = document.querySelector('#quizView .tag'); if(quizTag) quizTag.textContent = t('quiz_prompt');
+    const catAll = $$('catAllChip'); if(catAll) catAll.textContent = t('cat_all');
+    updateCatUI();
+    if(typeof rebuildLevelBox==='function') rebuildLevelBox();
+  } catch(e){}
+}
+window.applyUIChrome = applyUIChrome;
 /* Geriye dönük uyumluluk: eski çağrı biçimi hâlâ çalışsın (sadece native
    verir, hedef otomatik 'tr' olur — splash.js artık setLangPair kullanıyor
    ama başka bir yerden çağrılırsa diye bırakıldı). */
@@ -1759,7 +2067,7 @@ function rebuildLevelBox(){
   allLevels.forEach(lv => {
     const d = document.createElement('div');
     d.className = 'level-opt' + (lv===activeLevel ? ' active' : '');
-    d.textContent = lv;
+    d.textContent = (lv === "TÜMÜ") ? t('level_all') : lv;
     d.onclick = () => { activeLevel = lv; activeCat='Tümü'; rebuildLevelBox(); rebuildChips(); applyFilter(); };
     box.appendChild(d);
   });
@@ -1795,9 +2103,10 @@ function updateCatUI(){
   const allChip = document.getElementById('catAllChip');
   const trigger = document.getElementById('catTrigger');
   const isAll = activeCat === 'Tümü';
+  allChip.textContent = t('cat_all');
   allChip.classList.toggle('active', isAll);
   trigger.classList.toggle('active', !isAll);
-  trigger.textContent = isAll ? '📂 Kategori Seç' : ('📂 ' + activeCat);
+  trigger.textContent = isAll ? ('📂 '+t('cat_pick')) : ('📂 ' + activeCat);
   document.querySelectorAll('#catGrid .chip').forEach(c=>{
     c.classList.toggle('active', c.textContent===activeCat);
   });

@@ -126,6 +126,7 @@
       'color:var(--lms-acc);margin-bottom:15px;}',
       '.lms-h{font-family:var(--lms-serif);font-weight:600;font-size:35px;line-height:1.05;letter-spacing:-.01em;margin:0 0 12px;}',
       '.lms-h .em{font-style:italic;font-weight:500;}',
+      '.lms-native-sub{font-family:var(--lms-serif);font-size:13.5px;font-style:italic;color:#9b7bff;margin:-6px 0 22px;opacity:.85;}',
       '.lms-p{color:var(--lms-dim);font-size:15.5px;line-height:1.55;margin:0 0 24px;max-width:36ch;font-family:var(--lms-serif);}',
       '.lms-cta{display:block;width:100%;border:none;cursor:pointer;font-family:var(--lms-mono);font-size:14px;',
       'letter-spacing:.05em;text-transform:uppercase;color:#0a0d14;background:var(--lms-ink);',
@@ -254,16 +255,15 @@
     var chosen = { native: null, lang: null, level: null, lite: false };
     var stepEls = [];
     function step(html) { var d = document.createElement('div'); d.className = 'lms-step'; d.innerHTML = html; panel.appendChild(d); stepEls.push(d); return d; }
+    function tt(key) { return (window.t ? window.t(key) : key); }
 
-    /* 0 — hoş geldin */
-    step('<div class="lms-eyebrow">Lumira · Dil Kartları</div>' +
-      '<h1 class="lms-h">Hoş geldin.<br><span class="em">Yeni bir dile</span> başla.</h1>' +
-      '<p class="lms-p">Altı dilde 36.702 kelime kartı, örnek cümleleri ve karşılıklarıyla. Günde on dakika yeter.</p>' +
-      '<button class="lms-cta" data-go="1">Başlayalım</button>');
-
-    /* 1 — ana dil (native) */
-    var s0n = step('<div class="lms-eyebrow">Adım 1 / 4</div><h1 class="lms-h">Hangi dili konuşuyorsun?</h1>' +
-      '<div class="lms-cards" id="lbNative"></div><button class="lms-cta" id="nativeGo" disabled>Devam</button>');
+    /* 0 — hangi dili konuşuyorsun (HER ZAMAN EN BAŞTA — henüz hangi dili
+       konuştuğunu bilmediğimiz için başlık Türkçe + altında küçük, farklı
+       renkte İngilizce alt başık gösterilir; herkes ne sorulduğunu anlar). */
+    var s0n = step('<div class="lms-eyebrow">Lumira · Dil Kartları</div>' +
+      '<h1 class="lms-h">Hangi dili konuşuyorsun?</h1>' +
+      '<div class="lms-native-sub">What language do you speak?</div>' +
+      '<div class="lms-cards" id="lbNative"></div><button class="lms-cta" id="nativeGo" disabled>Devam · Continue</button>');
     var lgN = s0n.querySelector('#lbNative');
     NATIVE_LANGS.forEach(function (N) {
       var o = document.createElement('div'); o.className = 'lms-opt';
@@ -276,19 +276,77 @@
       };
       lgN.appendChild(o);
     });
-    s0n.querySelector('#nativeGo').onclick = function () {
-      if (!chosen.native) return;
-      buildTargetGrid();
-      show(2);
-    };
 
-    /* 2 — hedef dil: HERKES için — kendi ana dili hariç, 6 dil + (Türkçe
-       hariç ana diller için ayrıca) Türkçe seçeneği dinamik olarak burada
-       kuruluyor. Böylece örn. Deutsch seçen biri Türkçe'nin yanı sıra
-       İngilizce, Fransızca, Arapça, İspanyolca, Rusça'yı da öğrenebilir. */
-    var s1 = step('<div class="lms-eyebrow">Adım 2 / 4</div><h1 class="lms-h">Ne öğrenmek istiyorsun?</h1>' +
-      '<div class="lms-cards" id="lbLangs"></div><button class="lms-cta" data-go="3" disabled>Devam</button>');
-    var lg = s1.querySelector('#lbLangs');
+    /* --- Adım 1'den itibaren HER ŞEY seçilen ana dile göre kuruluyor.
+       window.NATIVE_LANG'i hemen (finish()'ten önce) güncelliyoruz ki
+       t() bundan sonraki tüm adımları doğru dilde üretsin. Kalıcı kayıt
+       (localStorage) ve gerçek dil/veri değişimi yine finish()'te,
+       setLangPair() ile yapılır — bu sadece onboarding metinlerinin
+       DOĞRU DİLDE görünmesi için erken bir önizlemedir. */
+    var restBuilt = false;
+    var s1, s2Level, s3Lite, s4Ready, lg, lgLevels, lgLite;
+    function buildRestOfSteps() {
+      window.NATIVE_LANG = chosen.native;
+      try { panel.setAttribute('dir', chosen.native === 'ar' ? 'rtl' : 'ltr'); } catch (e) {}
+      /* önceden kurulmuşsa temizleyip yeniden kur (kullanıcı farklı bir
+         ana dile geri dönüp değiştirebilir diye güvenlik amaçlı) */
+      stepEls.slice(1).forEach(function (el) { el.remove(); });
+      stepEls = [s0n];
+
+      /* 1 — hoş geldin */
+      step('<div class="lms-eyebrow">' + tt('onb_welcome_eyebrow') + '</div>' +
+        '<h1 class="lms-h">' + tt('onb_welcome_h1a') + '<br><span class="em">' + tt('onb_welcome_h1b') + '</span> ' + tt('onb_welcome_h1c') + '</h1>' +
+        '<p class="lms-p">' + tt('onb_welcome_p') + '</p>' +
+        '<button class="lms-cta" data-go="2">' + tt('onb_start') + '</button>');
+
+      /* 2 — hedef dil: kendi ana dili hariç, 6 dil + (Türkçe hariç ana
+         diller için ayrıca) Türkçe seçeneği. */
+      s1 = step('<div class="lms-eyebrow">' + tt('step_of')(2) + '</div><h1 class="lms-h">' + tt('onb_target_title') + '</h1>' +
+        '<div class="lms-cards" id="lbLangs"></div><button class="lms-cta" data-go="3" disabled>' + tt('continue_btn') + '</button>');
+      lg = s1.querySelector('#lbLangs');
+      buildTargetGrid();
+
+      /* 3 — seviye */
+      s2Level = step('<div class="lms-eyebrow">' + tt('step_of')(3) + '</div><h1 class="lms-h">' + tt('onb_level_title') + '</h1>' +
+        '<div class="lms-cards lms-lv" id="lbLevels"></div><button class="lms-cta" data-go="4" disabled>' + tt('continue_btn') + '</button>');
+      lgLevels = s2Level.querySelector('#lbLevels');
+      LEVELS.forEach(function (L) {
+        var o = document.createElement('div'); o.className = 'lms-opt'; o.textContent = L;
+        o.onclick = function () {
+          chosen.level = L;
+          lgLevels.querySelectorAll('.lms-opt').forEach(function (x) { x.classList.remove('sel'); });
+          o.classList.add('sel'); s2Level.querySelector('.lms-cta').removeAttribute('disabled');
+        };
+        lgLevels.appendChild(o);
+      });
+
+      /* 4 — hafif mod */
+      s3Lite = step('<div class="lms-eyebrow">' + tt('step_of')(4) + '</div><h1 class="lms-h">' + tt('onb_lite_title') + '</h1>' +
+        '<p class="lms-p">' + tt('onb_lite_p') + '</p>' +
+        '<div class="lms-cards" id="lbLite"></div>' +
+        '<p class="lms-warn">' + tt('onb_lite_warn') + '</p>' +
+        '<p class="lms-note">' + tt('onb_lite_note') + '</p>' +
+        '<button class="lms-cta" data-go="5">' + tt('continue_btn') + '</button>');
+      lgLite = s3Lite.querySelector('#lbLite');
+      [['off', tt('onb_lite_off')], ['on', tt('onb_lite_on')]].forEach(function (P, idx) {
+        var o = document.createElement('div'); o.className = 'lms-opt' + (idx === 0 ? ' sel' : ''); o.textContent = P[1];
+        o.style.justifyContent = 'center';
+        o.onclick = function () {
+          chosen.lite = (P[0] === 'on');
+          lgLite.querySelectorAll('.lms-opt').forEach(function (x) { x.classList.remove('sel'); });
+          o.classList.add('sel');
+        };
+        lgLite.appendChild(o);
+      });
+
+      /* 5 — hazır */
+      s4Ready = step('<div class="lms-eyebrow">' + tt('onb_ready_eyebrow') + '</div><h1 class="lms-h">' + tt('onb_ready_h1a') + '<br><span class="em">' + tt('onb_ready_h1b') + '</span></h1>' +
+        '<p class="lms-p">' + tt('onb_ready_p') + '</p>' +
+        '<button class="lms-cta" data-go="done">' + tt('onb_ready_cta') + '</button>');
+
+      restBuilt = true;
+    }
+
     function buildTargetGrid() {
       lg.innerHTML = '';
       chosen.lang = null;
@@ -308,43 +366,11 @@
       });
     }
 
-    /* 3 — seviye */
-    var s2 = step('<div class="lms-eyebrow">Adım 3 / 4</div><h1 class="lms-h">Seviyen nedir?</h1>' +
-      '<div class="lms-cards lms-lv" id="lbLevels"></div><button class="lms-cta" data-go="4" disabled>Devam</button>');
-    var lv = s2.querySelector('#lbLevels');
-    LEVELS.forEach(function (L) {
-      var o = document.createElement('div'); o.className = 'lms-opt'; o.textContent = L;
-      o.onclick = function () {
-        chosen.level = L;
-        lv.querySelectorAll('.lms-opt').forEach(function (x) { x.classList.remove('sel'); });
-        o.classList.add('sel'); s2.querySelector('.lms-cta').removeAttribute('disabled');
-      };
-      lv.appendChild(o);
-    });
-
-    /* 4 — hafif mod */
-    var s3 = step('<div class="lms-eyebrow">Adım 4 / 4</div><h1 class="lms-h">Hafif mod</h1>' +
-      '<p class="lms-p">Kar taneleri, ışıltı ve arka plan süslemelerini kapatır; uygulama daha akıcı ve daha az pil harcar. Sözlük ve quiz aynen çalışır.</p>' +
-      '<div class="lms-cards" id="lbLite"></div>' +
-      '<p class="lms-warn">Telefonun düşük performanslı değilse açman önerilmez.</p>' +
-      '<p class="lms-note">İstediğin zaman Ayarlar › Hafif mod\u2019dan değiştirebilirsin.</p>' +
-      '<button class="lms-cta" data-go="5">Devam</button>');
-    var li = s3.querySelector('#lbLite');
-    [['off','Kapalı kalsın'], ['on','Evet, aç']].forEach(function (P, idx) {
-      var o = document.createElement('div'); o.className = 'lms-opt' + (idx === 0 ? ' sel' : ''); o.textContent = P[1];
-      o.style.justifyContent = 'center';
-      o.onclick = function () {
-        chosen.lite = (P[0] === 'on');
-        li.querySelectorAll('.lms-opt').forEach(function (x) { x.classList.remove('sel'); });
-        o.classList.add('sel');
-      };
-      li.appendChild(o);
-    });
-
-    /* 5 — hazır */
-    step('<div class="lms-eyebrow">Hazırsın</div><h1 class="lms-h">Öğrenme yolculuğun<br><span class="em">şimdi başlıyor.</span></h1>' +
-      '<p class="lms-p">Seçtiğin dille ilk kartına birazdan bakacaksın. Dili ve seviyeni dilediğinde değiştirebilirsin.</p>' +
-      '<button class="lms-cta" data-go="done">Lumira\u2019ya Başla</button>');
+    s0n.querySelector('#nativeGo').onclick = function () {
+      if (!chosen.native) return;
+      buildRestOfSteps();
+      show(1);
+    };
 
     var dots = document.createElement('div'); dots.className = 'lms-steps';
     for (var i = 0; i < 6; i++) dots.appendChild(document.createElement('i')).className = 'lms-dot';
@@ -373,6 +399,17 @@
       var target = chosen.lang || (native === 'tr' ? 'de' : 'tr');
       applyChoice(native, target, chosen.level).then(function () {
         applyLite(chosen.lite);
+        /* GÜVENLİK: onboarding bitince ekran KESİNLİKLE Kartlar sekmesinde,
+           dil/seviye/kategori kutuları görünür durumda başlasın — uygulamanın
+           kendi "Kartlar" sekmesine geçiş mantığı burada birebir tekrar
+           kullanılıyor (deactivateAllTabs zaten pm-active'i ve tüm gizli
+           durumları temizliyor). */
+        try {
+          if (typeof window.deactivateAllTabs === 'function') window.deactivateAllTabs();
+          if (typeof window.toggleActive === 'function') window.toggleActive('tabCards', true);
+          if (typeof window.setDisplay === 'function') { window.setDisplay('cardsView', 'block'); window.setDisplay('langBox', ''); }
+          if (window.applyUIChrome) window.applyUIChrome();
+        } catch (e) {}
         track('native_lang_selected'); track('language_selected'); track('level_selected'); track('onboarding_completed');
       });
       ob.classList.add('lms-out'); setTimeout(function () { ob.remove(); }, 460);

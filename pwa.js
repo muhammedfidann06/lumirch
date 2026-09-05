@@ -1319,21 +1319,21 @@ function bigButton(text) {
 /* ------------------------------- PROFİLİM ------------------------------- */
 /* ============================================== DİL AYARI (native/hedef) === */
 function openLanguageSettings() {
-  sheet('🌐 Dil', 'Hangi dili konuştuğunu ve hangi dili öğrenmek istediğini değiştir.', function (b, api) {
+  sheet('🌐 ' + t('language_row'), '', function (b, api) {
     var NATIVE_OPTS = [
       { c: 'tr', t: '🇹🇷 Türkçe' }, { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' },
       { c: 'ar', t: '🇸🇦 العربية' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }
     ];
     var TARGET_OPTS = [
-      { c: 'de', t: '🇩🇪 Almanca' }, { c: 'en', t: '🇬🇧 İngilizce' }, { c: 'ar', t: '🇸🇦 Arapça' },
-      { c: 'fr', t: '🇫🇷 Fransızca' }, { c: 'es', t: '🇪🇸 İspanyolca' }, { c: 'ru', t: '🇷🇺 Rusça' }, { c: 'tr', t: '🇹🇷 Türkçe' }
+      { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' }, { c: 'ar', t: '🇸🇦 العربية' },
+      { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'tr', t: '🇹🇷 Türkçe' }
     ];
     var native = window.NATIVE_LANG || 'tr';
     var target = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
 
     var nativeWrap = document.createElement('div');
     nativeWrap.className = 'pwa-row'; nativeWrap.style.display = 'block'; nativeWrap.style.cursor = 'default';
-    nativeWrap.innerHTML = '<b style="display:block;margin-bottom:10px;">Hangi dili konuşuyorsun?</b>';
+    nativeWrap.innerHTML = '<b style="display:block;margin-bottom:10px;">' + t('onb_native_title') + '</b>';
     var nativeChips = document.createElement('div');
     nativeChips.className = 'pdf-chips';
     nativeWrap.appendChild(nativeChips);
@@ -1341,7 +1341,7 @@ function openLanguageSettings() {
 
     var targetWrap = document.createElement('div');
     targetWrap.className = 'pwa-row'; targetWrap.style.display = 'block'; targetWrap.style.cursor = 'default';
-    targetWrap.innerHTML = '<b style="display:block;margin-bottom:10px;margin-top:6px;">Ne öğrenmek istiyorsun?</b>';
+    targetWrap.innerHTML = '<b style="display:block;margin-bottom:10px;margin-top:6px;">' + t('onb_target_title') + '</b>';
     var targetChips = document.createElement('div');
     targetChips.className = 'pdf-chips';
     targetWrap.appendChild(targetChips);
@@ -1379,9 +1379,9 @@ function openLanguageSettings() {
     go.type = 'button';
     go.className = 'pwa-btn';
     go.style.marginTop = '18px';
-    go.textContent = 'Kaydet ve uygula';
+    go.textContent = t('save_apply');
     go.onclick = function () {
-      go.disabled = true; go.textContent = 'Uygulanıyor…';
+      go.disabled = true; go.textContent = t('applying');
       var p = window.setLangPair ? window.setLangPair(native, target) : Promise.resolve();
       p.then(function () {
         try {
@@ -1396,7 +1396,7 @@ function openLanguageSettings() {
         settingsOpen && settingsOpen.close && settingsOpen.close();
         api.close();
       }).catch(function () {
-        go.disabled = false; go.textContent = 'Kaydet ve uygula';
+        go.disabled = false; go.textContent = t('save_apply');
         toast('⚠️ Sözlük yüklenemedi, tekrar dene', { kind: 'bad' });
       });
     };
@@ -1803,10 +1803,10 @@ function hardRefresh(full) {
 var settingsOpen = null;
 function openSettings() {
   if (settingsOpen) { try { settingsOpen.close(); } catch (e) {} settingsOpen = null; return; }
-  settingsOpen = sheet('⚙️ Uygulama', CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
+  settingsOpen = sheet(t('set_app_title'), CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
 
     var liteOn = document.documentElement.classList.contains('lite');
-    var liteRow = row('⚡', 'Hafif mod',
+    var liteRow = row('⚡', t('set_lite_row'),
       liteOn
         ? (liteSetting() === true ? 'Açık — süslemeler kapalı, daha akıcı'
                                   : 'Açık (cihaz zayıf olduğu için otomatik)')
@@ -1829,7 +1829,7 @@ function openSettings() {
     /* --- Bildirimler ------------------------------------------------- */
     var s = reminderSettings();
     var permOk = notifyState() === 'granted';
-    var notifRow = row('🔔', 'Günlük hatırlatma',
+    var notifRow = row('🔔', t('set_notif_row'),
       permOk ? (s.on ? 'Her gün ' + pad(s.hour) + ':' + pad(s.min) : 'Kapalı') : 'İzin gerekiyor',
       '<div class="pwa-switch' + (s.on && permOk ? ' on' : '') + '"></div>');
     notifRow.onclick = function () {
@@ -1845,7 +1845,7 @@ function openSettings() {
     };
     b.appendChild(notifRow);
 
-    var timeRow = row('⏰', 'Hatırlatma saati', 'Bildirimin geleceği saat',
+    var timeRow = row('⏰', t('set_notif_time_row'), 'Bildirimin geleceği saat',
       '<input class="pwa-time" type="time" value="' + pad(s.hour) + ':' + pad(s.min) + '">');
     var inp = qs('.pwa-time', timeRow);
     inp.onclick = function (e) { e.stopPropagation(); };
@@ -1859,7 +1859,7 @@ function openSettings() {
     };
     b.appendChild(timeRow);
 
-    var testRow = row('📨', 'Test bildirimi gönder', 'Çalışıyor mu diye bak');
+    var testRow = row('📨', t('set_notif_test_row'), 'Çalışıyor mu diye bak');
     testRow.onclick = function () {
       askNotifyPermission().then(function (p) {
         if (p !== 'granted') { toast('Önce izin ver', { kind: 'bad' }); return; }
@@ -1869,7 +1869,7 @@ function openSettings() {
     b.appendChild(testRow);
 
     /* --- Çevrimdışı --------------------------------------------------- */
-    var packRow = row('📦', 'Çevrimdışı paketi indir', '6 dilin tüm sözlükleri · destek rozeti gerekir');
+    var packRow = row('📦', t('set_offline_row'), '6 dilin tüm sözlükleri · destek rozeti gerekir');
     var bar = document.createElement('div');
     bar.className = 'pwa-progress';
     bar.innerHTML = '<i></i>';
@@ -1883,17 +1883,17 @@ function openSettings() {
 
     estimateStorage().then(function (st) {
       if (!st) return;
-      var r = row('💾', 'Kullanılan alan', mb(st.used) + ' / ' + mb(st.quota));
+      var r = row('💾', t('set_storage_row'), mb(st.used) + ' / ' + mb(st.quota));
       r.style.cursor = 'default';
       b.insertBefore(r, packRow.nextSibling);
     });
 
     /* --- Favoriler & veri --------------------------------------------- */
-    var favRow = row('⭐', 'Favorilerim', favs().length + ' kelime');
+    var favRow = row('⭐', t('set_favs_row'), favs().length + ' kelime');
     favRow.onclick = function () { openFavorites(); };
     b.appendChild(favRow);
 
-    var check = row('🔍', 'Verilerim duruyor mu?', 'Kayıtlı ilerleme kayıtlarını say');
+    var check = row('🔍', t('set_check_row'), 'Kayıtlı ilerleme kayıtlarını say');
     check.onclick = function () {
       var n = 0, keys = [];
       try {
@@ -1908,27 +1908,27 @@ function openSettings() {
     };
     b.appendChild(check);
 
-    var exp = row('⬇️', 'İlerlememi yedekle', 'JSON dosyası indir veya paylaş');
+    var exp = row('⬇️', t('set_export_row'), 'JSON dosyası indir veya paylaş');
     exp.onclick = exportAllData;
     b.appendChild(exp);
 
-    var imp = row('⬆️', 'Yedekten geri yükle', 'Daha önce indirdiğin dosyayı seç');
+    var imp = row('⬆️', t('set_import_row'), 'Daha önce indirdiğin dosyayı seç');
     imp.onclick = importData;
     b.appendChild(imp);
 
-    var shr = row('🔗', 'Uygulamayı paylaş', 'Arkadaşlarına gönder');
+    var shr = row('🔗', t('set_share_row'), 'Arkadaşlarına gönder');
     shr.onclick = shareApp;
     b.appendChild(shr);
 
     /* --- Kurulum / güncelleme ----------------------------------------- */
     if (!isStandalone && !isTwa) {
-      var ins = row('📲', 'Ana ekrana ekle', 'Tam ekran, hızlı ve çevrimdışı');
+      var ins = row('📲', t('set_install_row'), 'Tam ekran, hızlı ve çevrimdışı');
       ins.onclick = doInstall;
       b.appendChild(ins);
     }
 
     var myVer = (window.PWA && window.PWA.version) ? window.PWA.version : 'bilinmiyor';
-    var upd = row('🔄', 'Güncellemeleri denetle', 'Çalışan sürüm: ' + myVer);
+    var upd = row('🔄', t('set_update_row'), 'Çalışan sürüm: ' + myVer);
     var updDesc = qs('.tx span', upd);
     b.appendChild(upd);
 
@@ -2006,17 +2006,19 @@ function openSettings() {
 
     /* --- Profil (en altta) ------------------------------------------- */
     b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note" style="margin:20px 2px 8px">Hesap</p>');
+      '<p class="pwa-note" style="margin:20px 2px 8px">' + t('account') + '</p>');
 
     var curNative = window.NATIVE_LANG || 'tr';
     var curTarget = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
     var NATIVE_NAMES = { tr:'Türkçe', de:'Deutsch', en:'English', ar:'العربية', ru:'Русский', fr:'Français', es:'Español' };
-    var TARGET_NAMES = { tr:'Türkçe', de:'Almanca', en:'İngilizce', ar:'Arapça', fr:'Fransızca', es:'İspanyolca', ru:'Rusça' };
-    var langRow = row('🌐', 'Dil', (NATIVE_NAMES[curNative]||curNative) + ' konuşuyorsun · ' + (TARGET_NAMES[curTarget]||curTarget) + ' öğreniyorsun');
+    var langSub = (window.I18N && window.I18N[curNative] && window.I18N[curNative].lang_change_sub)
+      ? window.I18N[curNative].lang_change_sub(NATIVE_NAMES[curNative]||curNative, NATIVE_NAMES[curTarget]||curTarget)
+      : (NATIVE_NAMES[curNative]||curNative) + ' konuşuyorsun · ' + (NATIVE_NAMES[curTarget]||curTarget) + ' öğreniyorsun';
+    var langRow = row('🌐', t('language_row'), langSub);
     langRow.onclick = function () { openLanguageSettings(); };
     b.appendChild(langRow);
 
-    var prof = row('👤', 'Profilim', 'Adını ve şifreni değiştir · 3. seviye gerekir');
+    var prof = row('👤', t('profile_row'), t('profile_desc'));
     prof.onclick = function () {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.level(3, 'Profilim')) return;
       openProfile();
