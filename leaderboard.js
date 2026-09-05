@@ -284,13 +284,13 @@ function initLeaderboard(){
       const el = document.getElementById('profileTimer');
       if(!el) return;
       if(!db){
-        el.textContent = `👤 ${name} — profil henüz bağlanmadı`;
+        el.textContent = `👤 ${name} — ${window.t ? window.t('profile_not_connected') : 'profil henüz bağlanmadı'}`;
         return;
       }
       db.ref('leaderboard/' + uid).on('value', (snap) => {
         const val = snap.val();
         const total = val && typeof val.totalSeconds === 'number' ? val.totalSeconds : 0;
-        el.textContent = `👤 ${name} — Toplam süren: ${fmtTime(total)}`;
+        el.textContent = window.t ? window.t('total_time_label')(name, fmtTime(total)) : `👤 ${name} — Toplam süren: ${fmtTime(total)}`;
       });
     }
 
@@ -447,21 +447,24 @@ function initLeaderboard(){
         box.innerHTML = '<div class="my-rank-empty">🏅 Sıralamanı görmek için giriş yap</div>';
         return;
       }
+      const noData = (window.t ? window.t('no_data_yet') : 'henüz veri yok');
+      const timeLbl = (window.t ? window.t('time_rank') : 'Süre sıralaması');
+      const levelLbl = (window.t ? window.t('level_rank') : 'Seviye sıralaması');
       const timeTxt = timeRank
         ? `<span class="my-rank-value">${timeRank}.</span><span class="my-rank-total"> / ${timeTotal}</span>`
-        : '<span class="my-rank-pending">henüz veri yok</span>';
+        : `<span class="my-rank-pending">${noData}</span>`;
       const levelTxt = levelRank
         ? `<span class="my-rank-value">${levelRank}.</span><span class="my-rank-total"> / ${levelTotal}</span>`
-        : '<span class="my-rank-pending">henüz veri yok</span>';
+        : `<span class="my-rank-pending">${noData}</span>`;
       box.innerHTML = `
         <div class="my-rank-row">
           <span class="my-rank-icon">⏱️</span>
-          <span class="my-rank-label">Süre sıralaması</span>
+          <span class="my-rank-label">${timeLbl}</span>
           ${timeTxt}
         </div>
         <div class="my-rank-row">
           <span class="my-rank-icon">⭐</span>
-          <span class="my-rank-label">Seviye sıralaması</span>
+          <span class="my-rank-label">${levelLbl}</span>
           ${levelTxt}
         </div>`;
     }

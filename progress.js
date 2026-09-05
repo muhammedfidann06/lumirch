@@ -226,7 +226,8 @@
       const key = 'streak'+a[0];
       if(s>=a[0] && !meta.awards[key]){
         meta.awards[key] = { e:a[1], n:a[2], ts:Date.now() };
-        showToast('Başarım açıldı: '+a[2]+' 🎉');
+        const dispName = window.t ? window.t('streak_award')(a[0]) : a[2];
+        showToast((window.t ? window.t('achievement_unlocked') : 'Başarım açıldı:')+' '+dispName+' 🎉');
       }
     });
   }
@@ -575,9 +576,9 @@
     });
 
     let badgeRow = '';
-    BADGE_THRESHOLDS.forEach(t=>{
-      const earned = meta.badges && meta.badges[t];
-      badgeRow += '<div class="pm-badge '+(earned?'':'locked')+'" title="'+t+' kelime">'+(earned?'🏅':'🔒')+'</div>';
+    BADGE_THRESHOLDS.forEach(th=>{
+      const earned = meta.badges && meta.badges[th];
+      badgeRow += '<div class="pm-badge '+(earned?'':'locked')+'" title="'+th+' '+window.t('pm_words_suffix')+'">'+(earned?'🏅':'🔒')+'</div>';
     });
 
     const groups = levelGroups();
@@ -585,7 +586,7 @@
     groups.forEach(g=>{
       const glist = poolForActiveLang().filter(v=>g.levels.includes(v.level));
       const gknown = knownCountIn(glist);
-      groupRow += '<div class="pm-group-btn" data-group="'+g.name+'">'+g.name+'<span class="g-count">'+gknown+' bilinen</span></div>';
+      groupRow += '<div class="pm-group-btn" data-group="'+g.name+'">'+g.name+'<span class="g-count">'+gknown+' '+window.t('pm_known_suffix')+'</span></div>';
     });
 
     const t = meta.tasks;
@@ -627,27 +628,28 @@
     });
     html += '</div>';
     html += '<div class="pm-pill-row"><div class="pm-pill flame">🔥 '+(meta.streak||0)+' günlük seri</div><div class="pm-pill">⭐ Seviye '+(Math.floor((meta.xp||0)/200)+1)+' - '+(meta.xp||0)+' XP</div></div>';
-    html += '<div class="pm-goal-wrap"><div class="pm-goal-row"><span>Bugün öğrenilen</span><span>'+today+' / '+goal+' kelime</span></div><div class="pm-bar"><div class="pm-bar-fill" style="width:'+goalPct+'%"></div></div></div>';
+    html += '<div class="pm-goal-wrap"><div class="pm-goal-row"><span>'+window.t('pm_today_learned')+'</span><span>'+today+' / '+goal+' '+window.t('pm_words_suffix')+'</span></div><div class="pm-bar"><div class="pm-bar-fill" style="width:'+goalPct+'%"></div></div></div>';
     html += '</div>';
 
     if(due.length > 0 && !t.t4){
       html += '<div class="pm-due-banner"><div class="pm-due-text">📋 Dün öğrendiğin <b>'+due.length+'</b> kelimenin günlük tekrarı var</div><button id="pmDueBtn">Tekrar Et</button></div>';
     }
 
-    html += '<div class="pm-card"><h4>İlerleme - '+activeLevel+' - '+filterKnown+' / '+filterPool.length+' kelime (%'+filterPct+')</h4>';
-    html += levelRows || '<div class="pm-empty">Bu dil icin henuz seviye tanimli degil.</div>';
+    const levelLabelDisp = (activeLevel === 'TÜMÜ') ? (window.t ? window.t('level_all') : 'TÜMÜ') : activeLevel;
+    html += '<div class="pm-card"><h4>'+window.t('pm_progress')+' - '+levelLabelDisp+' - '+filterKnown+' / '+filterPool.length+' '+window.t('pm_words_suffix')+' (%'+filterPct+')</h4>';
+    html += levelRows || '<div class="pm-empty">'+window.t('pm_no_level_defined')+'</div>';
     html += '</div>';
 
-    html += '<div class="pm-card"><h4>Genel Tekrar</h4><div class="pm-weak-meta">Bildiğini varsaydığımız kelimeleri tekrar sorar; yanlış yaparsan çalışma listene geri döner.</div><div class="pm-group-row" id="pmGroupRow">'+groupRow+'</div></div>';
+    html += '<div class="pm-card"><h4>'+window.t('pm_general_review')+'</h4><div class="pm-weak-meta">'+window.t('pm_general_review_desc')+'</div><div class="pm-group-row" id="pmGroupRow">'+groupRow+'</div></div>';
 
-    html += '<div class="pm-card"><h4>Istatistikler</h4><div class="pm-stat-grid">';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">Öğrenilen ('+L.label+')</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+today+'</div><div class="pm-stat-label">Bugün öğrenilen</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalStudied+'</div><div class="pm-stat-label">Toplam çalışılan</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+(acc===null?'-':acc+'%')+'</div><div class="pm-stat-label">Doğruluk oranı</div></div>';
+    html += '<div class="pm-card"><h4>'+window.t('pm_statistics')+'</h4><div class="pm-stat-grid">';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">'+window.t('pm_learned_in')(L.label)+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+today+'</div><div class="pm-stat-label">'+window.t('pm_today_learned')+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalStudied+'</div><div class="pm-stat-label">'+window.t('pm_total_studied')+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+(acc===null?'-':acc+'%')+'</div><div class="pm-stat-label">'+window.t('pm_accuracy')+'</div></div>';
     html += '</div>';
-    html += '<div class="pm-weak-meta" style="margin-top:10px;">'+(catInfo.best ? ('💪 En guclu kategori: <b>'+escapeHtml(catInfo.best.cat)+'</b>') : 'Henuz yeterli veri yok.')+'<br>'+(catInfo.worst ? ('🎯 Gelistirilecek kategori: <b>'+escapeHtml(catInfo.worst.cat)+'</b>') : '')+'</div>';
-    html += '<div class="pm-weak-meta" id="pmTotalTime" style="margin-top:6px;">⏱ Toplam çalışma süresi yükleniyor...</div>';
+    html += '<div class="pm-weak-meta" style="margin-top:10px;">'+(catInfo.best ? ('💪 '+window.t('pm_strongest_cat')+' <b>'+escapeHtml(catInfo.best.cat)+'</b>') : window.t('pm_not_enough_data'))+'<br>'+(catInfo.worst ? ('🎯 '+window.t('pm_weakest_cat')+' <b>'+escapeHtml(catInfo.worst.cat)+'</b>') : '')+'</div>';
+    html += '<div class="pm-weak-meta" id="pmTotalTime" style="margin-top:6px;">⏱ '+window.t('pm_total_time_loading')+'</div>';
     html += '</div>';
 
     html += '<div class="pm-card"><h4>Bugünkü Görevler</h4>';
@@ -669,11 +671,13 @@
     var supHtml = '';
     if(_tiers.length){
       var supRow = '';
-      _tiers.forEach(function(t){
-        var owned = !!(window.LUMIRA_BADGES && window.LUMIRA_BADGES.has(t.badge));
-        supRow += '<div class="pm-sup-badge'+(owned?' owned':'')+'"><span class="e">'+t.badge+'</span>'+(owned?'':'<span class="lock">🔒</span>')+'<span class="nm">'+String(t.name||'').replace(/</g,'')+'</span></div>';
+      _tiers.forEach(function(tier){
+        var owned = !!(window.LUMIRA_BADGES && window.LUMIRA_BADGES.has(tier.badge));
+        var tierNames = window.t ? window.t('tier_names') : null;
+        var dispName = (tierNames && tierNames[tier.sku]) ? tierNames[tier.sku] : tier.name;
+        supRow += '<div class="pm-sup-badge'+(owned?' owned':'')+'"><span class="e">'+tier.badge+'</span>'+(owned?'':'<span class="lock">🔒</span>')+'<span class="nm">'+String(dispName||'').replace(/</g,'')+'</span></div>';
       });
-      supHtml = '<div class="pm-card"><h4>Rozetler</h4><div class="pm-sup-grid">'+supRow+'</div></div>';
+      supHtml = '<div class="pm-card"><h4>'+window.t('pm_badges_header')+'</h4><div class="pm-sup-grid">'+supRow+'</div></div>';
     }
     var awHtml = '';
     const awards = meta.awards || {};
@@ -683,15 +687,20 @@
       let awRow = '';
       awardKeys.forEach(k=>{
         const a = awards[k] || {};
-        awRow += '<div class="pm-award" title="'+String(a.n||'').replace(/"/g,'')+'"><span class="pm-award-e">'+(a.e||'🏅')+'</span><span class="pm-award-n">'+String(a.n||'').replace(/</g,'')+'</span></div>';
+        /* "streakN" anahtarlı ödüller (seri başarımları) görüntülenirken
+           güncel arayüz diline çevrilir; diğerleri (yönetici tarafından
+           özel verilenler gibi) olduğu gibi (kaydedildiği hâliyle) kalır. */
+        const streakMatch = /^streak(\d+)$/.exec(k);
+        const dispName = (streakMatch && window.t) ? window.t('streak_award')(streakMatch[1]) : (a.n||'');
+        awRow += '<div class="pm-award" title="'+String(dispName).replace(/"/g,'')+'"><span class="pm-award-e">'+(a.e||'🏅')+'</span><span class="pm-award-n">'+String(dispName).replace(/</g,'')+'</span></div>';
       });
-      awHtml = '<div class="pm-card"><h4>Başarımlar</h4><div class="pm-awards">'+awRow+'</div></div>';
+      awHtml = '<div class="pm-card"><h4>'+window.t('pm_achievements_header')+'</h4><div class="pm-awards">'+awRow+'</div></div>';
     }
 
-    html += '<button class="pm-btn primary" id="pmStartBtn">🚀 Çalışmaya Başla</button>';
-    html += '<button class="pm-btn small" id="pmLevelTestBtn">🎓 Seviye Tespit Sınavı</button>';
-    html += '<button class="pm-btn small" id="pmKnownBtn">✅ Öğrendiğim Kelimeler ('+totalKnownLang+')</button>';
-    html += '<button class="pm-btn small" id="pmWeakBtn">📉 Hata Yaptığım Kelimeler</button>';
+    html += '<button class="pm-btn primary" id="pmStartBtn">'+window.t('pm_start_studying')+'</button>';
+    html += '<button class="pm-btn small" id="pmLevelTestBtn">'+window.t('pm_level_test_btn')+'</button>';
+    html += '<button class="pm-btn small" id="pmKnownBtn">✅ '+window.t('pm_known')+' ('+totalKnownLang+')</button>';
+    html += '<button class="pm-btn small" id="pmWeakBtn">📉 '+window.t('pm_weak')+'</button>';
     html += awHtml;    /* Başarımlar (mistakes butonunun altında) */
     html += supHtml;   /* Rozetler */
     html += '</div>';
@@ -737,7 +746,7 @@
         if(!el) return;
         const s = Math.floor(secs);
         const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
-        el.textContent = '⏱ Toplam çalışma süresi: '+(h>0?h+'s ':'')+m+'dk';
+        el.textContent = '⏱ '+window.t('pm_total_time')+' '+(h>0?h+(window.t('hour_abbr')||'s')+' ':'')+m+(window.t('min_abbr')||'dk');
       });
     }
   }
@@ -991,11 +1000,11 @@
     }catch(e){}
 
     const pct = Math.round((correct/order.length)*100);
-    const scopeTxt = (categories && categories.length) ? (categories.length+' kategori') : 'tüm kategoriler';
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">Sınav Tamamlandı</div>'+
-      '<div class="pm-title">🎓 '+level+' Seviye Sonucun</div>'+
-      '<div class="pm-sub">'+correct+' / '+order.length+' doğru ('+pct+'%) · '+scopeTxt+' · +100 XP kazandın · '+learnedKeys.length+' kelime bilinenler listene eklendi</div></div>'+
-      '<button type="button" class="ctrl primary" id="pmBackHome2" style="width:100%;margin-top:8px;">← Ana Sayfaya Dön</button></div>';
+    const scopeTxt = (categories && categories.length) ? t('pm_scope_categories')(categories.length) : t('pm_scope_all_categories');
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">'+t('pm_exam_completed')+'</div>'+
+      '<div class="pm-title">'+t('pm_level_result')(level)+'</div>'+
+      '<div class="pm-sub">'+t('pm_result_summary')(correct, order.length, pct, scopeTxt, 100, learnedKeys.length)+'</div></div>'+
+      '<button type="button" class="ctrl primary" id="pmBackHome2" style="width:100%;margin-top:8px;">'+t('pm_back_home')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHome2').onclick = renderHome;
     ltState = null;
@@ -1004,7 +1013,7 @@
   function startSession(){
     batch = pickBatch();
     if(batch.length === 0){
-      root.innerHTML = '<div class="pm-root"><div class="pm-empty">🎉 Bu seviyede çalışılacak yeni kelime kalmadı - harika iş çıkardın!<br><br>İstersen Genel Tekrar yaparak bildiklerini tazeleyebilirsin.</div><span class="pm-back-link" id="pmBackHome">← Ana sayfaya dön</span></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-empty">'+t('pm_no_new_words_level')+'<br><br>'+t('pm_try_general_review')+'</div><span class="pm-back-link" id="pmBackHome">'+t('pm_back_home')+'</span></div>';
       document.getElementById('pmBackHome').onclick = renderHome;
       return;
     }
@@ -1372,24 +1381,24 @@
     try{document.body.classList.add('pm-active');}catch(e){}
     try{['langBox','langPair','levelBox','chips'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});}catch(e){}
     let html = '<div class="pm-root">';
-    html += '<div class="pm-head"><div class="pm-eyebrow">Oturum Tamamlandı</div><div class="pm-title">🎉 Harika İş!</div><div class="pm-sub">'+s.newKnown+' yeni kelime öğrendin - +'+s.xp+' XP</div></div>';
-    html += '<div class="pm-card"><h4>Sonuç</h4><div class="pm-stat-grid"><div class="pm-stat-box"><div class="pm-stat-num">'+s.newKnown+'</div><div class="pm-stat-label">Yeni öğrenilen</div></div><div class="pm-stat-box"><div class="pm-stat-num">'+s.wrong+'</div><div class="pm-stat-label">Tekrar gerekiyor</div></div></div></div>';
+    html += '<div class="pm-head"><div class="pm-eyebrow">'+t('pm_session_complete')+'</div><div class="pm-title">'+t('pm_great_job')+'</div><div class="pm-sub">'+t('pm_session_summary')(s.newKnown, s.xp)+'</div></div>';
+    html += '<div class="pm-card"><h4>'+t('pm_result')+'</h4><div class="pm-stat-grid"><div class="pm-stat-box"><div class="pm-stat-num">'+s.newKnown+'</div><div class="pm-stat-label">'+t('pm_newly_learned')+'</div></div><div class="pm-stat-box"><div class="pm-stat-num">'+s.wrong+'</div><div class="pm-stat-label">'+t('pm_needs_review')+'</div></div></div></div>';
     if(s.newBadges.length){
-      html += '<div class="pm-card"><h4>Yeni Rozetler</h4><div class="pm-weak-meta">'+s.newBadges.map(t=>'🏅 '+t+' kelime rozeti').join('<br>')+'</div></div>';
+      html += '<div class="pm-card"><h4>'+t('pm_new_badges')+'</h4><div class="pm-weak-meta">'+s.newBadges.map(function(n){ return '🏅 '+t('pm_word_badge')(n); }).join('<br>')+'</div></div>';
     }
     if(s.mistakes.length){
-      html += '<button class="pm-btn small" id="pmSeeMistakes">Tekrar Gereken Kelimeleri Gor ('+s.mistakes.length+')</button>';
+      html += '<button class="pm-btn small" id="pmSeeMistakes">'+t('pm_see_review_words')(s.mistakes.length)+'</button>';
     }
-    html += '<button class="pm-btn primary" id="pmBackHomeBtn">Ana Sayfaya Dön</button></div>';
+    html += '<button class="pm-btn primary" id="pmBackHomeBtn">'+t('pm_back_home_btn')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHomeBtn').onclick = renderHome;
     if(s.mistakes.length){
       document.getElementById('pmSeeMistakes').onclick = () => {
-        let h2 = '<div class="pm-root"><div class="pm-head"><div class="pm-title">Tekrar Gereken Kelimeler</div><div class="pm-sub">Bir sonraki oturumu atlayıp, ondan sonrasında tekrar karşına çıkacaklar.</div></div>';
+        let h2 = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+t('pm_review_words_title')+'</div><div class="pm-sub">'+t('pm_review_words_desc')+'</div></div>';
         s.mistakes.forEach(m=>{
-          h2 += '<div class="pm-weak-item"><div class="pm-weak-word">'+escapeHtml(m.word)+'</div><div class="pm-weak-meta">Doğrusu: '+escapeHtml(m.tr)+'</div></div>';
+          h2 += '<div class="pm-weak-item"><div class="pm-weak-word">'+escapeHtml(m.word)+'</div><div class="pm-weak-meta">'+t('pm_correct_answer')+' '+escapeHtml(m.tr)+'</div></div>';
         });
-        h2 += '<button class="pm-btn primary" id="pmBackSummary">Geri Don</button></div>';
+        h2 += '<button class="pm-btn primary" id="pmBackSummary">'+t('pm_go_back')+'</button></div>';
         root.innerHTML = h2;
         document.getElementById('pmBackSummary').onclick = renderSessionSummary;
       };
@@ -1402,7 +1411,7 @@
     const list = poolForActiveLang().filter(v=>group.levels.includes(v.level));
     const known = list.filter(v=>{ const r=getRecord(v); return r && r.known; });
     if(known.length === 0){
-      root.innerHTML = '<div class="pm-root"><div class="pm-empty">Bu grupta henüz bilinen kelime yok. Önce biraz çalışman gerekiyor.</div><span class="pm-back-link" id="pmBackHome">← Ana sayfaya dön</span></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-empty">'+t('pm_no_known_in_group')+'</div><span class="pm-back-link" id="pmBackHome">'+t('pm_back_home')+'</span></div>';
       document.getElementById('pmBackHome').onclick = renderHome;
       return;
     }

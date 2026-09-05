@@ -749,21 +749,21 @@
         <img class="brand-mark" src="splash-logo.png" alt="Lumira" width="300" height="300" fetchpriority="high">
       </div>
       <h1 class="brand-name">LUMIRA<i class="brand-spark" aria-hidden="true">✦</i></h1>
-      <div class="brand-rule"><i></i><span>DİL KARTLARI</span><i></i></div>
+      <div class="brand-rule"><i></i><span id="splashSubtitle">DİL KARTLARI</span><i></i></div>
     </div>
-    <div class="splash-sub">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
-    <div class="goethe-note">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
+    <div class="splash-sub" id="splashTap">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
+    <div class="goethe-note" id="splashGoethe">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
 
     <div class="splash-lb" id="splashLb">
-      <div class="splash-lb-title">🏆 Sıralamalar</div>
+      <div class="splash-lb-title" id="splashLbTitle">🏆 Sıralamalar</div>
       <div class="splash-lb-cols">
         <div class="splash-lb-col">
-          <div class="splash-lb-subtitle time">⏱️ Vakit</div>
+          <div class="splash-lb-subtitle time" id="splashLbTimeLbl">⏱️ Vakit</div>
           <div id="splashLbTimeList" class="splash-lb-list"></div>
         </div>
         <div class="splash-lb-col-divider"></div>
         <div class="splash-lb-col">
-          <div class="splash-lb-subtitle level">⭐ Seviye</div>
+          <div class="splash-lb-subtitle level" id="splashLbLevelLbl">⭐ Seviye</div>
           <div id="splashLbLevelList" class="splash-lb-list"></div>
         </div>
       </div>
@@ -824,7 +824,7 @@
   <div class="cat-overlay" id="catOverlay">
     <div class="cat-panel">
       <div class="cat-panel-header">
-        <span>Kategori Seç</span>
+        <span id="catPanelTitle">Kategori Seç</span>
         <span class="cat-close" id="catClose">✕</span>
       </div>
       <div class="cat-grid" id="catGrid"></div>
@@ -1032,13 +1032,13 @@
     <div class="my-rank-empty">🏅 Sıralamanı görmek için giriş yap</div>
   </div>
   <div class="credit">
-    © 2026 <b>Lumira</b> · Tüm hakları saklıdır<br>
+    © 2026 <b>Lumira</b> · <span id="creditRights">Tüm hakları saklıdır</span><br>
     <span class="credit-sub">Lumira ve Lumira | Dil Kartları adları ile logosu tescilli markalardır.</span>
   </div>
 
   <!-- ============================ DESTEK OL ============================ -->
   <div class="support-wrap">
-    <button type="button" class="support-btn" id="supportBtn">❤️ Lumira'yı Destekle ⭐</button>
+    <button type="button" class="support-btn" id="supportBtn">❤️ <span id="supportBtnText">Lumira'yı Destekle</span> ⭐</button>
   </div>
 </div>
 
@@ -1225,6 +1225,43 @@ tr:{
   set_update_row:"Güncellemeleri denetle", set_admin_row:"Yönetici",
   pm_home_title:function(name){ return "👤 "+name+"\u2019e Özel"; },
   pm_known:"Öğrendiğin Kelimeler", pm_weak:"Zayıf Kelimeler", pm_streak:"Seri", pm_xp:"XP",
+  prev:"Önceki", shuffle:"Karıştır", next:"Sonraki",
+  session_time:function(s){ return "⏱ Bu oturumda: "+s; },
+  rights:"Tüm hakları saklıdır", support_app:"Lumira\u2019yı Destekle",
+  cat_pick_title:"Kategori Seç", app_subtitle:"Dil Kartları",
+  time_rank:"Vakit", level_rank:"Seviye", no_data_yet:"henüz veri yok", rankings:"Sıralamalar",
+  pm_progress:"İlerleme", pm_words_suffix:"kelime", pm_known_suffix:"bilinen",
+  pm_today_learned:"Bugün öğrenilen", pm_general_review:"Genel Tekrar",
+  pm_general_review_desc:"Bildiğini varsaydığımız kelimeleri tekrar sorar; yanlış yaparsan çalışma listene geri döner.",
+  pm_statistics:"İstatistikler", pm_learned_in:function(lang){ return "Öğrenilen ("+lang+")"; },
+  pm_total_studied:"Toplam çalışılan", pm_accuracy:"Doğruluk oranı",
+  pm_strongest_cat:"En güçlü kategori:", pm_weakest_cat:"Geliştirilecek kategori:",
+  pm_not_enough_data:"Henüz yeterli veri yok.", pm_total_time_loading:"Toplam çalışma süresi yükleniyor...",
+  pm_total_time:"Toplam çalışma süresi:", pm_level_test_btn:"🎓 Seviye Tespit Sınavı",
+  pm_no_known_in_group:"Bu grupta henüz bilinen kelime yok. Önce biraz çalışman gerekiyor.",
+  pm_back_home:"← Ana sayfaya dön", pm_no_level_defined:"Bu dil için henüz seviye tanımlı değil.", hour_abbr:"s", min_abbr:"dk",
+  pm_exam_completed:"Sınav Tamamlandı",
+  pm_level_result:function(lvl){ return "🎓 "+lvl+" Seviye Sonucun"; },
+  pm_scope_categories:function(n){ return n+" kategori"; }, pm_scope_all_categories:"tüm kategoriler",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" doğru ("+pct+"%) · "+scope+" · +"+xp+" XP kazandın · "+learned+" kelime bilinenler listene eklendi"; },
+  pm_no_new_words_level:"🎉 Bu seviyede çalışılacak yeni kelime kalmadı - harika iş çıkardın!",
+  pm_try_general_review:"İstersen Genel Tekrar yaparak bildiklerini tazeleyebilirsin.",
+  pm_start_studying:"🚀 Çalışmaya Başla", pm_new_badges:"Yeni Rozetler",
+  pm_word_badge:function(n){ return n+" kelime rozeti"; },
+  pm_badges_header:"Rozetler", pm_achievements_header:"Başarımlar",
+  total_time_label:function(name,time){ return "👤 "+name+" — Toplam süren: "+time; },
+  streak_award:function(n){ return n+" Gün Seri"; },
+  tier_names:{ lumira_support_1:"Teşekkür", lumira_support_5:"Kahve", lumira_support_10:"Destekçi", lumira_support_25:"Dost", lumira_support_50:"Yıldız", lumira_support_100:"Kral" },
+  pm_session_complete:"Oturum Tamamlandı", pm_great_job:"🎉 Harika İş!",
+  pm_session_summary:function(n,xp){ return n+" yeni kelime öğrendin - +"+xp+" XP"; },
+  pm_result:"Sonuç", pm_newly_learned:"Yeni öğrenilen", pm_needs_review:"Tekrar gerekiyor",
+  pm_see_review_words:function(n){ return "Tekrar Gereken Kelimeleri Gör ("+n+")"; },
+  pm_back_home_btn:"Ana Sayfaya Dön", pm_review_words_title:"Tekrar Gereken Kelimeler",
+  pm_review_words_desc:"Bir sonraki oturumu atlayıp, ondan sonrasında tekrar karşına çıkacaklar.",
+  pm_correct_answer:"Doğrusu:", pm_go_back:"Geri Dön", achievement_unlocked:"Başarım açıldı:", profile_not_connected:"profil henüz bağlanmadı",
+  lang_names:{ tr:"Türkçe", de:"Almanca", en:"İngilizce", ar:"Arapça", fr:"Fransızca", es:"İspanyolca", ru:"Rusça" },
+  splash_subtitle:"DİL KARTLARI", splash_tap:"GİRİŞ İÇİN EKRANA TIKLAYIN",
+  splash_goethe:"ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR",
   lang_change_sub:function(native,target){ return native+" konuşuyorsun · "+target+" öğreniyorsun"; }
 },
 en:{
@@ -1263,6 +1300,43 @@ en:{
   set_update_row:"Check for updates", set_admin_row:"Admin",
   pm_home_title:function(name){ return "👤 "+name+"\u2019s Space"; },
   pm_known:"Words You've Learned", pm_weak:"Weak Words", pm_streak:"Streak", pm_xp:"XP",
+  prev:"Previous", shuffle:"Shuffle", next:"Next",
+  session_time:function(s){ return "⏱ This session: "+s; },
+  rights:"All rights reserved", support_app:"Support Lumira",
+  cat_pick_title:"Choose Category", app_subtitle:"Language Cards",
+  time_rank:"Time", level_rank:"Level", no_data_yet:"no data yet", rankings:"Rankings",
+  pm_progress:"Progress", pm_words_suffix:"words", pm_known_suffix:"known",
+  pm_today_learned:"Learned today", pm_general_review:"General Review",
+  pm_general_review_desc:"Re-asks words we assume you know; get one wrong and it goes back to your study list.",
+  pm_statistics:"Statistics", pm_learned_in:function(lang){ return "Learned ("+lang+")"; },
+  pm_total_studied:"Total studied", pm_accuracy:"Accuracy",
+  pm_strongest_cat:"Strongest category:", pm_weakest_cat:"Needs work:",
+  pm_not_enough_data:"Not enough data yet.", pm_total_time_loading:"Loading total study time...",
+  pm_total_time:"Total study time:", pm_level_test_btn:"🎓 Level Placement Test",
+  pm_no_known_in_group:"No known words in this group yet. Study a bit first.",
+  pm_back_home:"← Back to home", pm_no_level_defined:"No levels defined for this language yet.", hour_abbr:"h", min_abbr:"m",
+  pm_exam_completed:"Test Complete",
+  pm_level_result:function(lvl){ return "🎓 Your "+lvl+" Level Result"; },
+  pm_scope_categories:function(n){ return n+" categories"; }, pm_scope_all_categories:"all categories",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correct ("+pct+"%) · "+scope+" · +"+xp+" XP earned · "+learned+" words added to your known list"; },
+  pm_no_new_words_level:"🎉 No new words left at this level - great job!",
+  pm_try_general_review:"You can refresh what you know with a General Review.",
+  pm_start_studying:"🚀 Start Studying", pm_new_badges:"New Badges",
+  pm_word_badge:function(n){ return n+" word badge"; },
+  pm_badges_header:"Badges", pm_achievements_header:"Achievements",
+  total_time_label:function(name,time){ return "👤 "+name+" — Total time: "+time; },
+  streak_award:function(n){ return n+"-Day Streak"; },
+  tier_names:{ lumira_support_1:"Thanks", lumira_support_5:"Coffee", lumira_support_10:"Supporter", lumira_support_25:"Friend", lumira_support_50:"Star", lumira_support_100:"King" },
+  pm_session_complete:"Session Complete", pm_great_job:"🎉 Great Job!",
+  pm_session_summary:function(n,xp){ return "You learned "+n+" new words - +"+xp+" XP"; },
+  pm_result:"Result", pm_newly_learned:"Newly learned", pm_needs_review:"Needs review",
+  pm_see_review_words:function(n){ return "See Words That Need Review ("+n+")"; },
+  pm_back_home_btn:"Back to Home", pm_review_words_title:"Words That Need Review",
+  pm_review_words_desc:"They\u2019ll skip the next session, then show up again after that.",
+  pm_correct_answer:"Correct:", pm_go_back:"Go Back", achievement_unlocked:"Achievement unlocked:", profile_not_connected:"profile not connected yet",
+  lang_names:{ tr:"Turkish", de:"German", en:"English", ar:"Arabic", fr:"French", es:"Spanish", ru:"Russian" },
+  splash_subtitle:"LANGUAGE CARDS", splash_tap:"TAP THE SCREEN TO ENTER",
+  splash_goethe:"ⓘ THE WORDS ON THIS PAGE MATCH GOETHE/CEFR EXACTLY",
   lang_change_sub:function(native,target){ return "You speak "+native+" · learning "+target; }
 },
 de:{
@@ -1301,6 +1375,43 @@ de:{
   set_update_row:"Nach Updates suchen", set_admin_row:"Admin",
   pm_home_title:function(name){ return "👤 Für "+name; },
   pm_known:"Gelernte Wörter", pm_weak:"Schwache Wörter", pm_streak:"Serie", pm_xp:"XP",
+  prev:"Zurück", shuffle:"Mischen", next:"Weiter",
+  session_time:function(s){ return "⏱ Diese Sitzung: "+s; },
+  rights:"Alle Rechte vorbehalten", support_app:"Lumira unterstützen",
+  cat_pick_title:"Kategorie wählen", app_subtitle:"Sprachkarten",
+  time_rank:"Zeit", level_rank:"Niveau", no_data_yet:"noch keine Daten", rankings:"Ranglisten",
+  pm_progress:"Fortschritt", pm_words_suffix:"Wörter", pm_known_suffix:"bekannt",
+  pm_today_learned:"Heute gelernt", pm_general_review:"Allgemeine Wiederholung",
+  pm_general_review_desc:"Fragt Wörter erneut ab, die du angeblich kennst; bei einem Fehler geht es zurück auf deine Lernliste.",
+  pm_statistics:"Statistiken", pm_learned_in:function(lang){ return "Gelernt ("+lang+")"; },
+  pm_total_studied:"Insgesamt geübt", pm_accuracy:"Trefferquote",
+  pm_strongest_cat:"Stärkste Kategorie:", pm_weakest_cat:"Verbesserungsbedarf:",
+  pm_not_enough_data:"Noch nicht genug Daten.", pm_total_time_loading:"Gesamte Lernzeit wird geladen...",
+  pm_total_time:"Gesamte Lernzeit:", pm_level_test_btn:"🎓 Einstufungstest",
+  pm_no_known_in_group:"Noch keine bekannten Wörter in dieser Gruppe. Erst etwas üben.",
+  pm_back_home:"← Zurück zur Startseite", pm_no_level_defined:"Für diese Sprache sind noch keine Stufen definiert.", hour_abbr:"Std", min_abbr:"Min",
+  pm_exam_completed:"Test abgeschlossen",
+  pm_level_result:function(lvl){ return "🎓 Dein "+lvl+"-Ergebnis"; },
+  pm_scope_categories:function(n){ return n+" Kategorien"; }, pm_scope_all_categories:"alle Kategorien",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" richtig ("+pct+"%) · "+scope+" · +"+xp+" XP erhalten · "+learned+" Wörter zu deiner Liste bekannter Wörter hinzugefügt"; },
+  pm_no_new_words_level:"🎉 Keine neuen Wörter mehr auf dieser Stufe - gut gemacht!",
+  pm_try_general_review:"Du kannst dein Wissen mit einer Allgemeinen Wiederholung auffrischen.",
+  pm_start_studying:"🚀 Lernen beginnen", pm_new_badges:"Neue Abzeichen",
+  pm_word_badge:function(n){ return n+"-Wörter-Abzeichen"; },
+  pm_badges_header:"Abzeichen", pm_achievements_header:"Erfolge",
+  total_time_label:function(name,time){ return "👤 "+name+" — Gesamtzeit: "+time; },
+  streak_award:function(n){ return n+"-Tage-Serie"; },
+  tier_names:{ lumira_support_1:"Danke", lumira_support_5:"Kaffee", lumira_support_10:"Unterstützer", lumira_support_25:"Freund", lumira_support_50:"Stern", lumira_support_100:"König" },
+  pm_session_complete:"Sitzung abgeschlossen", pm_great_job:"🎉 Gut gemacht!",
+  pm_session_summary:function(n,xp){ return "Du hast "+n+" neue Wörter gelernt - +"+xp+" XP"; },
+  pm_result:"Ergebnis", pm_newly_learned:"Neu gelernt", pm_needs_review:"Wiederholung nötig",
+  pm_see_review_words:function(n){ return "Wörter zur Wiederholung ansehen ("+n+")"; },
+  pm_back_home_btn:"Zur Startseite", pm_review_words_title:"Wörter zur Wiederholung",
+  pm_review_words_desc:"Sie überspringen die nächste Sitzung und tauchen danach wieder auf.",
+  pm_correct_answer:"Richtig:", pm_go_back:"Zurück", achievement_unlocked:"Erfolg freigeschaltet:", profile_not_connected:"Profil noch nicht verbunden",
+  lang_names:{ tr:"Türkisch", de:"Deutsch", en:"Englisch", ar:"Arabisch", fr:"Französisch", es:"Spanisch", ru:"Russisch" },
+  splash_subtitle:"SPRACHKARTEN", splash_tap:"ZUM STARTEN BILDSCHIRM ANTIPPEN",
+  splash_goethe:"ⓘ DIE WÖRTER AUF DIESER SEITE ENTSPRECHEN GENAU GOETHE/CEFR",
   lang_change_sub:function(native,target){ return "Du sprichst "+native+" · lernst "+target; }
 },
 ar:{
@@ -1339,6 +1450,43 @@ ar:{
   set_update_row:"التحقق من التحديثات", set_admin_row:"المسؤول",
   pm_home_title:function(name){ return "👤 خاص بـ "+name; },
   pm_known:"الكلمات التي تعلمتها", pm_weak:"الكلمات الضعيفة", pm_streak:"التتابع", pm_xp:"نقاط الخبرة",
+  prev:"السابق", shuffle:"خلط", next:"التالي",
+  session_time:function(s){ return "⏱ هذه الجلسة: "+s; },
+  rights:"جميع الحقوق محفوظة", support_app:"ادعم Lumira",
+  cat_pick_title:"اختر الفئة", app_subtitle:"بطاقات اللغة",
+  time_rank:"الوقت", level_rank:"المستوى", no_data_yet:"لا توجد بيانات بعد", rankings:"التصنيفات",
+  pm_progress:"التقدّم", pm_words_suffix:"كلمة", pm_known_suffix:"معروفة",
+  pm_today_learned:"تعلمتها اليوم", pm_general_review:"مراجعة عامة",
+  pm_general_review_desc:"يعيد طرح الكلمات التي نفترض أنك تعرفها؛ إذا أخطأت تعود إلى قائمة دراستك.",
+  pm_statistics:"الإحصائيات", pm_learned_in:function(lang){ return "تم تعلّمها ("+lang+")"; },
+  pm_total_studied:"إجمالي المدروس", pm_accuracy:"نسبة الدقة",
+  pm_strongest_cat:"أقوى فئة:", pm_weakest_cat:"تحتاج تحسين:",
+  pm_not_enough_data:"لا توجد بيانات كافية بعد.", pm_total_time_loading:"جارٍ تحميل إجمالي وقت الدراسة...",
+  pm_total_time:"إجمالي وقت الدراسة:", pm_level_test_btn:"🎓 اختبار تحديد المستوى",
+  pm_no_known_in_group:"لا توجد كلمات معروفة في هذه المجموعة بعد. ادرس قليلاً أولاً.",
+  pm_back_home:"← العودة للرئيسية", pm_no_level_defined:"لا توجد مستويات محددة لهذه اللغة بعد.", hour_abbr:"س", min_abbr:"د",
+  pm_exam_completed:"اكتمل الاختبار",
+  pm_level_result:function(lvl){ return "🎓 نتيجتك لمستوى "+lvl; },
+  pm_scope_categories:function(n){ return n+" فئات"; }, pm_scope_all_categories:"جميع الفئات",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" صحيحة ("+pct+"%) · "+scope+" · حصلت على +"+xp+" نقطة خبرة · تمت إضافة "+learned+" كلمة إلى قائمة الكلمات المعروفة"; },
+  pm_no_new_words_level:"🎉 لا توجد كلمات جديدة في هذا المستوى - أحسنت!",
+  pm_try_general_review:"يمكنك تجديد معلوماتك عبر المراجعة العامة.",
+  pm_start_studying:"🚀 ابدأ الدراسة", pm_new_badges:"شارات جديدة",
+  pm_word_badge:function(n){ return "شارة "+n+" كلمة"; },
+  pm_badges_header:"الشارات", pm_achievements_header:"الإنجازات",
+  total_time_label:function(name,time){ return "👤 "+name+" — الوقت الإجمالي: "+time; },
+  streak_award:function(n){ return "تتابع "+n+" أيام"; },
+  tier_names:{ lumira_support_1:"شكراً", lumira_support_5:"قهوة", lumira_support_10:"داعم", lumira_support_25:"صديق", lumira_support_50:"نجمة", lumira_support_100:"ملك" },
+  pm_session_complete:"اكتملت الجلسة", pm_great_job:"🎉 عمل رائع!",
+  pm_session_summary:function(n,xp){ return "تعلمت "+n+" كلمة جديدة - +"+xp+" نقطة خبرة"; },
+  pm_result:"النتيجة", pm_newly_learned:"تعلمتها حديثاً", pm_needs_review:"تحتاج مراجعة",
+  pm_see_review_words:function(n){ return "عرض الكلمات التي تحتاج مراجعة ("+n+")"; },
+  pm_back_home_btn:"العودة للرئيسية", pm_review_words_title:"الكلمات التي تحتاج مراجعة",
+  pm_review_words_desc:"ستتخطى الجلسة التالية، ثم تظهر مجدداً بعد ذلك.",
+  pm_correct_answer:"الصحيح:", pm_go_back:"رجوع", achievement_unlocked:"تم فتح إنجاز:", profile_not_connected:"الملف الشخصي غير متصل بعد",
+  lang_names:{ tr:"التركية", de:"الألمانية", en:"الإنجليزية", ar:"العربية", fr:"الفرنسية", es:"الإسبانية", ru:"الروسية" },
+  splash_subtitle:"بطاقات اللغة", splash_tap:"اضغط على الشاشة للدخول",
+  splash_goethe:"ⓘ الكلمات في هذه الصفحة مطابقة تماماً لمعايير Goethe/CEFR",
   lang_change_sub:function(native,target){ return "تتحدث "+native+" · تتعلّم "+target; }
 },
 fr:{
@@ -1377,6 +1525,62 @@ fr:{
   set_update_row:"Vérifier les mises à jour", set_admin_row:"Admin",
   pm_home_title:function(name){ return "👤 Espace de "+name; },
   pm_known:"Mots appris", pm_weak:"Mots faibles", pm_streak:"Série", pm_xp:"XP",
+  prev:"Précédent", shuffle:"Mélanger", next:"Suivant",
+  session_time:function(s){ return "⏱ Cette session : "+s; },
+  rights:"Tous droits réservés", support_app:"Soutenir Lumira",
+  cat_pick_title:"Choisir la catégorie", app_subtitle:"Cartes de langue",
+  time_rank:"Temps", level_rank:"Niveau", no_data_yet:"pas encore de données", rankings:"Classements",
+  pm_progress:"Progression", pm_words_suffix:"mots", pm_known_suffix:"connus",
+  pm_today_learned:"Appris aujourd\u2019hui", pm_general_review:"Révision générale",
+  pm_general_review_desc:"Redemande des mots que tu es censé connaître ; une erreur les renvoie dans ta liste d\u2019étude.",
+  pm_statistics:"Statistiques", pm_learned_in:function(lang){ return "Appris ("+lang+")"; },
+  pm_total_studied:"Total étudié", pm_accuracy:"Précision",
+  pm_strongest_cat:"Catégorie la plus forte :", pm_weakest_cat:"À améliorer :",
+  pm_not_enough_data:"Pas encore assez de données.", pm_total_time_loading:"Chargement du temps d\u2019étude total...",
+  pm_total_time:"Temps d\u2019étude total :", pm_level_test_btn:"🎓 Test de niveau",
+  pm_no_known_in_group:"Aucun mot connu dans ce groupe pour l\u2019instant. Étudie un peu d\u2019abord.",
+  pm_back_home:"← Retour à l\u2019accueil", pm_no_level_defined:"Aucun niveau défini pour cette langue pour l\u2019instant.", hour_abbr:"h", min_abbr:"min",
+  pm_exam_completed:"Prueba completada",
+  pm_level_result:function(lvl){ return "🎓 Tu resultado de nivel "+lvl; },
+  pm_scope_categories:function(n){ return n+" categorías"; }, pm_scope_all_categories:"todas las categorías",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctas ("+pct+"%) · "+scope+" · +"+xp+" XP ganados · "+learned+" palabras añadidas a tu lista de conocidas"; },
+  pm_no_new_words_level:"🎉 No quedan palabras nuevas en este nivel - ¡buen trabajo!",
+  pm_try_general_review:"Puedes repasar lo que sabes con un Repaso general.",
+  pm_start_studying:"🚀 Empezar a estudiar", pm_new_badges:"Nuevas insignias",
+  pm_word_badge:function(n){ return "insignia de "+n+" palabras"; },
+  pm_badges_header:"Insignias", pm_achievements_header:"Logros",
+  total_time_label:function(name,time){ return "👤 "+name+" — Tiempo total: "+time; },
+  streak_award:function(n){ return "Racha de "+n+" días"; },
+  tier_names:{ lumira_support_1:"Gracias", lumira_support_5:"Café", lumira_support_10:"Colaborador", lumira_support_25:"Amigo", lumira_support_50:"Estrella", lumira_support_100:"Rey" },
+  pm_session_complete:"Sesión completada", pm_great_job:"🎉 ¡Buen trabajo!",
+  pm_session_summary:function(n,xp){ return "Aprendiste "+n+" palabras nuevas - +"+xp+" XP"; },
+  pm_result:"Resultado", pm_newly_learned:"Aprendidas ahora", pm_needs_review:"Necesita repaso",
+  pm_see_review_words:function(n){ return "Ver palabras que necesitan repaso ("+n+")"; },
+  pm_back_home_btn:"Volver al inicio", pm_review_words_title:"Palabras que necesitan repaso",
+  pm_review_words_desc:"Se saltarán la próxima sesión y luego volverán a aparecer.",
+  pm_correct_answer:"Correcto:", pm_go_back:"Volver", achievement_unlocked:"Logro desbloqueado:", profile_not_connected:"perfil aún no conectado",
+  pm_exam_completed:"Test terminé",
+  pm_level_result:function(lvl){ return "🎓 Ton résultat niveau "+lvl; },
+  pm_scope_categories:function(n){ return n+" catégories"; }, pm_scope_all_categories:"toutes les catégories",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctes ("+pct+"%) · "+scope+" · +"+xp+" XP gagnés · "+learned+" mots ajoutés à ta liste de mots connus"; },
+  pm_no_new_words_level:"🎉 Plus de nouveaux mots à ce niveau - bravo !",
+  pm_try_general_review:"Tu peux rafraîchir tes connaissances avec une Révision générale.",
+  pm_start_studying:"🚀 Commencer à étudier", pm_new_badges:"Nouveaux badges",
+  pm_word_badge:function(n){ return "badge "+n+" mots"; },
+  pm_badges_header:"Badges", pm_achievements_header:"Succès",
+  total_time_label:function(name,time){ return "👤 "+name+" — Temps total : "+time; },
+  streak_award:function(n){ return "Série de "+n+" jours"; },
+  tier_names:{ lumira_support_1:"Merci", lumira_support_5:"Café", lumira_support_10:"Supporteur", lumira_support_25:"Ami", lumira_support_50:"Étoile", lumira_support_100:"Roi" },
+  pm_session_complete:"Session terminée", pm_great_job:"🎉 Bravo !",
+  pm_session_summary:function(n,xp){ return "Tu as appris "+n+" nouveaux mots - +"+xp+" XP"; },
+  pm_result:"Résultat", pm_newly_learned:"Nouvellement appris", pm_needs_review:"À revoir",
+  pm_see_review_words:function(n){ return "Voir les mots à revoir ("+n+")"; },
+  pm_back_home_btn:"Retour à l\u2019accueil", pm_review_words_title:"Mots à revoir",
+  pm_review_words_desc:"Ils sauteront la prochaine session, puis réapparaîtront après.",
+  pm_correct_answer:"Correct :", pm_go_back:"Retour", achievement_unlocked:"Succès débloqué :", profile_not_connected:"profil pas encore connecté",
+  lang_names:{ tr:"Turc", de:"Allemand", en:"Anglais", ar:"Arabe", fr:"Français", es:"Espagnol", ru:"Russe" },
+  splash_subtitle:"CARTES DE LANGUE", splash_tap:"TOUCHEZ L\u2019ÉCRAN POUR ENTRER",
+  splash_goethe:"ⓘ LES MOTS DE CETTE PAGE CORRESPONDENT EXACTEMENT À GOETHE/CEFR",
   lang_change_sub:function(native,target){ return "Tu parles "+native+" · tu apprends "+target; }
 },
 es:{
@@ -1415,6 +1619,44 @@ es:{
   set_update_row:"Buscar actualizaciones", set_admin_row:"Admin",
   pm_home_title:function(name){ return "👤 Espacio de "+name; },
   pm_known:"Palabras aprendidas", pm_weak:"Palabras débiles", pm_streak:"Racha", pm_xp:"XP",
+  prev:"Anterior", shuffle:"Mezclar", next:"Siguiente",
+  session_time:function(s){ return "⏱ Esta sesión: "+s; },
+  rights:"Todos los derechos reservados", support_app:"Apoyar a Lumira",
+  cat_pick_title:"Elegir categoría", app_subtitle:"Tarjetas de idiomas",
+  time_rank:"Tiempo", level_rank:"Nivel", no_data_yet:"aún sin datos", rankings:"Clasificaciones",
+  pm_progress:"Progreso", pm_words_suffix:"palabras", pm_known_suffix:"conocidas",
+  pm_today_learned:"Aprendidas hoy", pm_general_review:"Repaso general",
+  pm_general_review_desc:"Vuelve a preguntar palabras que se supone que conoces; si fallas, vuelve a tu lista de estudio.",
+  pm_statistics:"Estadísticas", pm_learned_in:function(lang){ return "Aprendidas ("+lang+")"; },
+  pm_total_studied:"Total estudiado", pm_accuracy:"Precisión",
+  pm_strongest_cat:"Categoría más fuerte:", pm_weakest_cat:"A mejorar:",
+  pm_not_enough_data:"Aún no hay suficientes datos.", pm_total_time_loading:"Cargando tiempo total de estudio...",
+  pm_total_time:"Tiempo total de estudio:", pm_level_test_btn:"🎓 Prueba de nivel",
+  pm_no_known_in_group:"Aún no hay palabras conocidas en este grupo. Estudia un poco primero.",
+  pm_back_home:"← Volver al inicio", pm_no_level_defined:"Aún no hay niveles definidos para este idioma.", hour_abbr:"h", min_abbr:"min",
+  lang_names:{ tr:"Turco", de:"Alemán", en:"Inglés", ar:"Árabe", fr:"Francés", es:"Español", ru:"Ruso" },
+  splash_subtitle:"TARJETAS DE IDIOMAS", splash_tap:"TOCA LA PANTALLA PARA ENTRAR",
+  splash_goethe:"ⓘ LAS PALABRAS DE ESTA PÁGINA COINCIDEN EXACTAMENTE CON GOETHE/CEFR",
+  pm_exam_completed:"Prueba completada",
+  pm_level_result:function(lvl){ return "🎓 Tu resultado de nivel "+lvl; },
+  pm_scope_categories:function(n){ return n+" categorías"; }, pm_scope_all_categories:"todas las categorías",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctas ("+pct+"%) · "+scope+" · +"+xp+" XP ganados · "+learned+" palabras añadidas a tu lista de conocidas"; },
+  pm_no_new_words_level:"🎉 No quedan palabras nuevas en este nivel - ¡buen trabajo!",
+  pm_try_general_review:"Puedes repasar lo que sabes con un Repaso general.",
+  pm_start_studying:"🚀 Empezar a estudiar", pm_new_badges:"Nuevas insignias",
+  pm_word_badge:function(n){ return "insignia de "+n+" palabras"; },
+  pm_badges_header:"Insignias", pm_achievements_header:"Logros",
+  total_time_label:function(name,time){ return "👤 "+name+" — Tiempo total: "+time; },
+  streak_award:function(n){ return "Racha de "+n+" días"; },
+  tier_names:{ lumira_support_1:"Gracias", lumira_support_5:"Café", lumira_support_10:"Colaborador", lumira_support_25:"Amigo", lumira_support_50:"Estrella", lumira_support_100:"Rey" },
+  pm_session_complete:"Sesión completada", pm_great_job:"🎉 ¡Buen trabajo!",
+  pm_session_summary:function(n,xp){ return "Aprendiste "+n+" palabras nuevas - +"+xp+" XP"; },
+  pm_result:"Resultado", pm_newly_learned:"Aprendidas ahora", pm_needs_review:"Necesita repaso",
+  pm_see_review_words:function(n){ return "Ver palabras que necesitan repaso ("+n+")"; },
+  pm_back_home_btn:"Volver al inicio", pm_review_words_title:"Palabras que necesitan repaso",
+  pm_review_words_desc:"Se saltarán la próxima sesión y luego volverán a aparecer.",
+  pm_correct_answer:"Correcto:", pm_go_back:"Volver",
+  achievement_unlocked:"Logro desbloqueado:", profile_not_connected:"perfil aún no conectado",
   lang_change_sub:function(native,target){ return "Hablas "+native+" · aprendes "+target; }
 },
 ru:{
@@ -1453,6 +1695,43 @@ ru:{
   set_update_row:"Проверить обновления", set_admin_row:"Админ",
   pm_home_title:function(name){ return "👤 Пространство "+name; },
   pm_known:"Изученные слова", pm_weak:"Слабые слова", pm_streak:"Серия", pm_xp:"XP",
+  prev:"Назад", shuffle:"Перемешать", next:"Далее",
+  session_time:function(s){ return "⏱ Эта сессия: "+s; },
+  rights:"Все права защищены", support_app:"Поддержать Lumira",
+  cat_pick_title:"Выбрать категорию", app_subtitle:"Языковые карточки",
+  time_rank:"Время", level_rank:"Уровень", no_data_yet:"пока нет данных", rankings:"Рейтинги",
+  pm_progress:"Прогресс", pm_words_suffix:"слов", pm_known_suffix:"известно",
+  pm_today_learned:"Выучено сегодня", pm_general_review:"Общее повторение",
+  pm_general_review_desc:"Повторно спрашивает слова, которые ты вроде бы знаешь; ошибёшься — оно вернётся в список изучения.",
+  pm_statistics:"Статистика", pm_learned_in:function(lang){ return "Изучено ("+lang+")"; },
+  pm_total_studied:"Всего изучено", pm_accuracy:"Точность",
+  pm_strongest_cat:"Сильнейшая категория:", pm_weakest_cat:"Нужно улучшить:",
+  pm_not_enough_data:"Пока недостаточно данных.", pm_total_time_loading:"Загрузка общего времени обучения...",
+  pm_total_time:"Общее время обучения:", pm_level_test_btn:"🎓 Тест на определение уровня",
+  pm_no_known_in_group:"В этой группе пока нет известных слов. Сначала немного позанимайся.",
+  pm_back_home:"← Назад на главную", pm_no_level_defined:"Для этого языка пока не определены уровни.", hour_abbr:"ч", min_abbr:"мин",
+  pm_exam_completed:"Тест завершён",
+  pm_level_result:function(lvl){ return "🎓 Твой результат уровня "+lvl; },
+  pm_scope_categories:function(n){ return n+" категорий"; }, pm_scope_all_categories:"все категории",
+  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" правильно ("+pct+"%) · "+scope+" · получено +"+xp+" XP · "+learned+" слов добавлено в список известных"; },
+  pm_no_new_words_level:"🎉 На этом уровне больше нет новых слов - отличная работа!",
+  pm_try_general_review:"Можешь освежить знания с помощью Общего повторения.",
+  pm_start_studying:"🚀 Начать учёбу", pm_new_badges:"Новые значки",
+  pm_word_badge:function(n){ return "значок "+n+" слов"; },
+  pm_badges_header:"Значки", pm_achievements_header:"Достижения",
+  total_time_label:function(name,time){ return "👤 "+name+" — Общее время: "+time; },
+  streak_award:function(n){ return "Серия "+n+" дней"; },
+  tier_names:{ lumira_support_1:"Спасибо", lumira_support_5:"Кофе", lumira_support_10:"Сторонник", lumira_support_25:"Друг", lumira_support_50:"Звезда", lumira_support_100:"Король" },
+  pm_session_complete:"Сессия завершена", pm_great_job:"🎉 Отличная работа!",
+  pm_session_summary:function(n,xp){ return "Ты выучил "+n+" новых слов - +"+xp+" XP"; },
+  pm_result:"Результат", pm_newly_learned:"Только что выучено", pm_needs_review:"Нужно повторить",
+  pm_see_review_words:function(n){ return "Посмотреть слова для повторения ("+n+")"; },
+  pm_back_home_btn:"На главную", pm_review_words_title:"Слова для повторения",
+  pm_review_words_desc:"Они пропустят следующую сессию, а потом появятся снова.",
+  pm_correct_answer:"Правильно:", pm_go_back:"Назад", achievement_unlocked:"Достижение открыто:", profile_not_connected:"профиль ещё не подключён",
+  lang_names:{ tr:"Турецкий", de:"Немецкий", en:"Английский", ar:"Арабский", fr:"Французский", es:"Испанский", ru:"Русский" },
+  splash_subtitle:"ЯЗЫКОВЫЕ КАРТОЧКИ", splash_tap:"НАЖМИТЕ НА ЭКРАН, ЧТОБЫ ВОЙТИ",
+  splash_goethe:"ⓘ СЛОВА НА ЭТОЙ СТРАНИЦЕ ТОЧНО СООТВЕТСТВУЮТ GOETHE/CEFR",
   lang_change_sub:function(native,target){ return "Говоришь на "+native+" · учишь "+target; }
 }
 };
@@ -1621,6 +1900,30 @@ function applyUIChrome(){
     document.querySelectorAll('.speak-lbl').forEach((el,i)=>{ el.textContent = (i%2===0)?t('normal_speed'):t('slow_speed'); });
     const quizTag = document.querySelector('#quizView .tag'); if(quizTag) quizTag.textContent = t('quiz_prompt');
     const catAll = $$('catAllChip'); if(catAll) catAll.textContent = t('cat_all');
+    /* dil butonlarının altındaki isimler (Almanca/German/Deutsch/...) */
+    const names = t('lang_names') || {};
+    document.querySelectorAll('.lang-opt').forEach(o=>{
+      const code = o.dataset.lang;
+      const nm = o.querySelector('.lname');
+      if(nm && names[code]) nm.textContent = names[code];
+    });
+    /* kart kontrol butonları */
+    if($$('prevBtn')) $$('prevBtn').textContent = t('prev');
+    if($$('shuffleBtn')) $$('shuffleBtn').textContent = t('shuffle');
+    if($$('nextBtn')) $$('nextBtn').textContent = t('next');
+    if($$('quizPrevBtn')) $$('quizPrevBtn').textContent = t('prev');
+    if($$('quizNextBtn')) $$('quizNextBtn').textContent = t('next');
+    /* footer / destek butonu / kategori modal başlığı / H1 alt başlık */
+    const rightsEl = $$('creditRights'); if(rightsEl) rightsEl.textContent = t('rights');
+    const supportBtnText = $$('supportBtnText'); if(supportBtnText) supportBtnText.textContent = t('support_app');
+    const catPanelTitle = $$('catPanelTitle'); if(catPanelTitle) catPanelTitle.textContent = t('cat_pick_title');
+    const h1 = document.querySelector('.app h1'); if(h1) h1.textContent = t('app_subtitle');
+    const spSub = $$('splashSubtitle'); if(spSub) spSub.textContent = t('splash_subtitle');
+    const spTap = $$('splashTap'); if(spTap) spTap.textContent = t('splash_tap');
+    const spGoe = $$('splashGoethe'); if(spGoe) spGoe.textContent = t('splash_goethe');
+    const spLbT = $$('splashLbTitle'); if(spLbT) spLbT.textContent = '🏆 '+t('rankings');
+    const spLbTime = $$('splashLbTimeLbl'); if(spLbTime) spLbTime.textContent = '⏱️ '+t('time_rank');
+    const spLbLevel = $$('splashLbLevelLbl'); if(spLbLevel) spLbLevel.textContent = '⭐ '+t('level_rank');
     updateCatUI();
     if(typeof rebuildLevelBox==='function') rebuildLevelBox();
   } catch(e){}
@@ -1932,7 +2235,7 @@ function startSessionTimer(){
   function tick(){
     const elapsed = (window.LB_getActiveSeconds ? window.LB_getActiveSeconds() : (Date.now() - start) / 1000);
     const idle = (window.LB_isIdle ? window.LB_isIdle() : false);
-    el.textContent = `⏱ Bu oturumda: ${fmt(elapsed)}${idle ? ' ⏸' : ''}`;
+    el.textContent = `${t('session_time')(fmt(elapsed))}${idle ? ' ⏸' : ''}`;
   }
   tick();
   setInterval(tick, 1000);
