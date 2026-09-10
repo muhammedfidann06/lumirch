@@ -1,0 +1,17 @@
+/* Small additions using Lumira's existing color palette and controls. */
+:where(button,[role="button"],input,textarea,select,a):focus-visible {
+  outline:2px solid #4fe8ff;
+  outline-offset:3px;
+}
+.nb-backup-actions { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
+.nb-backup-actions .ctrl { flex:1; min-width:140px; }
+#notebookView .pm-fill-input { box-sizing:border-box; }
+#wpResult { overflow-wrap:anywhere; }
+#wpInput { min-height:180px; }
+@media(max-width:480px) {
+  #wpInput,.nb-wrap input,.nb-wrap textarea { font-size:16px; }
+  .nb-backup-actions .ctrl { min-height:44px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #snowCanvas { display:none; }
+}

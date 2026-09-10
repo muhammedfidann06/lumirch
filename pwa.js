@@ -75,7 +75,8 @@ function toast(msg, opts) {
   opts = opts || {};
   var el = document.createElement('div');
   el.className = 'pwa-toast' + (opts.kind ? ' ' + opts.kind : '');
-  el.innerHTML = '<span>' + msg + '</span>';
+  var message = document.createElement('span');
+  message.textContent = msg; el.appendChild(message);
   if (opts.action) {
     var b = document.createElement('button');
     b.className = 't-act';
@@ -93,6 +94,9 @@ function toast(msg, opts) {
   }
   return close;
 }
+/* Notlarım/favoriler gibi index.html'in kendi inline script'i de aynı
+   toast sistemini kullanabilsin diye dışarı açıyoruz. */
+window.LUM_toast = toast;
 
 /* ------------------------------------------------------- ALT SAYFA ------ */
 var openSheets = [];
@@ -103,11 +107,14 @@ function sheet(title, subtitle, buildBody) {
     if (openSheets[i].title === title) { openSheets[i].close(); return null; }
   }
 
+  var previousFocus = document.activeElement;
   var back = document.createElement('div');
   back.className = 'pwa-sheet-backdrop';
   var box = document.createElement('div');
   box.className = 'pwa-sheet';
   box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.setAttribute('aria-label', String(title));
   box.innerHTML = '<div class="grab"></div>' +
                   '<button type="button" class="pwa-sheet-x" aria-label="Kapat">✕</button>' +
                   '<h3>' + title + '</h3>' +
@@ -142,6 +149,7 @@ function sheet(title, subtitle, buildBody) {
       if (i > -1) openSheets.splice(i, 1);
       if (settingsOpen === api) settingsOpen = null;
       back.classList.remove('in'); box.classList.remove('in');
+      if(previousFocus && previousFocus.isConnected) previousFocus.focus();
       setTimeout(function () { back.remove(); box.remove(); }, 380);
     }
   };
@@ -153,6 +161,16 @@ function sheet(title, subtitle, buildBody) {
   /* İçerik, api hazır olduktan SONRA kuruluyor: aksi hâlde geri çağrıya
      gönderilen api tanımsız oluyordu (var hoisting). */
   try { buildBody(body, api); } catch (e) { logError(e); }
+  if(xBtn) xBtn.focus();
+  box.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ e.preventDefault(); api.close(); return; }
+    if(e.key !== 'Tab') return;
+    var all = Array.from(box.querySelectorAll('button:not([disabled]),input:not([disabled]),select,textarea,a[href],[tabindex="0"]')).filter(function(el){return el.getClientRects().length;});
+    if(!all.length) return;
+    var first=all[0], last=all[all.length-1];
+    if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
+  });
   return api;
 }
 function row(icon, title, desc, right) {
@@ -227,7 +245,7 @@ function registerSW() {
   navigator.serviceWorker.addEventListener('message', function (ev) {
     var d = ev.data || {};
     if (d.type === 'CACHE_PROGRESS') onCacheProgress(d.done, d.total);
-    if (d.type === 'CACHE_DONE')     onCacheDone();
+    if (d.type === 'CACHE_DONE')     onCacheDone(d);
     if (d.type === 'NOTIFICATION_OPEN') route(new URL(d.url, location.href).searchParams, true);
     if (d.type === 'BACK_ONLINE')    refreshOnlineState();
   });
@@ -614,11 +632,9 @@ function fireReminder() {
   if (studiedToday()) return;
   store('pwa_reminder_last', today());
   var w = pickDailyWord();
-  var fw = w ? (window.FRONT_W ? window.FRONT_W(w) : w.w) : '';
-  var bw = w ? (window.BACK_W ? window.BACK_W(w) : w.tr) : '';
   showNotification(
     'Bugün birkaç kelime? 🌙',
-    w ? (fw + ' — ' + (bw || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
+    w ? (w.w + ' — ' + (w.tr || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
     './?src=reminder&tab=cards'
   );
 }
@@ -682,7 +698,13 @@ function downloadOfflinePack() {
 function onCacheProgress(done, total) {
   if (cacheBar) cacheBar.style.width = Math.round(done / total * 100) + '%';
 }
-function onCacheDone() {
+function onCacheDone(result) {
+  if (result && result.failed > 0) {
+    if (cacheBar) cacheBar.style.width = Math.round((result.total - result.failed) / result.total * 100) + '%';
+    store('pwa_offline_pack', null);
+    toast('Paket tamamlanamadı: ' + result.failed + ' sözlük indirilemedi. Bağlantını kontrol edip tekrar dene.', { kind: 'bad', duration: 6000 });
+    return;
+  }
   if (cacheBar) cacheBar.style.width = '100%';
   store('pwa_offline_pack', today());
   toast('✅ Çevrimdışı paket hazır — internet olmadan da çalışır', { kind: 'good', duration: 5000 });
@@ -744,6 +766,10 @@ function setupFavButton() {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.anyBadge('Favorilere ekleme')) return;
       addFavorite(c); vibrate(24); toast('⭐ ' + c.w + ' favorilere eklendi', { kind: 'good' });
     }
+    /* Aynı tıklama, Notlarım'daki hesaba-bağlı (Firebase) favori sistemine
+       de yazsın — böylece kartlardan favorilenen kelimeler artık
+       Notlarım'da da görünür. */
+    try{ window.NB_toggleFavoriteFromCard && window.NB_toggleFavoriteFromCard(); }catch(e2){}
     syncFavButton();
   };
 
@@ -772,7 +798,12 @@ function openFavorites() {
       it.innerHTML = '<div class="fl">' + (flags[f.lang] || '🏳️') + '</div>' +
         '<div class="w"><b>' + escapeHtml(f.w) + '</b><span>' + escapeHtml(f.tr || '') + '</span></div>' +
         '<button class="rm" aria-label="Sil">✕</button>';
-      qs('.rm', it).onclick = function () { removeFavorite(f); it.remove(); syncFavButton(); };
+      qs('.rm', it).onclick = function () {
+        removeFavorite(f);
+        try{ window.NB_unfavoriteByWord && window.NB_unfavoriteByWord(f.lang, f.w); }catch(e){}
+        it.remove();
+        syncFavButton();
+      };
       b.appendChild(it);
     });
     var exp = row('📤', 'Favorileri paylaş / indir', list.length + ' kelime');
@@ -837,12 +868,13 @@ function copyText(t) {
     ta.remove();
   }
 }
+function backupKeyAllowed(k){ return /^(pm_data_|pwa_|lumira_(favs_|resume_|nb_cache_|notebook|lt_|support_|onboarded_|welcome_))/.test(k); }
 function exportAllData() {
   var dump = { app: CONFIG.brand, exportedAt: new Date().toISOString(), data: {} };
   try {
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
-      dump.data[k] = localStorage.getItem(k);
+      if(backupKeyAllowed(k)) dump.data[k] = localStorage.getItem(k);
     }
   } catch (e) {}
   shareOrSave('dil-kartlari-yedek-' + today() + '.json',
@@ -854,12 +886,21 @@ function importData() {
   inp.onchange = function () {
     var f = inp.files && inp.files[0];
     if (!f) return;
+    if(f.size > 10*1024*1024){ toast('Yedek en fazla 10 MB olabilir.', {kind:'bad'}); return; }
     var fr = new FileReader();
     fr.onload = function () {
       try {
         var j = JSON.parse(fr.result);
         var d = j.data || j;
-        Object.keys(d).forEach(function (k) { localStorage.setItem(k, d[k]); });
+        if(!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Geçersiz yedek');
+        var keys=Object.keys(d).filter(backupKeyAllowed), previous={};
+        if(!keys.length || keys.some(function(k){return typeof d[k] !== 'string';})) throw new Error('Geçersiz yedek');
+        keys.forEach(function(k){ JSON.parse(d[k]); previous[k]=localStorage.getItem(k); });
+        try{ keys.forEach(function(k){localStorage.setItem(k,d[k]);}); }
+        catch(error){
+          keys.forEach(function(k){try{if(previous[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,previous[k]);}catch(e){}});
+          throw error;
+        }
         toast('✅ Yedek geri yüklendi, yenileniyor…', { kind: 'good' });
         setTimeout(function () { location.reload(); }, 1200);
       } catch (e) { toast('Dosya okunamadı', { kind: 'bad' }); }
@@ -1019,8 +1060,7 @@ function applyResume(r) {
   /* Önce kelimeyi ara (deste karıştırılmış olabilir), bulamazsan sırayı kullan */
   if (r.word) {
     for (var i = 0; i < deck.length; i++) {
-      var fw = (window.FRONT_W && deck[i]) ? window.FRONT_W(deck[i]) : (deck[i] && deck[i].w);
-      if (deck[i] && fw === r.word) { target = i; break; }
+      if (deck[i] && deck[i].w === r.word) { target = i; break; }
     }
   }
   if (target < 0 && typeof r.idx === 'number' && r.idx < deck.length) target = r.idx;
@@ -1089,12 +1129,10 @@ function showDailyWord() {
       b.innerHTML = '<div class="pwa-empty">Kartlar henüz yüklenmedi. Birkaç saniye sonra tekrar dene.</div>';
       return;
     }
-    var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
-    var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || w.t);
     var card = document.createElement('div');
     card.className = 'pwa-row';
     card.innerHTML = '<div class="ic">📘</div><div class="tx"><b style="font-size:19px">' +
-      escapeHtml(fw || '') + '</b><span style="font-size:13px">' + escapeHtml(bw || '') + '</span></div>';
+      escapeHtml(w.w || '') + '</b><span style="font-size:13px">' + escapeHtml(w.tr || w.t || '') + '</span></div>';
     b.appendChild(card);
 
     var listen = row('🔊', 'Dinle', 'Telaffuzu seslendir');
@@ -1102,20 +1140,19 @@ function showDailyWord() {
       try {
         if (typeof window.speakNative === 'function') {
           var map = { de: 'de-DE', en: 'en-US', ar: 'ar-SA', fr: 'fr-FR', es: 'es-ES', ru: 'ru-RU' };
-          var voice = window.FRONT_VOICE ? window.FRONT_VOICE(w) : (map[w.lang || activeLangCode()] || 'de-DE');
-          window.speakNative(fw, voice, 0.92, function () {});
+          window.speakNative(w.w, map[w.lang || activeLangCode()] || 'de-DE', 0.92, function () {});
         }
       } catch (e) { logError(e); }
     };
     b.appendChild(listen);
 
     var fav = row('⭐', 'Favorilere ekle', '');
-    fav.onclick = function () { addFavorite({ w: fw, tr: bw || '', lang: w.lang || activeLangCode() }); toast('⭐ Eklendi', { kind: 'good' }); };
+    fav.onclick = function () { addFavorite({ w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() }); toast('⭐ Eklendi', { kind: 'good' }); };
     b.appendChild(fav);
 
     var sh = row('📤', 'Paylaş', 'Arkadaşına gönder');
     sh.onclick = function () {
-      var txt = fw + ' — ' + (bw || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
+      var txt = w.w + ' — ' + (w.tr || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
       if (navigator.share) navigator.share({ text: txt, url: location.origin + location.pathname }).catch(function () {});
       else copyText(txt);
     };
@@ -1125,14 +1162,12 @@ function showDailyWord() {
 }
 function updateWidgetData(w) {
   if (!w) return;
-  var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
-  var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || '');
-  store('lumira_daily_word', { date: today(), w: fw, tr: bw || '', lang: w.lang || activeLangCode() });
+  store('lumira_daily_word', { date: today(), w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() });
   try {
     if ('widgets' in navigator) {
       /* Windows Widgets Board / desteklenen platformlar */
       navigator.widgets.updateByTag && navigator.widgets.updateByTag('daily-word', {
-        template: 'daily-word', data: JSON.stringify({ word: fw, translation: bw || '' })
+        template: 'daily-word', data: JSON.stringify({ word: w.w, translation: w.tr || '' })
       });
     }
   } catch (e) {}
@@ -1317,93 +1352,6 @@ function bigButton(text) {
 }
 
 /* ------------------------------- PROFİLİM ------------------------------- */
-/* ============================================== DİL AYARI (native/hedef) === */
-function openLanguageSettings() {
-  sheet('🌐 ' + t('language_row'), '', function (b, api) {
-    var NATIVE_OPTS = [
-      { c: 'tr', t: '🇹🇷 Türkçe' }, { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' },
-      { c: 'ar', t: '🇸🇦 العربية' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }
-    ];
-    var TARGET_OPTS = [
-      { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' }, { c: 'ar', t: '🇸🇦 العربية' },
-      { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'tr', t: '🇹🇷 Türkçe' }
-    ];
-    var native = window.NATIVE_LANG || 'tr';
-    var target = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
-
-    var nativeWrap = document.createElement('div');
-    nativeWrap.className = 'pwa-row'; nativeWrap.style.display = 'block'; nativeWrap.style.cursor = 'default';
-    nativeWrap.innerHTML = '<b style="display:block;margin-bottom:10px;">' + t('onb_native_title') + '</b>';
-    var nativeChips = document.createElement('div');
-    nativeChips.className = 'pdf-chips';
-    nativeWrap.appendChild(nativeChips);
-    b.appendChild(nativeWrap);
-
-    var targetWrap = document.createElement('div');
-    targetWrap.className = 'pwa-row'; targetWrap.style.display = 'block'; targetWrap.style.cursor = 'default';
-    targetWrap.innerHTML = '<b style="display:block;margin-bottom:10px;margin-top:6px;">' + t('onb_target_title') + '</b>';
-    var targetChips = document.createElement('div');
-    targetChips.className = 'pdf-chips';
-    targetWrap.appendChild(targetChips);
-    b.appendChild(targetWrap);
-
-    function drawNative() {
-      nativeChips.innerHTML = '';
-      NATIVE_OPTS.forEach(function (o) {
-        var c = document.createElement('button');
-        c.type = 'button';
-        c.className = 'pdf-chip' + (o.c === native ? ' on' : '');
-        c.textContent = o.t;
-        c.onclick = function () {
-          native = o.c;
-          if (target === native) target = (native === 'tr') ? 'de' : 'tr'; /* çakışma olursa otomatik düzelt */
-          drawNative(); drawTarget();
-        };
-        nativeChips.appendChild(c);
-      });
-    }
-    function drawTarget() {
-      targetChips.innerHTML = '';
-      TARGET_OPTS.filter(function (o) { return o.c !== native && (o.c !== 'tr' || native !== 'tr'); }).forEach(function (o) {
-        var c = document.createElement('button');
-        c.type = 'button';
-        c.className = 'pdf-chip' + (o.c === target ? ' on' : '');
-        c.textContent = o.t;
-        c.onclick = function () { target = o.c; drawTarget(); };
-        targetChips.appendChild(c);
-      });
-    }
-    drawNative(); drawTarget();
-
-    var go = document.createElement('button');
-    go.type = 'button';
-    go.className = 'pwa-btn';
-    go.style.marginTop = '18px';
-    go.textContent = t('save_apply');
-    go.onclick = function () {
-      go.disabled = true; go.textContent = t('applying');
-      var p = window.setLangPair ? window.setLangPair(native, target) : Promise.resolve();
-      p.then(function () {
-        try {
-          document.querySelectorAll('.lang-opt').forEach(function (o) { o.classList.toggle('active', o.dataset.lang === target); });
-          if (window.renderLangPair) window.renderLangPair();
-          if (window.rebuildLevelBox) window.rebuildLevelBox();
-          if (window.rebuildChips) window.rebuildChips();
-          if (window.applyFilter) window.applyFilter();
-          if (document.querySelector('.pm-root') && window.PM_open) window.PM_open();
-        } catch (e) { logError(e); }
-        toast('🌐 Dil ayarı güncellendi', { kind: 'good' });
-        settingsOpen && settingsOpen.close && settingsOpen.close();
-        api.close();
-      }).catch(function () {
-        go.disabled = false; go.textContent = t('save_apply');
-        toast('⚠️ Sözlük yüklenemedi, tekrar dene', { kind: 'bad' });
-      });
-    };
-    b.appendChild(go);
-  });
-}
-
 function openProfile() {
   var u = fbUser();
   sheet('👤 Profilim', u ? 'Giriş yapıldı' : 'Bu bölüm için önce giriş yapman gerekiyor.', function (b) {
@@ -1803,10 +1751,10 @@ function hardRefresh(full) {
 var settingsOpen = null;
 function openSettings() {
   if (settingsOpen) { try { settingsOpen.close(); } catch (e) {} settingsOpen = null; return; }
-  settingsOpen = sheet(t('set_app_title'), CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
+  settingsOpen = sheet('⚙️ Uygulama', CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
 
     var liteOn = document.documentElement.classList.contains('lite');
-    var liteRow = row('⚡', t('set_lite_row'),
+    var liteRow = row('⚡', 'Hafif mod',
       liteOn
         ? (liteSetting() === true ? 'Açık — süslemeler kapalı, daha akıcı'
                                   : 'Açık (cihaz zayıf olduğu için otomatik)')
@@ -1829,7 +1777,7 @@ function openSettings() {
     /* --- Bildirimler ------------------------------------------------- */
     var s = reminderSettings();
     var permOk = notifyState() === 'granted';
-    var notifRow = row('🔔', t('set_notif_row'),
+    var notifRow = row('🔔', 'Günlük hatırlatma',
       permOk ? (s.on ? 'Her gün ' + pad(s.hour) + ':' + pad(s.min) : 'Kapalı') : 'İzin gerekiyor',
       '<div class="pwa-switch' + (s.on && permOk ? ' on' : '') + '"></div>');
     notifRow.onclick = function () {
@@ -1845,7 +1793,7 @@ function openSettings() {
     };
     b.appendChild(notifRow);
 
-    var timeRow = row('⏰', t('set_notif_time_row'), 'Bildirimin geleceği saat',
+    var timeRow = row('⏰', 'Hatırlatma saati', 'Bildirimin geleceği saat',
       '<input class="pwa-time" type="time" value="' + pad(s.hour) + ':' + pad(s.min) + '">');
     var inp = qs('.pwa-time', timeRow);
     inp.onclick = function (e) { e.stopPropagation(); };
@@ -1859,7 +1807,7 @@ function openSettings() {
     };
     b.appendChild(timeRow);
 
-    var testRow = row('📨', t('set_notif_test_row'), 'Çalışıyor mu diye bak');
+    var testRow = row('📨', 'Test bildirimi gönder', 'Çalışıyor mu diye bak');
     testRow.onclick = function () {
       askNotifyPermission().then(function (p) {
         if (p !== 'granted') { toast('Önce izin ver', { kind: 'bad' }); return; }
@@ -1869,7 +1817,7 @@ function openSettings() {
     b.appendChild(testRow);
 
     /* --- Çevrimdışı --------------------------------------------------- */
-    var packRow = row('📦', t('set_offline_row'), '6 dilin tüm sözlükleri · destek rozeti gerekir');
+    var packRow = row('📦', 'Çevrimdışı paketi indir', '6 dilin tüm sözlükleri · destek rozeti gerekir');
     var bar = document.createElement('div');
     bar.className = 'pwa-progress';
     bar.innerHTML = '<i></i>';
@@ -1883,17 +1831,17 @@ function openSettings() {
 
     estimateStorage().then(function (st) {
       if (!st) return;
-      var r = row('💾', t('set_storage_row'), mb(st.used) + ' / ' + mb(st.quota));
+      var r = row('💾', 'Kullanılan alan', mb(st.used) + ' / ' + mb(st.quota));
       r.style.cursor = 'default';
       b.insertBefore(r, packRow.nextSibling);
     });
 
     /* --- Favoriler & veri --------------------------------------------- */
-    var favRow = row('⭐', t('set_favs_row'), favs().length + ' kelime');
+    var favRow = row('⭐', 'Favorilerim', favs().length + ' kelime');
     favRow.onclick = function () { openFavorites(); };
     b.appendChild(favRow);
 
-    var check = row('🔍', t('set_check_row'), 'Kayıtlı ilerleme kayıtlarını say');
+    var check = row('🔍', 'Verilerim duruyor mu?', 'Kayıtlı ilerleme kayıtlarını say');
     check.onclick = function () {
       var n = 0, keys = [];
       try {
@@ -1908,27 +1856,27 @@ function openSettings() {
     };
     b.appendChild(check);
 
-    var exp = row('⬇️', t('set_export_row'), 'JSON dosyası indir veya paylaş');
+    var exp = row('⬇️', 'Bu cihazdaki ilerlememi yedekle', 'Defterini ayrıca Notlarım içinden yedekleyebilirsin');
     exp.onclick = exportAllData;
     b.appendChild(exp);
 
-    var imp = row('⬆️', t('set_import_row'), 'Daha önce indirdiğin dosyayı seç');
+    var imp = row('⬆️', 'Yedekten geri yükle', 'Daha önce indirdiğin dosyayı seç');
     imp.onclick = importData;
     b.appendChild(imp);
 
-    var shr = row('🔗', t('set_share_row'), 'Arkadaşlarına gönder');
+    var shr = row('🔗', 'Uygulamayı paylaş', 'Arkadaşlarına gönder');
     shr.onclick = shareApp;
     b.appendChild(shr);
 
     /* --- Kurulum / güncelleme ----------------------------------------- */
     if (!isStandalone && !isTwa) {
-      var ins = row('📲', t('set_install_row'), 'Tam ekran, hızlı ve çevrimdışı');
+      var ins = row('📲', 'Ana ekrana ekle', 'Tam ekran, hızlı ve çevrimdışı');
       ins.onclick = doInstall;
       b.appendChild(ins);
     }
 
     var myVer = (window.PWA && window.PWA.version) ? window.PWA.version : 'bilinmiyor';
-    var upd = row('🔄', t('set_update_row'), 'Çalışan sürüm: ' + myVer);
+    var upd = row('🔄', 'Güncellemeleri denetle', 'Çalışan sürüm: ' + myVer);
     var updDesc = qs('.tx span', upd);
     b.appendChild(upd);
 
@@ -2006,19 +1954,8 @@ function openSettings() {
 
     /* --- Profil (en altta) ------------------------------------------- */
     b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note" style="margin:20px 2px 8px">' + t('account') + '</p>');
-
-    var curNative = window.NATIVE_LANG || 'tr';
-    var curTarget = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
-    var NATIVE_NAMES = { tr:'Türkçe', de:'Deutsch', en:'English', ar:'العربية', ru:'Русский', fr:'Français', es:'Español' };
-    var langSub = (window.I18N && window.I18N[curNative] && window.I18N[curNative].lang_change_sub)
-      ? window.I18N[curNative].lang_change_sub(NATIVE_NAMES[curNative]||curNative, NATIVE_NAMES[curTarget]||curTarget)
-      : (NATIVE_NAMES[curNative]||curNative) + ' konuşuyorsun · ' + (NATIVE_NAMES[curTarget]||curTarget) + ' öğreniyorsun';
-    var langRow = row('🌐', t('language_row'), langSub);
-    langRow.onclick = function () { openLanguageSettings(); };
-    b.appendChild(langRow);
-
-    var prof = row('👤', t('profile_row'), t('profile_desc'));
+      '<p class="pwa-note" style="margin:20px 2px 8px">Hesap</p>');
+    var prof = row('👤', 'Profilim', 'Adını ve şifreni değiştir · 3. seviye gerekir');
     prof.onclick = function () {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.level(3, 'Profilim')) return;
       openProfile();
@@ -2210,7 +2147,7 @@ window.PWA = {
     });
     return { onLine: navigator.onLine, badgeVisible: !!(document.getElementById('pwa-offline') || {}).classList && document.getElementById('pwa-offline').classList.contains('in') };
   },
-  version: '1.7.22',
+  version: '1.7.52',
   isStandalone: function () { return isStandalone; }
 };
 

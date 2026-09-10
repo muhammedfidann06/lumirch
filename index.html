@@ -223,6 +223,16 @@
   }
 
   .lang-box{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  /* GÜVENLİK KATMANI: "Notlarım" (ve "Kişisel") sekmesi açıkken üstteki dil
+     kartları/seviye/kategori çubuğu normalde ilgili tab handler'ı içindeki
+     setDisplay(...,'none') satırlarıyla gizleniyor. Olası bir zamanlama/
+     cache sorununda bile bu asla yanlışlıkla görünür KALMASIN diye, aynı
+     şeyi body sınıfı üzerinden CSS ile de zorunlu kılıyoruz — iki bağımsız
+     mekanizma birden aynı sonucu garanti ediyor. */
+  body.notebook-active #langBox, body.notebook-active #langPair,
+  body.notebook-active #levelBox, body.notebook-active #chips{
+    display:none !important;
+  }
   body.pm-active #langBox,body.pm-active #langPair,body.pm-active #levelBox,body.pm-active #chips{display:none !important;}
   .lang-opt{
     flex:1 1 27%;min-width:78px;text-align:center;padding:12px 4px;border-radius:16px;cursor:pointer;
@@ -295,8 +305,8 @@
   .cat-panel::-webkit-scrollbar-thumb{background:rgba(79,232,255,0.35);border-radius:4px;}
   .cat-panel::-webkit-scrollbar-thumb:hover{background:rgba(79,232,255,0.55);}
   @media (min-width:720px){
-    .cat-overlay{ align-items:center; }
-    .cat-panel{ max-height:70vh; border-radius:22px; }
+    .cat-overlay{ align-items:flex-start; padding-top:5vh; }
+    .cat-panel{ max-height:90vh; border-radius:22px; }
   }
   .cat-panel-header{
     display:flex;justify-content:space-between;align-items:center;
@@ -668,9 +678,227 @@
     background-size:300% 300%;-webkit-background-clip:text;background-clip:text;color:transparent;
     animation:pmNeonShift 4s ease-in-out infinite;
   }
+
+  /* ===== NOTLARIM (kullanıcının kendi kelime defteri) =====
+     4. sekme eklendiğinde .tabs biraz daha sıkışık olmalı ki 4 kutu da
+     tek satırda, taşmadan sığsın. */
+  .tabs{gap:6px;}
+  .tab{font-size:11.8px;padding:9px 2px;}
+
+  .nb-wrap{padding:2px 0 10px;}
+  .nb-intro{
+    font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 16px;
+    background:rgba(10,14,24,0.35);padding:10px 12px;border-radius:12px;
+  }
+  .nb-form{
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid rgba(79,232,255,0.3);border-radius:18px;
+    padding:16px;margin-bottom:18px;
+  }
+  .nb-form-title{font-size:13.5px;font-weight:800;color:var(--cyan-soft);margin:0 0 12px;letter-spacing:.02em;}
+  .nb-row{display:flex;gap:8px;margin-bottom:10px;}
+  .nb-row > *{flex:1;min-width:0;}
+  .nb-field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:5px;letter-spacing:.03em;}
+  .nb-field input, .nb-field textarea{
+    width:100%;box-sizing:border-box;padding:11px 12px;border-radius:11px;
+    border:1px solid rgba(79,232,255,0.3);background:rgba(0,0,0,0.22);
+    color:var(--text);font-size:14px;font-family:inherit;
+  }
+  .nb-field textarea{resize:vertical;min-height:40px;}
+  .nb-field input:focus, .nb-field textarea:focus{outline:2px solid var(--cyan-soft);}
+  .nb-form-actions{display:flex;gap:10px;margin-top:4px;}
+  .nb-btn{
+    flex:1;padding:12px 0;border-radius:12px;border:none;cursor:pointer;
+    font-weight:700;font-size:13.5px;transition:filter .15s ease, transform .1s ease;
+  }
+  .nb-btn:active{transform:scale(.97);}
+  .nb-btn-primary{
+    background:linear-gradient(135deg,var(--cyan),var(--pink));color:#2a1420;
+    box-shadow:0 4px 18px rgba(255,95,184,0.35);
+  }
+  .nb-btn-ghost{
+    background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid rgba(130,145,179,0.3);
+  }
+  .nb-start{
+    width:100%;padding:11px 0;border-radius:13px;border:none;cursor:pointer;
+    background:linear-gradient(120deg,#4fe8ff,#9b7bff,#ff5fb8,#4fe8ff);
+    background-size:300% 300%;animation:pmNeonShift 5s ease-in-out infinite;
+    color:#04050a;font-weight:800;font-size:13px;margin-bottom:10px;
+    box-shadow:0 4px 16px rgba(79,232,255,0.3), 0 0 22px rgba(255,95,184,0.2);
+  }
+  .nb-start[disabled]{opacity:.45;cursor:default;animation:none;box-shadow:none;}
+  .nb-list-title{font-size:12px;color:var(--muted);margin:0 0 10px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;}
+  .nb-empty{
+    text-align:center;color:var(--muted);font-size:12.5px;padding:30px 14px;
+    background:rgba(10,14,24,0.3);border-radius:14px;line-height:1.6;
+  }
+  .nb-item{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid rgba(79,232,255,0.14);border-radius:14px;
+    padding:12px 12px;margin-bottom:9px;
+  }
+  .nb-item-main{flex:1;min-width:0;}
+  .nb-item-w{font-size:14.5px;font-weight:700;color:var(--text);word-break:break-word;}
+  .nb-item-tr{font-size:12px;color:var(--cyan-soft);margin-top:2px;word-break:break-word;}
+  .nb-item-ex{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;word-break:break-word;}
+  .nb-item-actions{display:flex;gap:6px;flex-shrink:0;}
+  .nb-icon-btn{
+    width:32px;height:32px;border-radius:9px;border:1px solid rgba(130,145,179,0.25);
+    background:rgba(255,255,255,0.05);color:var(--text);font-size:14px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  }
+  .nb-icon-btn:active{filter:brightness(1.3);}
+  .nb-icon-btn.danger{color:var(--red);}
+  .nb-search-results{
+    display:none;position:absolute;left:16px;right:16px;top:auto;margin-top:6px;
+    max-height:260px;overflow-y:auto;z-index:30;
+    background:linear-gradient(160deg,#151b30,#0d1122);
+    border:1px solid rgba(79,232,255,0.35);border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .nb-search-item{
+    display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .nb-search-item:last-child{border-bottom:none;}
+  .nb-search-item:active, .nb-search-item:hover{background:rgba(79,232,255,0.1);}
+  .nb-search-flag{font-size:16px;flex-shrink:0;}
+  .nb-search-text{font-size:13px;color:var(--text);}
+  .nb-search-empty{padding:12px 14px;font-size:12px;color:var(--muted);text-align:center;}
+
+  /* ---- Zorluk seviyesi (kart üstü kutu) ---- */
+  .stage.stage-merged{margin-bottom:0;}
+  .stage.stage-merged .card, .stage.stage-merged .face{border-radius:var(--radius) var(--radius) 0 0;}
+  .nb-diff-box{
+    margin-top:0;padding:14px;border-radius:0 0 var(--radius) var(--radius);
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid rgba(79,232,255,0.25);border-top:1px solid rgba(79,232,255,0.1);
+    margin-bottom:18px;
+  }
+  .nb-diff-title{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:800;margin-bottom:10px;}
+  .nb-diff-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .nb-diff-opt{
+    flex:1 1 100px;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:13px;cursor:pointer;
+    border:1px solid rgba(130,145,179,0.28);background:rgba(0,0,0,0.16);transition:all .15s ease;
+  }
+  .nb-diff-emoji{font-size:18px;flex-shrink:0;}
+  .nb-diff-text{flex:1;min-width:0;}
+  .nb-diff-name{font-size:12.5px;font-weight:800;}
+  .nb-diff-sub{font-size:9.5px;color:var(--muted);}
+  .nb-diff-radio{width:15px;height:15px;border-radius:50%;border:2px solid rgba(130,145,179,0.5);flex-shrink:0;}
+  .nb-diff-opt.active{background:rgba(79,232,255,0.1);}
+  .nb-diff-opt.active .nb-diff-radio{border-color:var(--cyan-soft);background:radial-gradient(circle,var(--cyan-soft) 40%,transparent 42%);}
+  .nb-diff-opt[data-diff="kolay"].active{border-color:rgba(61,255,160,0.6);}
+  .nb-diff-opt[data-diff="orta"].active{border-color:rgba(255,210,59,0.6);}
+  .nb-diff-opt[data-diff="zor"].active{border-color:rgba(255,95,122,0.6);}
+  .nb-diff-hint{text-align:center;font-size:10.5px;color:var(--muted);margin-top:10px;}
+
+  .nb-diff-mini{display:flex;gap:5px;margin-top:6px;}
+  .nb-diff-mini-btn{
+    font-size:10px;font-weight:700;padding:4px 9px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(130,145,179,0.3);background:rgba(0,0,0,0.15);color:var(--muted);
+  }
+  .nb-diff-mini-btn.active[data-diff="kolay"]{background:rgba(61,255,160,0.18);color:var(--green);border-color:rgba(61,255,160,0.5);}
+  .nb-diff-mini-btn.active[data-diff="orta"]{background:rgba(255,210,59,0.18);color:var(--gold);border-color:rgba(255,210,59,0.5);}
+  .nb-diff-mini-btn.active[data-diff="zor"]{background:rgba(255,95,122,0.18);color:var(--red);border-color:rgba(255,95,122,0.5);}
+
+  /* ---- Arama + filtreleme çubuğu (Kelime Defterim) ---- */
+  .nb-filter-bar{margin-bottom:12px;}
+  .nb-filter-search-wrap{position:relative;margin-bottom:8px;}
+  .nb-filter-search-icon{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    font-size:13px;opacity:.6;pointer-events:none;
+  }
+  .nb-filter-search{
+    width:100%;box-sizing:border-box;font-size:13.5px;color:var(--text);
+    background:rgba(10,14,32,0.55);border:1px solid rgba(79,232,255,0.25);
+    border-radius:12px;padding:10px 14px 10px 34px;outline:none;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    transition:border-color .15s ease;
+  }
+  .nb-filter-search::placeholder{color:var(--muted);}
+  .nb-filter-search:focus{border-color:var(--cyan-soft);}
+  .nb-filter-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;}
+  .nb-filter-row select{
+    flex:1;min-width:90px;padding:9px 8px;border-radius:11px;font-size:12px;
+    border:1px solid rgba(79,232,255,0.25);background:rgba(0,0,0,0.22);color:var(--text);font-family:inherit;
+    color-scheme:dark;
+  }
+  .nb-cselect{position:relative;flex:1;min-width:90px;}
+  .nb-cselect-trigger{
+    padding:9px 10px;border-radius:11px;font-size:12px;cursor:pointer;
+    border:1px solid rgba(79,232,255,0.25);background:rgba(0,0,0,0.22);color:var(--text);
+    display:flex;justify-content:space-between;align-items:center;gap:6px;
+  }
+  .nb-cselect-trigger:active{border-color:var(--cyan-soft);}
+  .nb-cselect-trigger span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .nb-cselect-arrow{opacity:.6;font-size:10px;flex-shrink:0;}
+  .nb-cselect-panel{
+    position:absolute;top:100%;left:0;right:0;margin-top:6px;z-index:40;
+    max-height:220px;overflow-y:auto;
+    background:linear-gradient(160deg,#151b30,#0d1122);
+    border:1px solid rgba(79,232,255,0.35);border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .nb-cselect-opt{padding:10px 12px;font-size:12.5px;color:var(--text);cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .nb-cselect-opt:last-child{border-bottom:none;}
+  .nb-cselect-opt:hover,.nb-cselect-opt:active{background:rgba(79,232,255,0.12);}
+  .nb-cselect-opt.active{background:rgba(79,232,255,0.18);color:var(--cyan-soft);font-weight:700;}
+
+  .nb-start-secondary{
+    width:100%;padding:10px 0;border-radius:13px;border:1px solid rgba(155,123,255,0.4);cursor:pointer;
+    background:rgba(155,123,255,0.12);color:var(--violet);font-weight:800;font-size:12.5px;margin-bottom:12px;
+  }
+  .nb-badge-level{background:rgba(79,232,255,0.16);color:var(--cyan-soft);}
+  .nb-icon-btn.fav-active{color:var(--gold);border-color:rgba(255,210,59,0.5);background:rgba(255,210,59,0.12);}
+  .nb-badge{
+    display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.03em;
+    padding:2px 7px;border-radius:999px;margin-top:4px;margin-right:5px;
+  }
+  .nb-badge-manual{background:rgba(79,232,255,0.15);color:var(--cyan-soft);}
+  .nb-badge-fav{background:rgba(255,210,59,0.16);color:var(--gold);}
+  .nb-badge-lang{background:rgba(155,123,255,0.18);color:var(--violet);}
+  .nb-badge-cat{background:rgba(61,255,160,0.14);color:var(--green);}
+
+  .nb-lang-picker{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+  .nb-lang-chip{
+    flex:1 1 auto;min-width:74px;text-align:center;padding:9px 6px;border-radius:11px;cursor:pointer;
+    border:1px solid rgba(79,232,255,0.22);background:rgba(0,0,0,0.18);color:var(--muted);
+    font-size:12px;font-weight:600;transition:all .15s ease;
+  }
+  .nb-lang-chip .flg{font-size:17px;display:block;margin-bottom:2px;}
+  .nb-lang-chip.active{
+    background:linear-gradient(135deg,rgba(79,232,255,0.28),rgba(255,95,184,0.22));
+    border-color:var(--cyan-soft);color:var(--text);box-shadow:0 0 14px rgba(79,232,255,0.25);
+  }
+  .nb-lang-required{
+    font-size:11px;color:var(--pink);margin:-4px 0 12px;min-height:14px;
+  }
+
+  /* çalışma dili seçim ekranı (Çalışmaya Başla öncesi) */
+  .nb-study-pick{
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid rgba(79,232,255,0.3);border-radius:18px;
+    padding:18px 16px;margin-bottom:16px;text-align:center;
+  }
+  .nb-study-pick p{font-size:12.5px;color:var(--muted);margin:0 0 14px;}
+
+  /* kart üzerindeki favori yıldızı — ARTIK KULLANILMIYOR:
+     pwa.js'te önceden var olan #favBtn (Ayarlar > Favorilerim) ile aynı
+     köşede oturuyordu ve daha yüksek z-index'i olduğu için TÜM tıklamaları
+     kendi üzerine alıyordu — bu yüzden bu yıldıza her basışta aslında
+     pwa.js'in eski localStorage sistemi tetikleniyordu, benimki HİÇ
+     çalışmıyordu. Artık #favBtn'in kendisini (aşağıda) Notlarım'a da
+     yazacak şekilde güncelledim; bu yıldızı tamamen gizliyoruz ki iki
+     ayrı yıldız görünmesin / çakışmasın. */
+  .fav-star{ display:none !important; }
 </style>
-<link rel="stylesheet" href="theme.css?v=1.7.27">
-<link rel="stylesheet" href="pwa.css?v=1.7.27">
+<link rel="stylesheet" href="theme.css?v=1.7.52">
+<link rel="stylesheet" href="pwa.css?v=1.7.52">
+<link rel="stylesheet" href="improvements.css?v=1.7.54">
 </head>
 <body>
 <!-- Açılış ekranı (splash.js yönetir; kritik stil satır içi, anında boyanır) -->
@@ -727,13 +955,13 @@
   <div class="name-card">
     <h3>Hoş geldin! 👋</h3>
     <p>Liderlik tablosunda görünmek için adını ve şifreni gir. Sitede geçirdiğin süre ve ilerlemen kalıcı olarak bu hesaba bağlanacak.</p>
-    <input type="text" id="nameInput" maxlength="20" placeholder="Kullanıcı adını yaz...">
+    <input type="text" autocomplete="username" aria-label="Kullanıcı adı" id="nameInput" maxlength="20" placeholder="Kullanıcı adını yaz...">
     <div class="pw-field-wrap">
-      <span class="pw-eye" id="pwEye" title="Şifreyi göster/gizle">
+      <span class="pw-eye" role="button" tabindex="0" aria-label="Şifreyi göster" id="pwEye" title="Şifreyi göster/gizle">
         <span class="pw-emoji in" id="pwEmojiVisible">🐵</span>
         <span class="pw-emoji out" id="pwEmojiHidden" style="position:absolute;">🙈</span>
       </span>
-      <input type="text" id="passwordInput" maxlength="30" placeholder="Şifreni yaz...">
+      <input type="password" autocomplete="current-password" aria-label="Şifre" id="passwordInput" maxlength="30" placeholder="Şifreni yaz...">
     </div>
     <div class="login-hint">İlk kez giriyorsan, yazdığın şifre kalıcı şifren olacak. Daha önce bu kullanıcı adıyla girdiysen, aynı şifreyle devam edebilirsin.</div>
     <div class="login-error" id="loginError"></div>
@@ -749,21 +977,21 @@
         <img class="brand-mark" src="splash-logo.png" alt="Lumira" width="300" height="300" fetchpriority="high">
       </div>
       <h1 class="brand-name">LUMIRA<i class="brand-spark" aria-hidden="true">✦</i></h1>
-      <div class="brand-rule"><i></i><span id="splashSubtitle">DİL KARTLARI</span><i></i></div>
+      <div class="brand-rule"><i></i><span>DİL KARTLARI</span><i></i></div>
     </div>
-    <div class="splash-sub" id="splashTap">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
-    <div class="goethe-note" id="splashGoethe">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
+    <div class="splash-sub">GİRİŞ İÇİN EKRANA TIKLAYIN</div>
+    <div class="goethe-note">ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR</div>
 
     <div class="splash-lb" id="splashLb">
-      <div class="splash-lb-title" id="splashLbTitle">🏆 Sıralamalar</div>
+      <div class="splash-lb-title">🏆 Sıralamalar</div>
       <div class="splash-lb-cols">
         <div class="splash-lb-col">
-          <div class="splash-lb-subtitle time" id="splashLbTimeLbl">⏱️ Vakit</div>
+          <div class="splash-lb-subtitle time">⏱️ Vakit</div>
           <div id="splashLbTimeList" class="splash-lb-list"></div>
         </div>
         <div class="splash-lb-col-divider"></div>
         <div class="splash-lb-col">
-          <div class="splash-lb-subtitle level" id="splashLbLevelLbl">⭐ Seviye</div>
+          <div class="splash-lb-subtitle level">⭐ Seviye</div>
           <div id="splashLbLevelList" class="splash-lb-list"></div>
         </div>
       </div>
@@ -796,7 +1024,7 @@
   </div>
 
   <div class="lang-pair" id="langPair"></div>
-  <div class="sub" id="mainSub">Seviye, dil ve kategori seç — kartına dokun, dinle, öğren</div>
+  <div class="sub">Seviye, dil ve kategori seç — kartına dokun, dinle, öğren</div>
 
   <div class="lang-box" id="langBox">
     <div class="lang-opt active" data-lang="de"><div class="flag">🇩🇪</div><div class="lname">Almanca</div></div>
@@ -805,15 +1033,15 @@
     <div class="lang-opt" data-lang="fr"><div class="flag">🇫🇷</div><div class="lname">Fransızca</div></div>
     <div class="lang-opt" data-lang="es"><div class="flag">🇪🇸</div><div class="lname">İspanyolca</div></div>
     <div class="lang-opt" data-lang="ru"><div class="flag">🇷🇺</div><div class="lname">Rusça</div></div>
-    <div class="lang-opt" data-lang="tr" id="langOptTr" style="display:none;"><div class="flag">🇹🇷</div><div class="lname">Türkçe</div></div>
   </div>
 
   <div class="level-box" id="levelBox"></div>
 
   <div class="tabs">
-    <div class="tab active" id="tabCards">Kartlar</div>
-    <div class="tab" id="tabQuiz">Quiz</div>
+    <div class="tab active" id="tabCards">🧠 Kartlar</div>
+    <div class="tab" id="tabQuiz">🧩 Quiz</div>
     <div class="tab" id="tabPersonal">🎯 Kişisel</div>
+    <div class="tab" id="tabNotebook">📒 Notlarım</div>
   </div>
 
   <div class="chips" id="chips">
@@ -824,7 +1052,7 @@
   <div class="cat-overlay" id="catOverlay">
     <div class="cat-panel">
       <div class="cat-panel-header">
-        <span id="catPanelTitle">Kategori Seç</span>
+        <span>Kategori Seç</span>
         <span class="cat-close" id="catClose">✕</span>
       </div>
       <div class="cat-grid" id="catGrid"></div>
@@ -842,6 +1070,7 @@
       <div class="card" id="card">
         <div class="face face-front">
           <div class="card-bg-emoji" id="frontBgEmoji" aria-hidden="true"></div>
+          <div class="fav-star off" id="favStarFront" title="Favorilere ekle">☆</div>
           <div class="level-badge" id="levelBadgeFront">A1</div>
           <div class="tag" id="tagFront">Deutsch</div>
           <div class="word" id="frontWord">Hallo</div>
@@ -857,24 +1086,33 @@
               <span class="speak-lbl">Yavaş</span>
             </div>
           </div>
-          <div class="speak-caption">Dinlemek İçin Tıkla</div>
+          <div class="speak-caption">Çevirmek için karta tıkla</div>
         </div>
         <div class="face face-back">
           <div class="card-bg-emoji" id="backBgEmoji" aria-hidden="true"></div>
+          <div class="fav-star off" id="favStarBack" title="Favorilere ekle">☆</div>
           <div class="level-badge" id="levelBadgeBack">A1</div>
-          <div class="tag" id="tagBack">Türkçe</div>
+          <div class="tag">Türkçe</div>
           <div class="word" id="trWord">Merhaba</div>
           <div class="example" id="trExample"></div>
         </div>
       </div>
     </div>
-    <div class="hint">Çevirmek için karta dokun</div>
+    <div class="nb-diff-box" id="nbDifficultyBox" style="display:none;">
+      <div class="nb-diff-title">ZORLUK SEVİYESİ</div>
+      <div class="nb-diff-row">
+        <div class="nb-diff-opt" data-diff="kolay"><span class="nb-diff-emoji">🙂</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--green);">Kolay</div><div class="nb-diff-sub">Kolay hatırlıyorum</div></div><div class="nb-diff-radio"></div></div>
+        <div class="nb-diff-opt" data-diff="orta"><span class="nb-diff-emoji">😐</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--gold);">Orta</div><div class="nb-diff-sub">Biraz zorlanıyorum</div></div><div class="nb-diff-radio"></div></div>
+        <div class="nb-diff-opt" data-diff="zor"><span class="nb-diff-emoji">☹️</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--red);">Zor</div><div class="nb-diff-sub">Unutuyorum</div></div><div class="nb-diff-radio"></div></div>
+      </div>
+    </div>
 
     <div class="controls">
       <button class="ctrl" id="prevBtn">Önceki</button>
       <button class="ctrl" id="shuffleBtn">Karıştır</button>
       <button class="ctrl primary" id="nextBtn">Sonraki</button>
     </div>
+    <button class="ctrl primary" id="nbFinishStudyBtn" style="display:none;width:100%;margin-top:10px;">✅ Çalışmayı Bitir</button>
   </div>
 
   <div id="quizView" style="display:none;">
@@ -907,6 +1145,7 @@
     <div class="controls" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
       <button class="ctrl" id="showMistakesBtn" style="display:none;">Hatalarını Gör</button>
       <button class="ctrl primary" id="restartBtn">Tekrar Başla</button>
+      <button class="ctrl" id="nbBackToNotebookBtn" style="display:none;">📒 Notlarım'a Dön</button>
     </div>
   </div>
 
@@ -919,6 +1158,7 @@
   </div>
 
   <div id="personalView" style="display:none;"></div>
+  <div id="notebookView" style="display:none;"></div>
 
   <div class="info-overlay" id="infoPanel">
     <div class="info-card">
@@ -1032,13 +1272,13 @@
     <div class="my-rank-empty">🏅 Sıralamanı görmek için giriş yap</div>
   </div>
   <div class="credit">
-    © 2026 <b>Lumira</b> · <span id="creditRights">Tüm hakları saklıdır</span><br>
+    © 2026 <b>Lumira</b> · Tüm hakları saklıdır<br>
     <span class="credit-sub">Lumira ve Lumira | Dil Kartları adları ile logosu tescilli markalardır.</span>
   </div>
 
   <!-- ============================ DESTEK OL ============================ -->
   <div class="support-wrap">
-    <button type="button" class="support-btn" id="supportBtn">❤️ <span id="supportBtnText">Lumira'yı Destekle</span> ⭐</button>
+    <button type="button" class="support-btn" id="supportBtn">❤️ Lumira'yı Destekle ⭐</button>
   </div>
 </div>
 
@@ -1048,6 +1288,7 @@
      birden (5,2 MB) her açılışta ayrıştırılıyordu; telefonlarda donmanın en
      büyük sebebi buydu. -->
 <script src="vocab-de.js"></script>
+<script src="vocab-extra.js?v=1.7.54"></script>
 <script>
 /* ===================== SÖZLÜKLERİN İHTİYAÇ ANINDA YÜKLENMESİ =============
    Bu kod BİLEREK index.html'in içinde: sözlük etiketlerini kaldıran dosya ile
@@ -1116,17 +1357,12 @@ window.VOCAB_LOADED = { de: true };
     return function(){};
   }
 
-  /* Yakalama aşaması: uygulamanın kendi dil işleyicisinden ÖNCE çalışır.
-     "tr" (Türkçe) SANAL bir seçenektir — kendi vocab-tr.js dosyası YOKTUR,
-     çünkü Türkçe öğrenmek isteyen biri kendi ana dilinin sözlüğünü (örn.
-     vocab-en.js) ters yönde kullanır. Bu yüzden "tr" için dosya yüklemeye
-     ÇALIŞILMAZ — aksi hâlde 404 alınıp "sözlük yüklenemedi" hatası çıkar.
-     Gerçek dosya yükleme ihtiyacı setLangPair() içinde ayrıca ele alınır. */
+  /* Yakalama aşaması: uygulamanın kendi dil işleyicisinden ÖNCE çalışır */
   document.addEventListener('click', function(e){
     var el = e.target && e.target.closest ? e.target.closest('.lang-opt') : null;
     if(!el) return;
     var lang = el.getAttribute('data-lang');
-    if(!lang || lang === 'tr' || window.VOCAB_LOADED[lang]) return;      /* hazırsa veya sanalsa karışma */
+    if(!lang || window.VOCAB_LOADED[lang]) return;      /* hazırsa karışma */
 
     e.preventDefault();
     e.stopPropagation();
@@ -1153,7 +1389,7 @@ window.VOCAB_LOADED = { de: true };
   }, true);
 })();
 </script>
-<script src="leaderboard.js?v=1.7.27"></script>
+<script src="leaderboard.js?v=1.7.52"></script>
 <script>
 /* ================================================================
    ŞİFRE GÖSTER/GİZLE — Maymun emoji animasyonu (sadece görsel, saf UI)
@@ -1164,11 +1400,13 @@ document.addEventListener('DOMContentLoaded', function(){
   const pwEye = document.getElementById('pwEye');
   const emojiVisible = document.getElementById('pwEmojiVisible');
   const emojiHidden = document.getElementById('pwEmojiHidden');
-  let pwHidden = false;
+  let pwHidden = true;
+  if(pwInput) pwInput.type = 'password';
   if(pwEye && pwInput && emojiVisible && emojiHidden){
     pwEye.onclick = () => {
       pwHidden = !pwHidden;
       pwInput.type = pwHidden ? 'password' : 'text';
+      pwEye.setAttribute('aria-label', pwHidden ? 'Şifreyi göster' : 'Şifreyi gizle');
       if(pwHidden){
         emojiVisible.classList.remove('in'); emojiVisible.classList.add('out');
         emojiHidden.classList.remove('out'); emojiHidden.classList.add('in');
@@ -1179,570 +1417,6 @@ document.addEventListener('DOMContentLoaded', function(){
     };
   }
 });
-</script>
-<script>
-/* ======================= I18N — ARAYÜZ ÇEVİRİSİ =======================
-   Ana dil Türkçe DIŞINDA seçildiğinde (örn. English), uygulamanın kendisi
-   (menüler, butonlar, onboarding, ayarlar, Kişisel Mod) de o dile döner.
-   Kelime kartlarının içeriği (VOCAB verisi) bu sistemin dışındadır —
-   onu FRONT_W/BACK_W zaten yönetiyor.
-   Kullanım: t('anahtar')  → NATIVE_LANG'e göre çeviri döner, yoksa Türkçe
-   metne, o da yoksa anahtarın kendisine düşer. Asla boş/undefined dönmez. */
-const I18N = {
-tr:{
-  tab_cards:"Kartlar", tab_quiz:"Quiz", tab_personal:"🎯 Kişisel",
-  main_sub_full:"Seviye, dil ve kategori seç — kartına dokun, dinle, öğren",
-  level_all:"TÜMÜ", cat_all:"Tümü", cat_pick:"Kategori Seç",
-  tap_to_listen:"Dinlemek İçin Tıkla", tap_to_flip:"Çevirmek için karta dokun",
-  normal_speed:"Normal", slow_speed:"Yavaş",
-  quiz_prompt:"Bu kelimenin anlamı nedir?", fill_blank:"Boşluğu doldur",
-  settings_title:"⚙️ Ayarlar", account:"Hesap", language_row:"Dil", profile_row:"Profilim",
-  profile_desc:"Adını ve şifreni değiştir · 3. seviye gerekir",
-  save:"Kaydet", save_apply:"Kaydet ve uygula", cancel:"İptal", close:"Kapat", continue_btn:"Devam",
-  applying:"Uygulanıyor…",
-  onb_native_title:"Hangi dili konuşuyorsun?", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · Dil Kartları",
-  onb_welcome_h1a:"Hoş geldin.", onb_welcome_h1b:"Yeni bir dile", onb_welcome_h1c:"başla.",
-  onb_welcome_p:"Altı dilde 36.702 kelime kartı, örnek cümleleri ve karşılıklarıyla. Günde on dakika yeter.",
-  onb_start:"Başlayalım",
-  onb_target_title:"Ne öğrenmek istiyorsun?",
-  onb_level_title:"Seviyen nedir?",
-  onb_lite_title:"Hafif mod",
-  onb_lite_p:"Kar taneleri, ışıltı ve arka plan süslemelerini kapatır; uygulama daha akıcı ve daha az pil harcar. Sözlük ve quiz aynen çalışır.",
-  onb_lite_off:"Kapalı kalsın", onb_lite_on:"Evet, aç",
-  onb_lite_warn:"Telefonun düşük performanslı değilse açman önerilmez.",
-  onb_lite_note:"İstediğin zaman Ayarlar › Hafif mod\u2019dan değiştirebilirsin.",
-  onb_ready_eyebrow:"Hazırsın", onb_ready_h1a:"Öğrenme yolculuğun", onb_ready_h1b:"şimdi başlıyor.",
-  onb_ready_p:"Seçtiğin dille ilk kartına birazdan bakacaksın. Dili ve seviyeni dilediğinde değiştirebilirsin.",
-  onb_ready_cta:"Lumira\u2019ya Başla",
-  step_of:function(n){ return "Adım "+n+" / 5"; },
-    set_app_title:"⚙️ Uygulama", set_lite_row:"Hafif mod", set_notif_row:"Günlük hatırlatma",
-  set_notif_time_row:"Hatırlatma saati", set_notif_test_row:"Test bildirimi gönder",
-  set_offline_row:"Çevrimdışı paketi indir", set_storage_row:"Kullanılan alan",
-  set_favs_row:"Favorilerim", set_check_row:"Verilerim duruyor mu?",
-  set_export_row:"İlerlememi yedekle", set_import_row:"Yedekten geri yükle",
-  set_share_row:"Uygulamayı paylaş", set_install_row:"Ana ekrana ekle",
-  set_update_row:"Güncellemeleri denetle", set_admin_row:"Yönetici",
-  pm_home_title:function(name){ return "👤 "+name+"\u2019e Özel"; },
-  pm_known:"Öğrendiğin Kelimeler", pm_weak:"Zayıf Kelimeler", pm_streak:"Seri", pm_xp:"XP",
-  prev:"Önceki", shuffle:"Karıştır", next:"Sonraki",
-  session_time:function(s){ return "⏱ Bu oturumda: "+s; },
-  rights:"Tüm hakları saklıdır", support_app:"Lumira\u2019yı Destekle",
-  cat_pick_title:"Kategori Seç", app_subtitle:"Dil Kartları",
-  time_rank:"Vakit", level_rank:"Seviye", no_data_yet:"henüz veri yok", rankings:"Sıralamalar",
-  pm_progress:"İlerleme", pm_words_suffix:"kelime", pm_known_suffix:"bilinen",
-  pm_today_learned:"Bugün öğrenilen", pm_general_review:"Genel Tekrar",
-  pm_general_review_desc:"Bildiğini varsaydığımız kelimeleri tekrar sorar; yanlış yaparsan çalışma listene geri döner.",
-  pm_statistics:"İstatistikler", pm_learned_in:function(lang){ return "Öğrenilen ("+lang+")"; },
-  pm_total_studied:"Toplam çalışılan", pm_accuracy:"Doğruluk oranı",
-  pm_strongest_cat:"En güçlü kategori:", pm_weakest_cat:"Geliştirilecek kategori:",
-  pm_not_enough_data:"Henüz yeterli veri yok.", pm_total_time_loading:"Toplam çalışma süresi yükleniyor...",
-  pm_total_time:"Toplam çalışma süresi:", pm_level_test_btn:"🎓 Seviye Tespit Sınavı",
-  pm_no_known_in_group:"Bu grupta henüz bilinen kelime yok. Önce biraz çalışman gerekiyor.",
-  pm_back_home:"← Ana sayfaya dön", pm_no_level_defined:"Bu dil için henüz seviye tanımlı değil.", hour_abbr:"s", min_abbr:"dk",
-  pm_exam_completed:"Sınav Tamamlandı",
-  pm_level_result:function(lvl){ return "🎓 "+lvl+" Seviye Sonucun"; },
-  pm_scope_categories:function(n){ return n+" kategori"; }, pm_scope_all_categories:"tüm kategoriler",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" doğru ("+pct+"%) · "+scope+" · +"+xp+" XP kazandın · "+learned+" kelime bilinenler listene eklendi"; },
-  pm_no_new_words_level:"🎉 Bu seviyede çalışılacak yeni kelime kalmadı - harika iş çıkardın!",
-  pm_try_general_review:"İstersen Genel Tekrar yaparak bildiklerini tazeleyebilirsin.",
-  pm_start_studying:"🚀 Çalışmaya Başla", pm_new_badges:"Yeni Rozetler",
-  pm_word_badge:function(n){ return n+" kelime rozeti"; },
-  pm_badges_header:"Rozetler", pm_achievements_header:"Başarımlar",
-  total_time_label:function(name,time){ return "👤 "+name+" — Toplam süren: "+time; },
-  streak_award:function(n){ return n+" Gün Seri"; },
-  tier_names:{ lumira_support_1:"Teşekkür", lumira_support_5:"Kahve", lumira_support_10:"Destekçi", lumira_support_25:"Dost", lumira_support_50:"Yıldız", lumira_support_100:"Kral" },
-  pm_session_complete:"Oturum Tamamlandı", pm_great_job:"🎉 Harika İş!",
-  pm_session_summary:function(n,xp){ return n+" yeni kelime öğrendin - +"+xp+" XP"; },
-  pm_result:"Sonuç", pm_newly_learned:"Yeni öğrenilen", pm_needs_review:"Tekrar gerekiyor",
-  pm_see_review_words:function(n){ return "Tekrar Gereken Kelimeleri Gör ("+n+")"; },
-  pm_back_home_btn:"Ana Sayfaya Dön", pm_review_words_title:"Tekrar Gereken Kelimeler",
-  pm_review_words_desc:"Bir sonraki oturumu atlayıp, ondan sonrasında tekrar karşına çıkacaklar.",
-  pm_correct_answer:"Doğrusu:", pm_go_back:"Geri Dön", achievement_unlocked:"Başarım açıldı:", profile_not_connected:"profil henüz bağlanmadı",
-  lang_names:{ tr:"Türkçe", de:"Almanca", en:"İngilizce", ar:"Arapça", fr:"Fransızca", es:"İspanyolca", ru:"Rusça" },
-  splash_subtitle:"DİL KARTLARI", splash_tap:"GİRİŞ İÇİN EKRANA TIKLAYIN",
-  splash_goethe:"ⓘ BU SAYFADA KULLANILAN KELİMELER GOETHE/CEFR İLE BİREBİR UYUMLUDUR",
-  lang_change_sub:function(native,target){ return native+" konuşuyorsun · "+target+" öğreniyorsun"; }
-},
-en:{
-  tab_cards:"Cards", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
-  main_sub_full:"Choose level, language and category — tap a card, listen, learn",
-  level_all:"ALL", cat_all:"All", cat_pick:"Choose Category",
-  tap_to_listen:"Tap to Listen", tap_to_flip:"Tap the card to flip",
-  normal_speed:"Normal", slow_speed:"Slow",
-  quiz_prompt:"What does this word mean?", fill_blank:"Fill in the blank",
-  settings_title:"⚙️ Settings", account:"Account", language_row:"Language", profile_row:"My Profile",
-  profile_desc:"Change your name and password · Level 3 required",
-  save:"Save", save_apply:"Save and apply", cancel:"Cancel", close:"Close", continue_btn:"Continue",
-  applying:"Applying…",
-  onb_native_title:"Which language do you speak?", onb_native_sub:"Hangi dili konuşuyorsun?",
-  onb_welcome_eyebrow:"Lumira · Language Cards",
-  onb_welcome_h1a:"Welcome.", onb_welcome_h1b:"Start a", onb_welcome_h1c:"new language.",
-  onb_welcome_p:"36,702 word cards in six languages, with example sentences and translations. Ten minutes a day is enough.",
-  onb_start:"Let's begin",
-  onb_target_title:"What do you want to learn?",
-  onb_level_title:"What's your level?",
-  onb_lite_title:"Lite mode",
-  onb_lite_p:"Turns off snowflakes, glow and background decorations; the app runs smoother and uses less battery. The dictionary and quiz work exactly the same.",
-  onb_lite_off:"Keep it off", onb_lite_on:"Yes, turn on",
-  onb_lite_warn:"Not recommended unless your phone is low-performance.",
-  onb_lite_note:"You can change this anytime in Settings › Lite mode.",
-  onb_ready_eyebrow:"You're ready", onb_ready_h1a:"Your learning journey", onb_ready_h1b:"starts now.",
-  onb_ready_p:"You'll see your first card in the language you picked in a moment. You can change the language and level anytime.",
-  onb_ready_cta:"Start Lumira",
-  step_of:function(n){ return "Step "+n+" of 5"; },
-    set_app_title:"⚙️ App", set_lite_row:"Lite mode", set_notif_row:"Daily reminder",
-  set_notif_time_row:"Reminder time", set_notif_test_row:"Send test notification",
-  set_offline_row:"Download offline pack", set_storage_row:"Storage used",
-  set_favs_row:"My Favorites", set_check_row:"Is my data safe?",
-  set_export_row:"Back up my progress", set_import_row:"Restore from backup",
-  set_share_row:"Share the app", set_install_row:"Add to home screen",
-  set_update_row:"Check for updates", set_admin_row:"Admin",
-  pm_home_title:function(name){ return "👤 "+name+"\u2019s Space"; },
-  pm_known:"Words You've Learned", pm_weak:"Weak Words", pm_streak:"Streak", pm_xp:"XP",
-  prev:"Previous", shuffle:"Shuffle", next:"Next",
-  session_time:function(s){ return "⏱ This session: "+s; },
-  rights:"All rights reserved", support_app:"Support Lumira",
-  cat_pick_title:"Choose Category", app_subtitle:"Language Cards",
-  time_rank:"Time", level_rank:"Level", no_data_yet:"no data yet", rankings:"Rankings",
-  pm_progress:"Progress", pm_words_suffix:"words", pm_known_suffix:"known",
-  pm_today_learned:"Learned today", pm_general_review:"General Review",
-  pm_general_review_desc:"Re-asks words we assume you know; get one wrong and it goes back to your study list.",
-  pm_statistics:"Statistics", pm_learned_in:function(lang){ return "Learned ("+lang+")"; },
-  pm_total_studied:"Total studied", pm_accuracy:"Accuracy",
-  pm_strongest_cat:"Strongest category:", pm_weakest_cat:"Needs work:",
-  pm_not_enough_data:"Not enough data yet.", pm_total_time_loading:"Loading total study time...",
-  pm_total_time:"Total study time:", pm_level_test_btn:"🎓 Level Placement Test",
-  pm_no_known_in_group:"No known words in this group yet. Study a bit first.",
-  pm_back_home:"← Back to home", pm_no_level_defined:"No levels defined for this language yet.", hour_abbr:"h", min_abbr:"m",
-  pm_exam_completed:"Test Complete",
-  pm_level_result:function(lvl){ return "🎓 Your "+lvl+" Level Result"; },
-  pm_scope_categories:function(n){ return n+" categories"; }, pm_scope_all_categories:"all categories",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correct ("+pct+"%) · "+scope+" · +"+xp+" XP earned · "+learned+" words added to your known list"; },
-  pm_no_new_words_level:"🎉 No new words left at this level - great job!",
-  pm_try_general_review:"You can refresh what you know with a General Review.",
-  pm_start_studying:"🚀 Start Studying", pm_new_badges:"New Badges",
-  pm_word_badge:function(n){ return n+" word badge"; },
-  pm_badges_header:"Badges", pm_achievements_header:"Achievements",
-  total_time_label:function(name,time){ return "👤 "+name+" — Total time: "+time; },
-  streak_award:function(n){ return n+"-Day Streak"; },
-  tier_names:{ lumira_support_1:"Thanks", lumira_support_5:"Coffee", lumira_support_10:"Supporter", lumira_support_25:"Friend", lumira_support_50:"Star", lumira_support_100:"King" },
-  pm_session_complete:"Session Complete", pm_great_job:"🎉 Great Job!",
-  pm_session_summary:function(n,xp){ return "You learned "+n+" new words - +"+xp+" XP"; },
-  pm_result:"Result", pm_newly_learned:"Newly learned", pm_needs_review:"Needs review",
-  pm_see_review_words:function(n){ return "See Words That Need Review ("+n+")"; },
-  pm_back_home_btn:"Back to Home", pm_review_words_title:"Words That Need Review",
-  pm_review_words_desc:"They\u2019ll skip the next session, then show up again after that.",
-  pm_correct_answer:"Correct:", pm_go_back:"Go Back", achievement_unlocked:"Achievement unlocked:", profile_not_connected:"profile not connected yet",
-  lang_names:{ tr:"Turkish", de:"German", en:"English", ar:"Arabic", fr:"French", es:"Spanish", ru:"Russian" },
-  splash_subtitle:"LANGUAGE CARDS", splash_tap:"TAP THE SCREEN TO ENTER",
-  splash_goethe:"ⓘ THE WORDS ON THIS PAGE MATCH GOETHE/CEFR EXACTLY",
-  lang_change_sub:function(native,target){ return "You speak "+native+" · learning "+target; }
-},
-de:{
-  tab_cards:"Karten", tab_quiz:"Quiz", tab_personal:"🎯 Persönlich",
-  main_sub_full:"Stufe, Sprache und Kategorie wählen — Karte antippen, hören, lernen",
-  level_all:"ALLE", cat_all:"Alle", cat_pick:"Kategorie wählen",
-  tap_to_listen:"Zum Anhören tippen", tap_to_flip:"Zum Umdrehen antippen",
-  normal_speed:"Normal", slow_speed:"Langsam",
-  quiz_prompt:"Was bedeutet dieses Wort?", fill_blank:"Lücke ausfüllen",
-  settings_title:"⚙️ Einstellungen", account:"Konto", language_row:"Sprache", profile_row:"Mein Profil",
-  profile_desc:"Name und Passwort ändern · Stufe 3 erforderlich",
-  save:"Speichern", save_apply:"Speichern und anwenden", cancel:"Abbrechen", close:"Schließen", continue_btn:"Weiter",
-  applying:"Wird angewendet…",
-  onb_native_title:"Welche Sprache sprichst du?", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · Sprachkarten",
-  onb_welcome_h1a:"Willkommen.", onb_welcome_h1b:"Beginne eine", onb_welcome_h1c:"neue Sprache.",
-  onb_welcome_p:"36.702 Wortkarten in sechs Sprachen mit Beispielsätzen und Übersetzungen. Zehn Minuten am Tag genügen.",
-  onb_start:"Los geht\u2019s",
-  onb_target_title:"Was möchtest du lernen?",
-  onb_level_title:"Was ist dein Niveau?",
-  onb_lite_title:"Leichter Modus",
-  onb_lite_p:"Schaltet Schneeflocken, Leuchteffekte und Hintergrunddekoration aus; die App läuft flüssiger und spart Akku. Wörterbuch und Quiz funktionieren genauso.",
-  onb_lite_off:"Ausgeschaltet lassen", onb_lite_on:"Ja, aktivieren",
-  onb_lite_warn:"Nicht empfohlen, außer dein Handy ist leistungsschwach.",
-  onb_lite_note:"Du kannst das jederzeit in Einstellungen › Leichter Modus ändern.",
-  onb_ready_eyebrow:"Du bist bereit", onb_ready_h1a:"Deine Lernreise", onb_ready_h1b:"beginnt jetzt.",
-  onb_ready_p:"Gleich siehst du deine erste Karte in der gewählten Sprache. Sprache und Niveau kannst du jederzeit ändern.",
-  onb_ready_cta:"Lumira starten",
-  step_of:function(n){ return "Schritt "+n+" von 5"; },
-    set_app_title:"⚙️ App", set_lite_row:"Leichter Modus", set_notif_row:"Tägliche Erinnerung",
-  set_notif_time_row:"Erinnerungszeit", set_notif_test_row:"Testbenachrichtigung senden",
-  set_offline_row:"Offline-Paket herunterladen", set_storage_row:"Belegter Speicher",
-  set_favs_row:"Meine Favoriten", set_check_row:"Sind meine Daten sicher?",
-  set_export_row:"Fortschritt sichern", set_import_row:"Aus Backup wiederherstellen",
-  set_share_row:"App teilen", set_install_row:"Zum Startbildschirm hinzufügen",
-  set_update_row:"Nach Updates suchen", set_admin_row:"Admin",
-  pm_home_title:function(name){ return "👤 Für "+name; },
-  pm_known:"Gelernte Wörter", pm_weak:"Schwache Wörter", pm_streak:"Serie", pm_xp:"XP",
-  prev:"Zurück", shuffle:"Mischen", next:"Weiter",
-  session_time:function(s){ return "⏱ Diese Sitzung: "+s; },
-  rights:"Alle Rechte vorbehalten", support_app:"Lumira unterstützen",
-  cat_pick_title:"Kategorie wählen", app_subtitle:"Sprachkarten",
-  time_rank:"Zeit", level_rank:"Niveau", no_data_yet:"noch keine Daten", rankings:"Ranglisten",
-  pm_progress:"Fortschritt", pm_words_suffix:"Wörter", pm_known_suffix:"bekannt",
-  pm_today_learned:"Heute gelernt", pm_general_review:"Allgemeine Wiederholung",
-  pm_general_review_desc:"Fragt Wörter erneut ab, die du angeblich kennst; bei einem Fehler geht es zurück auf deine Lernliste.",
-  pm_statistics:"Statistiken", pm_learned_in:function(lang){ return "Gelernt ("+lang+")"; },
-  pm_total_studied:"Insgesamt geübt", pm_accuracy:"Trefferquote",
-  pm_strongest_cat:"Stärkste Kategorie:", pm_weakest_cat:"Verbesserungsbedarf:",
-  pm_not_enough_data:"Noch nicht genug Daten.", pm_total_time_loading:"Gesamte Lernzeit wird geladen...",
-  pm_total_time:"Gesamte Lernzeit:", pm_level_test_btn:"🎓 Einstufungstest",
-  pm_no_known_in_group:"Noch keine bekannten Wörter in dieser Gruppe. Erst etwas üben.",
-  pm_back_home:"← Zurück zur Startseite", pm_no_level_defined:"Für diese Sprache sind noch keine Stufen definiert.", hour_abbr:"Std", min_abbr:"Min",
-  pm_exam_completed:"Test abgeschlossen",
-  pm_level_result:function(lvl){ return "🎓 Dein "+lvl+"-Ergebnis"; },
-  pm_scope_categories:function(n){ return n+" Kategorien"; }, pm_scope_all_categories:"alle Kategorien",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" richtig ("+pct+"%) · "+scope+" · +"+xp+" XP erhalten · "+learned+" Wörter zu deiner Liste bekannter Wörter hinzugefügt"; },
-  pm_no_new_words_level:"🎉 Keine neuen Wörter mehr auf dieser Stufe - gut gemacht!",
-  pm_try_general_review:"Du kannst dein Wissen mit einer Allgemeinen Wiederholung auffrischen.",
-  pm_start_studying:"🚀 Lernen beginnen", pm_new_badges:"Neue Abzeichen",
-  pm_word_badge:function(n){ return n+"-Wörter-Abzeichen"; },
-  pm_badges_header:"Abzeichen", pm_achievements_header:"Erfolge",
-  total_time_label:function(name,time){ return "👤 "+name+" — Gesamtzeit: "+time; },
-  streak_award:function(n){ return n+"-Tage-Serie"; },
-  tier_names:{ lumira_support_1:"Danke", lumira_support_5:"Kaffee", lumira_support_10:"Unterstützer", lumira_support_25:"Freund", lumira_support_50:"Stern", lumira_support_100:"König" },
-  pm_session_complete:"Sitzung abgeschlossen", pm_great_job:"🎉 Gut gemacht!",
-  pm_session_summary:function(n,xp){ return "Du hast "+n+" neue Wörter gelernt - +"+xp+" XP"; },
-  pm_result:"Ergebnis", pm_newly_learned:"Neu gelernt", pm_needs_review:"Wiederholung nötig",
-  pm_see_review_words:function(n){ return "Wörter zur Wiederholung ansehen ("+n+")"; },
-  pm_back_home_btn:"Zur Startseite", pm_review_words_title:"Wörter zur Wiederholung",
-  pm_review_words_desc:"Sie überspringen die nächste Sitzung und tauchen danach wieder auf.",
-  pm_correct_answer:"Richtig:", pm_go_back:"Zurück", achievement_unlocked:"Erfolg freigeschaltet:", profile_not_connected:"Profil noch nicht verbunden",
-  lang_names:{ tr:"Türkisch", de:"Deutsch", en:"Englisch", ar:"Arabisch", fr:"Französisch", es:"Spanisch", ru:"Russisch" },
-  splash_subtitle:"SPRACHKARTEN", splash_tap:"ZUM STARTEN BILDSCHIRM ANTIPPEN",
-  splash_goethe:"ⓘ DIE WÖRTER AUF DIESER SEITE ENTSPRECHEN GENAU GOETHE/CEFR",
-  lang_change_sub:function(native,target){ return "Du sprichst "+native+" · lernst "+target; }
-},
-ar:{
-  tab_cards:"البطاقات", tab_quiz:"اختبار", tab_personal:"🎯 شخصي",
-  main_sub_full:"اختر المستوى واللغة والفئة — اضغط على البطاقة، استمع، تعلّم",
-  level_all:"الكل", cat_all:"الكل", cat_pick:"اختر الفئة",
-  tap_to_listen:"اضغط للاستماع", tap_to_flip:"اضغط على البطاقة لقلبها",
-  normal_speed:"عادي", slow_speed:"بطيء",
-  quiz_prompt:"ما معنى هذه الكلمة؟", fill_blank:"املأ الفراغ",
-  settings_title:"⚙️ الإعدادات", account:"الحساب", language_row:"اللغة", profile_row:"ملفي الشخصي",
-  profile_desc:"غيّر اسمك وكلمة مرورك · يتطلب المستوى 3",
-  save:"حفظ", save_apply:"حفظ وتطبيق", cancel:"إلغاء", close:"إغلاق", continue_btn:"متابعة",
-  applying:"جارٍ التطبيق…",
-  onb_native_title:"ما اللغة التي تتحدثها؟", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · بطاقات اللغة",
-  onb_welcome_h1a:"أهلاً بك.", onb_welcome_h1b:"ابدأ بتعلّم", onb_welcome_h1c:"لغة جديدة.",
-  onb_welcome_p:"36,702 بطاقة كلمة بست لغات، مع جمل توضيحية وترجمات. عشر دقائق يومياً تكفي.",
-  onb_start:"لنبدأ",
-  onb_target_title:"ماذا تريد أن تتعلم؟",
-  onb_level_title:"ما مستواك؟",
-  onb_lite_title:"الوضع الخفيف",
-  onb_lite_p:"يوقف رقاقات الثلج والتوهج وزخارف الخلفية؛ يعمل التطبيق بسلاسة أكبر ويستهلك بطارية أقل. القاموس والاختبار يعملان كالمعتاد.",
-  onb_lite_off:"إبقاؤه مغلقاً", onb_lite_on:"نعم، تفعيله",
-  onb_lite_warn:"لا يُنصح به إلا إذا كان هاتفك ضعيف الأداء.",
-  onb_lite_note:"يمكنك تغيير هذا لاحقاً من الإعدادات › الوضع الخفيف.",
-  onb_ready_eyebrow:"أنت جاهز", onb_ready_h1a:"رحلة تعلّمك", onb_ready_h1b:"تبدأ الآن.",
-  onb_ready_p:"ستشاهد بطاقتك الأولى باللغة التي اخترتها بعد قليل. يمكنك تغيير اللغة والمستوى في أي وقت.",
-  onb_ready_cta:"ابدأ Lumira",
-  step_of:function(n){ return "الخطوة "+n+" من 5"; },
-    set_app_title:"⚙️ التطبيق", set_lite_row:"الوضع الخفيف", set_notif_row:"تذكير يومي",
-  set_notif_time_row:"وقت التذكير", set_notif_test_row:"إرسال إشعار تجريبي",
-  set_offline_row:"تنزيل الحزمة دون اتصال", set_storage_row:"المساحة المستخدمة",
-  set_favs_row:"مفضلتي", set_check_row:"هل بياناتي محفوظة؟",
-  set_export_row:"نسخ احتياطي لتقدمي", set_import_row:"استعادة من نسخة احتياطية",
-  set_share_row:"مشاركة التطبيق", set_install_row:"إضافة إلى الشاشة الرئيسية",
-  set_update_row:"التحقق من التحديثات", set_admin_row:"المسؤول",
-  pm_home_title:function(name){ return "👤 خاص بـ "+name; },
-  pm_known:"الكلمات التي تعلمتها", pm_weak:"الكلمات الضعيفة", pm_streak:"التتابع", pm_xp:"نقاط الخبرة",
-  prev:"السابق", shuffle:"خلط", next:"التالي",
-  session_time:function(s){ return "⏱ هذه الجلسة: "+s; },
-  rights:"جميع الحقوق محفوظة", support_app:"ادعم Lumira",
-  cat_pick_title:"اختر الفئة", app_subtitle:"بطاقات اللغة",
-  time_rank:"الوقت", level_rank:"المستوى", no_data_yet:"لا توجد بيانات بعد", rankings:"التصنيفات",
-  pm_progress:"التقدّم", pm_words_suffix:"كلمة", pm_known_suffix:"معروفة",
-  pm_today_learned:"تعلمتها اليوم", pm_general_review:"مراجعة عامة",
-  pm_general_review_desc:"يعيد طرح الكلمات التي نفترض أنك تعرفها؛ إذا أخطأت تعود إلى قائمة دراستك.",
-  pm_statistics:"الإحصائيات", pm_learned_in:function(lang){ return "تم تعلّمها ("+lang+")"; },
-  pm_total_studied:"إجمالي المدروس", pm_accuracy:"نسبة الدقة",
-  pm_strongest_cat:"أقوى فئة:", pm_weakest_cat:"تحتاج تحسين:",
-  pm_not_enough_data:"لا توجد بيانات كافية بعد.", pm_total_time_loading:"جارٍ تحميل إجمالي وقت الدراسة...",
-  pm_total_time:"إجمالي وقت الدراسة:", pm_level_test_btn:"🎓 اختبار تحديد المستوى",
-  pm_no_known_in_group:"لا توجد كلمات معروفة في هذه المجموعة بعد. ادرس قليلاً أولاً.",
-  pm_back_home:"← العودة للرئيسية", pm_no_level_defined:"لا توجد مستويات محددة لهذه اللغة بعد.", hour_abbr:"س", min_abbr:"د",
-  pm_exam_completed:"اكتمل الاختبار",
-  pm_level_result:function(lvl){ return "🎓 نتيجتك لمستوى "+lvl; },
-  pm_scope_categories:function(n){ return n+" فئات"; }, pm_scope_all_categories:"جميع الفئات",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" صحيحة ("+pct+"%) · "+scope+" · حصلت على +"+xp+" نقطة خبرة · تمت إضافة "+learned+" كلمة إلى قائمة الكلمات المعروفة"; },
-  pm_no_new_words_level:"🎉 لا توجد كلمات جديدة في هذا المستوى - أحسنت!",
-  pm_try_general_review:"يمكنك تجديد معلوماتك عبر المراجعة العامة.",
-  pm_start_studying:"🚀 ابدأ الدراسة", pm_new_badges:"شارات جديدة",
-  pm_word_badge:function(n){ return "شارة "+n+" كلمة"; },
-  pm_badges_header:"الشارات", pm_achievements_header:"الإنجازات",
-  total_time_label:function(name,time){ return "👤 "+name+" — الوقت الإجمالي: "+time; },
-  streak_award:function(n){ return "تتابع "+n+" أيام"; },
-  tier_names:{ lumira_support_1:"شكراً", lumira_support_5:"قهوة", lumira_support_10:"داعم", lumira_support_25:"صديق", lumira_support_50:"نجمة", lumira_support_100:"ملك" },
-  pm_session_complete:"اكتملت الجلسة", pm_great_job:"🎉 عمل رائع!",
-  pm_session_summary:function(n,xp){ return "تعلمت "+n+" كلمة جديدة - +"+xp+" نقطة خبرة"; },
-  pm_result:"النتيجة", pm_newly_learned:"تعلمتها حديثاً", pm_needs_review:"تحتاج مراجعة",
-  pm_see_review_words:function(n){ return "عرض الكلمات التي تحتاج مراجعة ("+n+")"; },
-  pm_back_home_btn:"العودة للرئيسية", pm_review_words_title:"الكلمات التي تحتاج مراجعة",
-  pm_review_words_desc:"ستتخطى الجلسة التالية، ثم تظهر مجدداً بعد ذلك.",
-  pm_correct_answer:"الصحيح:", pm_go_back:"رجوع", achievement_unlocked:"تم فتح إنجاز:", profile_not_connected:"الملف الشخصي غير متصل بعد",
-  lang_names:{ tr:"التركية", de:"الألمانية", en:"الإنجليزية", ar:"العربية", fr:"الفرنسية", es:"الإسبانية", ru:"الروسية" },
-  splash_subtitle:"بطاقات اللغة", splash_tap:"اضغط على الشاشة للدخول",
-  splash_goethe:"ⓘ الكلمات في هذه الصفحة مطابقة تماماً لمعايير Goethe/CEFR",
-  lang_change_sub:function(native,target){ return "تتحدث "+native+" · تتعلّم "+target; }
-},
-fr:{
-  tab_cards:"Cartes", tab_quiz:"Quiz", tab_personal:"🎯 Personnel",
-  main_sub_full:"Choisis le niveau, la langue et la catégorie — touche une carte, écoute, apprends",
-  level_all:"TOUT", cat_all:"Tout", cat_pick:"Choisir la catégorie",
-  tap_to_listen:"Toucher pour écouter", tap_to_flip:"Toucher la carte pour la retourner",
-  normal_speed:"Normal", slow_speed:"Lent",
-  quiz_prompt:"Que signifie ce mot ?", fill_blank:"Complète le vide",
-  settings_title:"⚙️ Paramètres", account:"Compte", language_row:"Langue", profile_row:"Mon profil",
-  profile_desc:"Modifier ton nom et mot de passe · Niveau 3 requis",
-  save:"Enregistrer", save_apply:"Enregistrer et appliquer", cancel:"Annuler", close:"Fermer", continue_btn:"Continuer",
-  applying:"Application en cours…",
-  onb_native_title:"Quelle langue parles-tu ?", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · Cartes de langue",
-  onb_welcome_h1a:"Bienvenue.", onb_welcome_h1b:"Commence une", onb_welcome_h1c:"nouvelle langue.",
-  onb_welcome_p:"36 702 cartes de mots en six langues, avec phrases d\u2019exemple et traductions. Dix minutes par jour suffisent.",
-  onb_start:"Commençons",
-  onb_target_title:"Que veux-tu apprendre ?",
-  onb_level_title:"Quel est ton niveau ?",
-  onb_lite_title:"Mode léger",
-  onb_lite_p:"Désactive les flocons, les lueurs et les décors d\u2019arrière-plan ; l\u2019appli est plus fluide et économise la batterie. Le dictionnaire et le quiz fonctionnent normalement.",
-  onb_lite_off:"Laisser désactivé", onb_lite_on:"Oui, activer",
-  onb_lite_warn:"Non recommandé sauf si ton téléphone est peu performant.",
-  onb_lite_note:"Tu peux changer cela à tout moment dans Paramètres › Mode léger.",
-  onb_ready_eyebrow:"Tu es prêt", onb_ready_h1a:"Ton parcours d\u2019apprentissage", onb_ready_h1b:"commence maintenant.",
-  onb_ready_p:"Tu verras bientôt ta première carte dans la langue choisie. Tu peux changer la langue et le niveau à tout moment.",
-  onb_ready_cta:"Démarrer Lumira",
-  step_of:function(n){ return "Étape "+n+" sur 5"; },
-    set_app_title:"⚙️ Application", set_lite_row:"Mode léger", set_notif_row:"Rappel quotidien",
-  set_notif_time_row:"Heure du rappel", set_notif_test_row:"Envoyer une notification test",
-  set_offline_row:"Télécharger le pack hors ligne", set_storage_row:"Espace utilisé",
-  set_favs_row:"Mes favoris", set_check_row:"Mes données sont-elles sûres ?",
-  set_export_row:"Sauvegarder ma progression", set_import_row:"Restaurer une sauvegarde",
-  set_share_row:"Partager l\u2019appli", set_install_row:"Ajouter à l\u2019écran d\u2019accueil",
-  set_update_row:"Vérifier les mises à jour", set_admin_row:"Admin",
-  pm_home_title:function(name){ return "👤 Espace de "+name; },
-  pm_known:"Mots appris", pm_weak:"Mots faibles", pm_streak:"Série", pm_xp:"XP",
-  prev:"Précédent", shuffle:"Mélanger", next:"Suivant",
-  session_time:function(s){ return "⏱ Cette session : "+s; },
-  rights:"Tous droits réservés", support_app:"Soutenir Lumira",
-  cat_pick_title:"Choisir la catégorie", app_subtitle:"Cartes de langue",
-  time_rank:"Temps", level_rank:"Niveau", no_data_yet:"pas encore de données", rankings:"Classements",
-  pm_progress:"Progression", pm_words_suffix:"mots", pm_known_suffix:"connus",
-  pm_today_learned:"Appris aujourd\u2019hui", pm_general_review:"Révision générale",
-  pm_general_review_desc:"Redemande des mots que tu es censé connaître ; une erreur les renvoie dans ta liste d\u2019étude.",
-  pm_statistics:"Statistiques", pm_learned_in:function(lang){ return "Appris ("+lang+")"; },
-  pm_total_studied:"Total étudié", pm_accuracy:"Précision",
-  pm_strongest_cat:"Catégorie la plus forte :", pm_weakest_cat:"À améliorer :",
-  pm_not_enough_data:"Pas encore assez de données.", pm_total_time_loading:"Chargement du temps d\u2019étude total...",
-  pm_total_time:"Temps d\u2019étude total :", pm_level_test_btn:"🎓 Test de niveau",
-  pm_no_known_in_group:"Aucun mot connu dans ce groupe pour l\u2019instant. Étudie un peu d\u2019abord.",
-  pm_back_home:"← Retour à l\u2019accueil", pm_no_level_defined:"Aucun niveau défini pour cette langue pour l\u2019instant.", hour_abbr:"h", min_abbr:"min",
-  pm_exam_completed:"Prueba completada",
-  pm_level_result:function(lvl){ return "🎓 Tu resultado de nivel "+lvl; },
-  pm_scope_categories:function(n){ return n+" categorías"; }, pm_scope_all_categories:"todas las categorías",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctas ("+pct+"%) · "+scope+" · +"+xp+" XP ganados · "+learned+" palabras añadidas a tu lista de conocidas"; },
-  pm_no_new_words_level:"🎉 No quedan palabras nuevas en este nivel - ¡buen trabajo!",
-  pm_try_general_review:"Puedes repasar lo que sabes con un Repaso general.",
-  pm_start_studying:"🚀 Empezar a estudiar", pm_new_badges:"Nuevas insignias",
-  pm_word_badge:function(n){ return "insignia de "+n+" palabras"; },
-  pm_badges_header:"Insignias", pm_achievements_header:"Logros",
-  total_time_label:function(name,time){ return "👤 "+name+" — Tiempo total: "+time; },
-  streak_award:function(n){ return "Racha de "+n+" días"; },
-  tier_names:{ lumira_support_1:"Gracias", lumira_support_5:"Café", lumira_support_10:"Colaborador", lumira_support_25:"Amigo", lumira_support_50:"Estrella", lumira_support_100:"Rey" },
-  pm_session_complete:"Sesión completada", pm_great_job:"🎉 ¡Buen trabajo!",
-  pm_session_summary:function(n,xp){ return "Aprendiste "+n+" palabras nuevas - +"+xp+" XP"; },
-  pm_result:"Resultado", pm_newly_learned:"Aprendidas ahora", pm_needs_review:"Necesita repaso",
-  pm_see_review_words:function(n){ return "Ver palabras que necesitan repaso ("+n+")"; },
-  pm_back_home_btn:"Volver al inicio", pm_review_words_title:"Palabras que necesitan repaso",
-  pm_review_words_desc:"Se saltarán la próxima sesión y luego volverán a aparecer.",
-  pm_correct_answer:"Correcto:", pm_go_back:"Volver", achievement_unlocked:"Logro desbloqueado:", profile_not_connected:"perfil aún no conectado",
-  pm_exam_completed:"Test terminé",
-  pm_level_result:function(lvl){ return "🎓 Ton résultat niveau "+lvl; },
-  pm_scope_categories:function(n){ return n+" catégories"; }, pm_scope_all_categories:"toutes les catégories",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctes ("+pct+"%) · "+scope+" · +"+xp+" XP gagnés · "+learned+" mots ajoutés à ta liste de mots connus"; },
-  pm_no_new_words_level:"🎉 Plus de nouveaux mots à ce niveau - bravo !",
-  pm_try_general_review:"Tu peux rafraîchir tes connaissances avec une Révision générale.",
-  pm_start_studying:"🚀 Commencer à étudier", pm_new_badges:"Nouveaux badges",
-  pm_word_badge:function(n){ return "badge "+n+" mots"; },
-  pm_badges_header:"Badges", pm_achievements_header:"Succès",
-  total_time_label:function(name,time){ return "👤 "+name+" — Temps total : "+time; },
-  streak_award:function(n){ return "Série de "+n+" jours"; },
-  tier_names:{ lumira_support_1:"Merci", lumira_support_5:"Café", lumira_support_10:"Supporteur", lumira_support_25:"Ami", lumira_support_50:"Étoile", lumira_support_100:"Roi" },
-  pm_session_complete:"Session terminée", pm_great_job:"🎉 Bravo !",
-  pm_session_summary:function(n,xp){ return "Tu as appris "+n+" nouveaux mots - +"+xp+" XP"; },
-  pm_result:"Résultat", pm_newly_learned:"Nouvellement appris", pm_needs_review:"À revoir",
-  pm_see_review_words:function(n){ return "Voir les mots à revoir ("+n+")"; },
-  pm_back_home_btn:"Retour à l\u2019accueil", pm_review_words_title:"Mots à revoir",
-  pm_review_words_desc:"Ils sauteront la prochaine session, puis réapparaîtront après.",
-  pm_correct_answer:"Correct :", pm_go_back:"Retour", achievement_unlocked:"Succès débloqué :", profile_not_connected:"profil pas encore connecté",
-  lang_names:{ tr:"Turc", de:"Allemand", en:"Anglais", ar:"Arabe", fr:"Français", es:"Espagnol", ru:"Russe" },
-  splash_subtitle:"CARTES DE LANGUE", splash_tap:"TOUCHEZ L\u2019ÉCRAN POUR ENTRER",
-  splash_goethe:"ⓘ LES MOTS DE CETTE PAGE CORRESPONDENT EXACTEMENT À GOETHE/CEFR",
-  lang_change_sub:function(native,target){ return "Tu parles "+native+" · tu apprends "+target; }
-},
-es:{
-  tab_cards:"Tarjetas", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
-  main_sub_full:"Elige nivel, idioma y categoría — toca una tarjeta, escucha, aprende",
-  level_all:"TODOS", cat_all:"Todo", cat_pick:"Elegir categoría",
-  tap_to_listen:"Toca para escuchar", tap_to_flip:"Toca la tarjeta para girarla",
-  normal_speed:"Normal", slow_speed:"Lento",
-  quiz_prompt:"¿Qué significa esta palabra?", fill_blank:"Completa el espacio",
-  settings_title:"⚙️ Ajustes", account:"Cuenta", language_row:"Idioma", profile_row:"Mi perfil",
-  profile_desc:"Cambia tu nombre y contraseña · Requiere nivel 3",
-  save:"Guardar", save_apply:"Guardar y aplicar", cancel:"Cancelar", close:"Cerrar", continue_btn:"Continuar",
-  applying:"Aplicando…",
-  onb_native_title:"¿Qué idioma hablas?", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · Tarjetas de idiomas",
-  onb_welcome_h1a:"Bienvenido.", onb_welcome_h1b:"Empieza un", onb_welcome_h1c:"nuevo idioma.",
-  onb_welcome_p:"36.702 tarjetas de palabras en seis idiomas, con frases de ejemplo y traducciones. Diez minutos al día bastan.",
-  onb_start:"Empecemos",
-  onb_target_title:"¿Qué quieres aprender?",
-  onb_level_title:"¿Cuál es tu nivel?",
-  onb_lite_title:"Modo ligero",
-  onb_lite_p:"Desactiva los copos de nieve, brillos y decoraciones de fondo; la app va más fluida y gasta menos batería. El diccionario y el quiz funcionan igual.",
-  onb_lite_off:"Dejarlo apagado", onb_lite_on:"Sí, activarlo",
-  onb_lite_warn:"No se recomienda salvo que tu teléfono sea de bajo rendimiento.",
-  onb_lite_note:"Puedes cambiarlo cuando quieras en Ajustes › Modo ligero.",
-  onb_ready_eyebrow:"Estás listo", onb_ready_h1a:"Tu viaje de aprendizaje", onb_ready_h1b:"empieza ahora.",
-  onb_ready_p:"Verás tu primera tarjeta en el idioma elegido en un momento. Puedes cambiar el idioma y el nivel cuando quieras.",
-  onb_ready_cta:"Iniciar Lumira",
-  step_of:function(n){ return "Paso "+n+" de 5"; },
-    set_app_title:"⚙️ Aplicación", set_lite_row:"Modo ligero", set_notif_row:"Recordatorio diario",
-  set_notif_time_row:"Hora del recordatorio", set_notif_test_row:"Enviar notificación de prueba",
-  set_offline_row:"Descargar paquete sin conexión", set_storage_row:"Espacio usado",
-  set_favs_row:"Mis favoritos", set_check_row:"¿Mis datos están a salvo?",
-  set_export_row:"Respaldar mi progreso", set_import_row:"Restaurar desde copia",
-  set_share_row:"Compartir la app", set_install_row:"Añadir a inicio",
-  set_update_row:"Buscar actualizaciones", set_admin_row:"Admin",
-  pm_home_title:function(name){ return "👤 Espacio de "+name; },
-  pm_known:"Palabras aprendidas", pm_weak:"Palabras débiles", pm_streak:"Racha", pm_xp:"XP",
-  prev:"Anterior", shuffle:"Mezclar", next:"Siguiente",
-  session_time:function(s){ return "⏱ Esta sesión: "+s; },
-  rights:"Todos los derechos reservados", support_app:"Apoyar a Lumira",
-  cat_pick_title:"Elegir categoría", app_subtitle:"Tarjetas de idiomas",
-  time_rank:"Tiempo", level_rank:"Nivel", no_data_yet:"aún sin datos", rankings:"Clasificaciones",
-  pm_progress:"Progreso", pm_words_suffix:"palabras", pm_known_suffix:"conocidas",
-  pm_today_learned:"Aprendidas hoy", pm_general_review:"Repaso general",
-  pm_general_review_desc:"Vuelve a preguntar palabras que se supone que conoces; si fallas, vuelve a tu lista de estudio.",
-  pm_statistics:"Estadísticas", pm_learned_in:function(lang){ return "Aprendidas ("+lang+")"; },
-  pm_total_studied:"Total estudiado", pm_accuracy:"Precisión",
-  pm_strongest_cat:"Categoría más fuerte:", pm_weakest_cat:"A mejorar:",
-  pm_not_enough_data:"Aún no hay suficientes datos.", pm_total_time_loading:"Cargando tiempo total de estudio...",
-  pm_total_time:"Tiempo total de estudio:", pm_level_test_btn:"🎓 Prueba de nivel",
-  pm_no_known_in_group:"Aún no hay palabras conocidas en este grupo. Estudia un poco primero.",
-  pm_back_home:"← Volver al inicio", pm_no_level_defined:"Aún no hay niveles definidos para este idioma.", hour_abbr:"h", min_abbr:"min",
-  lang_names:{ tr:"Turco", de:"Alemán", en:"Inglés", ar:"Árabe", fr:"Francés", es:"Español", ru:"Ruso" },
-  splash_subtitle:"TARJETAS DE IDIOMAS", splash_tap:"TOCA LA PANTALLA PARA ENTRAR",
-  splash_goethe:"ⓘ LAS PALABRAS DE ESTA PÁGINA COINCIDEN EXACTAMENTE CON GOETHE/CEFR",
-  pm_exam_completed:"Prueba completada",
-  pm_level_result:function(lvl){ return "🎓 Tu resultado de nivel "+lvl; },
-  pm_scope_categories:function(n){ return n+" categorías"; }, pm_scope_all_categories:"todas las categorías",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" correctas ("+pct+"%) · "+scope+" · +"+xp+" XP ganados · "+learned+" palabras añadidas a tu lista de conocidas"; },
-  pm_no_new_words_level:"🎉 No quedan palabras nuevas en este nivel - ¡buen trabajo!",
-  pm_try_general_review:"Puedes repasar lo que sabes con un Repaso general.",
-  pm_start_studying:"🚀 Empezar a estudiar", pm_new_badges:"Nuevas insignias",
-  pm_word_badge:function(n){ return "insignia de "+n+" palabras"; },
-  pm_badges_header:"Insignias", pm_achievements_header:"Logros",
-  total_time_label:function(name,time){ return "👤 "+name+" — Tiempo total: "+time; },
-  streak_award:function(n){ return "Racha de "+n+" días"; },
-  tier_names:{ lumira_support_1:"Gracias", lumira_support_5:"Café", lumira_support_10:"Colaborador", lumira_support_25:"Amigo", lumira_support_50:"Estrella", lumira_support_100:"Rey" },
-  pm_session_complete:"Sesión completada", pm_great_job:"🎉 ¡Buen trabajo!",
-  pm_session_summary:function(n,xp){ return "Aprendiste "+n+" palabras nuevas - +"+xp+" XP"; },
-  pm_result:"Resultado", pm_newly_learned:"Aprendidas ahora", pm_needs_review:"Necesita repaso",
-  pm_see_review_words:function(n){ return "Ver palabras que necesitan repaso ("+n+")"; },
-  pm_back_home_btn:"Volver al inicio", pm_review_words_title:"Palabras que necesitan repaso",
-  pm_review_words_desc:"Se saltarán la próxima sesión y luego volverán a aparecer.",
-  pm_correct_answer:"Correcto:", pm_go_back:"Volver",
-  achievement_unlocked:"Logro desbloqueado:", profile_not_connected:"perfil aún no conectado",
-  lang_change_sub:function(native,target){ return "Hablas "+native+" · aprendes "+target; }
-},
-ru:{
-  tab_cards:"Карточки", tab_quiz:"Тест", tab_personal:"🎯 Личный",
-  main_sub_full:"Выбери уровень, язык и категорию — коснись карточки, слушай, учись",
-  level_all:"ВСЕ", cat_all:"Все", cat_pick:"Выбрать категорию",
-  tap_to_listen:"Нажми, чтобы послушать", tap_to_flip:"Нажми на карточку, чтобы перевернуть",
-  normal_speed:"Обычно", slow_speed:"Медленно",
-  quiz_prompt:"Что означает это слово?", fill_blank:"Заполни пропуск",
-  settings_title:"⚙️ Настройки", account:"Аккаунт", language_row:"Язык", profile_row:"Мой профиль",
-  profile_desc:"Изменить имя и пароль · Требуется 3 уровень",
-  save:"Сохранить", save_apply:"Сохранить и применить", cancel:"Отмена", close:"Закрыть", continue_btn:"Далее",
-  applying:"Применяется…",
-  onb_native_title:"На каком языке ты говоришь?", onb_native_sub:"What language do you speak?",
-  onb_welcome_eyebrow:"Lumira · Языковые карточки",
-  onb_welcome_h1a:"Добро пожаловать.", onb_welcome_h1b:"Начни изучать", onb_welcome_h1c:"новый язык.",
-  onb_welcome_p:"36 702 карточки слов на шести языках, с примерами предложений и переводами. Достаточно десяти минут в день.",
-  onb_start:"Начнём",
-  onb_target_title:"Что ты хочешь выучить?",
-  onb_level_title:"Какой у тебя уровень?",
-  onb_lite_title:"Лёгкий режим",
-  onb_lite_p:"Отключает снежинки, свечение и фоновые украшения; приложение работает плавнее и экономит батарею. Словарь и тест работают так же.",
-  onb_lite_off:"Оставить выключенным", onb_lite_on:"Да, включить",
-  onb_lite_warn:"Не рекомендуется, если твой телефон не слабый.",
-  onb_lite_note:"Ты можешь изменить это в любое время в Настройках › Лёгкий режим.",
-  onb_ready_eyebrow:"Ты готов", onb_ready_h1a:"Твой путь изучения языка", onb_ready_h1b:"начинается сейчас.",
-  onb_ready_p:"Скоро ты увидишь свою первую карточку на выбранном языке. Язык и уровень можно менять в любое время.",
-  onb_ready_cta:"Запустить Lumira",
-  step_of:function(n){ return "Шаг "+n+" из 5"; },
-    set_app_title:"⚙️ Приложение", set_lite_row:"Лёгкий режим", set_notif_row:"Ежедневное напоминание",
-  set_notif_time_row:"Время напоминания", set_notif_test_row:"Отправить тестовое уведомление",
-  set_offline_row:"Скачать офлайн-пакет", set_storage_row:"Используемое место",
-  set_favs_row:"Мои избранные", set_check_row:"Мои данные в безопасности?",
-  set_export_row:"Резервная копия прогресса", set_import_row:"Восстановить из копии",
-  set_share_row:"Поделиться приложением", set_install_row:"Добавить на главный экран",
-  set_update_row:"Проверить обновления", set_admin_row:"Админ",
-  pm_home_title:function(name){ return "👤 Пространство "+name; },
-  pm_known:"Изученные слова", pm_weak:"Слабые слова", pm_streak:"Серия", pm_xp:"XP",
-  prev:"Назад", shuffle:"Перемешать", next:"Далее",
-  session_time:function(s){ return "⏱ Эта сессия: "+s; },
-  rights:"Все права защищены", support_app:"Поддержать Lumira",
-  cat_pick_title:"Выбрать категорию", app_subtitle:"Языковые карточки",
-  time_rank:"Время", level_rank:"Уровень", no_data_yet:"пока нет данных", rankings:"Рейтинги",
-  pm_progress:"Прогресс", pm_words_suffix:"слов", pm_known_suffix:"известно",
-  pm_today_learned:"Выучено сегодня", pm_general_review:"Общее повторение",
-  pm_general_review_desc:"Повторно спрашивает слова, которые ты вроде бы знаешь; ошибёшься — оно вернётся в список изучения.",
-  pm_statistics:"Статистика", pm_learned_in:function(lang){ return "Изучено ("+lang+")"; },
-  pm_total_studied:"Всего изучено", pm_accuracy:"Точность",
-  pm_strongest_cat:"Сильнейшая категория:", pm_weakest_cat:"Нужно улучшить:",
-  pm_not_enough_data:"Пока недостаточно данных.", pm_total_time_loading:"Загрузка общего времени обучения...",
-  pm_total_time:"Общее время обучения:", pm_level_test_btn:"🎓 Тест на определение уровня",
-  pm_no_known_in_group:"В этой группе пока нет известных слов. Сначала немного позанимайся.",
-  pm_back_home:"← Назад на главную", pm_no_level_defined:"Для этого языка пока не определены уровни.", hour_abbr:"ч", min_abbr:"мин",
-  pm_exam_completed:"Тест завершён",
-  pm_level_result:function(lvl){ return "🎓 Твой результат уровня "+lvl; },
-  pm_scope_categories:function(n){ return n+" категорий"; }, pm_scope_all_categories:"все категории",
-  pm_result_summary:function(correct,total,pct,scope,xp,learned){ return correct+" / "+total+" правильно ("+pct+"%) · "+scope+" · получено +"+xp+" XP · "+learned+" слов добавлено в список известных"; },
-  pm_no_new_words_level:"🎉 На этом уровне больше нет новых слов - отличная работа!",
-  pm_try_general_review:"Можешь освежить знания с помощью Общего повторения.",
-  pm_start_studying:"🚀 Начать учёбу", pm_new_badges:"Новые значки",
-  pm_word_badge:function(n){ return "значок "+n+" слов"; },
-  pm_badges_header:"Значки", pm_achievements_header:"Достижения",
-  total_time_label:function(name,time){ return "👤 "+name+" — Общее время: "+time; },
-  streak_award:function(n){ return "Серия "+n+" дней"; },
-  tier_names:{ lumira_support_1:"Спасибо", lumira_support_5:"Кофе", lumira_support_10:"Сторонник", lumira_support_25:"Друг", lumira_support_50:"Звезда", lumira_support_100:"Король" },
-  pm_session_complete:"Сессия завершена", pm_great_job:"🎉 Отличная работа!",
-  pm_session_summary:function(n,xp){ return "Ты выучил "+n+" новых слов - +"+xp+" XP"; },
-  pm_result:"Результат", pm_newly_learned:"Только что выучено", pm_needs_review:"Нужно повторить",
-  pm_see_review_words:function(n){ return "Посмотреть слова для повторения ("+n+")"; },
-  pm_back_home_btn:"На главную", pm_review_words_title:"Слова для повторения",
-  pm_review_words_desc:"Они пропустят следующую сессию, а потом появятся снова.",
-  pm_correct_answer:"Правильно:", pm_go_back:"Назад", achievement_unlocked:"Достижение открыто:", profile_not_connected:"профиль ещё не подключён",
-  lang_names:{ tr:"Турецкий", de:"Немецкий", en:"Английский", ar:"Арабский", fr:"Французский", es:"Испанский", ru:"Русский" },
-  splash_subtitle:"ЯЗЫКОВЫЕ КАРТОЧКИ", splash_tap:"НАЖМИТЕ НА ЭКРАН, ЧТОБЫ ВОЙТИ",
-  splash_goethe:"ⓘ СЛОВА НА ЭТОЙ СТРАНИЦЕ ТОЧНО СООТВЕТСТВУЮТ GOETHE/CEFR",
-  lang_change_sub:function(native,target){ return "Говоришь на "+native+" · учишь "+target; }
-}
-};
-function t(key){
-  var lang = (window.NATIVE_LANG || 'tr');
-  var dict = I18N[lang] || I18N.tr;
-  var v = (dict && Object.prototype.hasOwnProperty.call(dict,key)) ? dict[key] : undefined;
-  if(v===undefined) v = (I18N.tr && I18N.tr[key]);
-  return (v===undefined) ? key : v;
-}
-window.t = t; window.I18N = I18N;
 </script>
 <script>
 /* Kelime verisi vocab-core.js + vocab-<dil>.js dosyalarından geliyor.
@@ -1759,182 +1433,7 @@ const LANGS = {
   ru:{ label:"Rusça", native:"Русский", levels:["A1","A2","B1","B2"], voice:"ru-RU", dir:"ltr" }
 };
 
-/* ======================= ANA DİL / HEDEF DİL — çok yönlü öğrenme =======================
-   Varsayılan: NATIVE_LANG='tr', TARGET_LANG=seçilen dil. Bu durumda UYGULAMA
-   HİÇBİR ŞEKİLDE DEĞİŞMEZ — mevcut davranışın birebir aynısı.
-
-   Üç mod:
-   1) NORMAL     (native=tr, target=biri):   vocab-X.js doğrudan kullanılır (orijinal davranış)
-   2) REVERSED   (native≠tr, target=tr):     kişinin kendi dilinin sözlüğü (vocab-X.js) kullanılır,
-                                              sadece ön/arka (kelime/çeviri) yer değiştirir
-   3) CROSS      (native≠tr, target≠tr,
-                  native≠target):            iki gerçek sözlük dosyası, ORTAK TÜRKÇE KARŞILIK
-                                              üzerinden eşleştirilir (ör. Almanca "Auto" ve İngilizce
-                                              "car" ikisi de Türkçede "araba" ise eşleştirilir).
-                                              Hiçbir çeviri UYDURULMAZ — sadece iki insan tarafından
-                                              zaten girilmiş çeviri aynı Türkçe kelimeye çıkıyorsa
-                                              birleştirilir; belirsiz (birden fazla eşleşen) kelimeler
-                                              GÜVENLİK için tamamen atlanır.
-   Veri yapısı, ilerleme kayıtları (wordKeyFor v.w'ye dayanır) ve tüm diğer
-   mantık DOKUNULMADAN kalır — sadece görüntüleme ve kaynak seçim katmanı değişir. */
-let NATIVE_LANG = 'tr';
-let TARGET_LANG = 'de';
-try { NATIVE_LANG = localStorage.getItem('lumira_native_lang') || 'tr'; } catch(e){}
-try { TARGET_LANG = localStorage.getItem('lumira_target_lang') || (NATIVE_LANG!=='tr' ? '' : 'de'); } catch(e){}
-if(!TARGET_LANG){ TARGET_LANG = (NATIVE_LANG==='tr') ? 'de' : 'tr'; }
-let REVERSED_MODE = (NATIVE_LANG !== 'tr' && TARGET_LANG === 'tr');
-let IS_CROSS = (NATIVE_LANG !== 'tr' && TARGET_LANG !== 'tr' && TARGET_LANG !== NATIVE_LANG);
-let CROSS_DECK = [];
-let activeLang = REVERSED_MODE ? NATIVE_LANG : TARGET_LANG;
-
-function isReversed(){ return REVERSED_MODE; }
-function isCross(){ return IS_CROSS; }
-function FRONT_W(v){ return isReversed() ? v.tr : v.w; }
-function BACK_W(v){ return isReversed() ? v.w : v.tr; }
-function FRONT_EX(v){ return isReversed() ? v.exTr : v.ex; }
-function BACK_EX(v){ return isReversed() ? v.ex : v.exTr; }
-function FRONT_DIR(v){ return isReversed() ? 'ltr' : LANGS[v.lang].dir; }
-function BACK_DIR(v){ return isReversed() ? LANGS[v.lang].dir : 'ltr'; }
-function FRONT_VOICE(v){ return isReversed() ? 'tr-TR' : LANGS[v.lang].voice; }
-function BACK_VOICE(v){ return isReversed() ? LANGS[v.lang].voice : 'tr-TR'; }
-function FRONT_LABEL(){ return isReversed() ? 'Türkçe' : LANGS[activeLang].native; }
-function BACK_LABEL(){ return isReversed() ? LANGS[activeLang].native : (isCross() ? LANGS[NATIVE_LANG].native : 'Türkçe'); }
-window.isReversed = isReversed; window.isCross = isCross;
-window.FRONT_W = FRONT_W; window.BACK_W = BACK_W;
-window.FRONT_EX = FRONT_EX; window.BACK_EX = BACK_EX;
-window.FRONT_DIR = FRONT_DIR; window.BACK_DIR = BACK_DIR;
-window.FRONT_VOICE = FRONT_VOICE; window.BACK_VOICE = BACK_VOICE;
-
-/* basePool(): tüm seviye/kategori/quiz/dağıtıcı filtrelemesi TEK NOKTADAN
-   buradan geçer. CROSS modda gerçek VOCAB yerine CROSS_DECK kullanılır;
-   diğer iki modda eskisi gibi VOCAB, activeLang'e göre filtrelenir. */
-function basePool(){ return IS_CROSS ? CROSS_DECK : VOCAB.filter(v => v.lang===activeLang); }
-window.basePool = basePool;
-
-/* İki dilin ORTAK Türkçe karşılığı üzerinden eşleştirilmiş, sentetik ama
-   UYDURULMAMIŞ bir deste üretir. Yalnızca HER İKİ tarafta da tekil
-   (belirsiz olmayan) eşleşmeler kullanılır — bu yüzden %100 iki insanın
-   yazdığı gerçek çeviridir, makine çevirisi YOKTUR. */
-function buildCrossDeck(nativeCode, targetCode){
-  function normTr(s){
-    s = String(s||'').trim().toLowerCase();
-    s = s.replace(/^(bir|biraz)\s+/,'');
-    s = s.replace(/[.!?]+$/,'');
-    return s;
-  }
-  const nativeMap = {}, targetMap = {};
-  VOCAB.forEach(v=>{
-    if(v.lang===nativeCode){ const k=normTr(v.tr); (nativeMap[k]=nativeMap[k]||[]).push(v); }
-    else if(v.lang===targetCode){ const k=normTr(v.tr); (targetMap[k]=targetMap[k]||[]).push(v); }
-  });
-  const out = [];
-  Object.keys(targetMap).forEach(k=>{
-    if(!k) return;
-    const tArr = targetMap[k], nArr = nativeMap[k];
-    if(!tArr || tArr.length!==1 || !nArr || nArr.length!==1) return; /* belirsizse atla */
-    const tW = tArr[0], nW = nArr[0];
-    out.push({
-      lang: targetCode, level: tW.level, cat: tW.cat, pos: tW.pos,
-      w: tW.w, tr: nW.w, ex: tW.ex, exTr: nW.ex, c1: tW.c1, c2: tW.c2
-    });
-  });
-  return out;
-}
-window.buildCrossDeck = buildCrossDeck;
-
-/* Native/hedef çiftini uygular: localStorage'a yazar, modu (normal/ters/
-   çapraz) hesaplar, gerekiyorsa iki sözlüğü de yükleyip CROSS_DECK'i
-   kurar, arayüzü (dil kutusu, alt metin, aktif buton) günceller. Bir
-   Promise döner — çağıran taraf .then() içinde render fonksiyonlarını
-   (renderLangPair/rebuildLevelBox/rebuildChips/applyFilter) çalıştırmalı. */
-function setLangPair(native, target){
-  NATIVE_LANG = native || 'tr';
-  TARGET_LANG = target || (NATIVE_LANG==='tr' ? 'de' : 'tr');
-  try { localStorage.setItem('lumira_native_lang', NATIVE_LANG); } catch(e){}
-  try { localStorage.setItem('lumira_target_lang', TARGET_LANG); } catch(e){}
-  window.NATIVE_LANG = NATIVE_LANG;
-  window.TARGET_LANG = TARGET_LANG;
-  REVERSED_MODE = (NATIVE_LANG !== 'tr' && TARGET_LANG === 'tr');
-  IS_CROSS = (NATIVE_LANG !== 'tr' && TARGET_LANG !== 'tr' && TARGET_LANG !== NATIVE_LANG);
-  activeLang = REVERSED_MODE ? NATIVE_LANG : TARGET_LANG;
-
-  const lb = document.getElementById('langBox');
-  const sb = document.getElementById('mainSub');
-  const trOpt = document.getElementById('langOptTr');
-  if (trOpt) trOpt.style.display = (NATIVE_LANG !== 'tr') ? '' : 'none';
-  document.querySelectorAll('.lang-opt').forEach(o=>{
-    /* kendi ana dilini "öğrenme" seçeneği olarak gösterme */
-    o.style.display = (o.dataset.lang === NATIVE_LANG) ? 'none' : '';
-    o.classList.toggle('active', o.dataset.lang === TARGET_LANG);
-  });
-  if (lb) lb.style.display = '';
-  if (sb) sb.textContent = t('main_sub_full');
-  applyUIChrome();
-
-  const need = [];
-  if(!IS_CROSS){
-    if(activeLang !== 'de' && !window.VOCAB_LOADED[activeLang]) need.push(window.ensureVocab(activeLang));
-  } else {
-    if(!window.VOCAB_LOADED[NATIVE_LANG]) need.push(window.ensureVocab(NATIVE_LANG));
-    if(!window.VOCAB_LOADED[TARGET_LANG]) need.push(window.ensureVocab(TARGET_LANG));
-  }
-  return Promise.all(need).then(()=>{
-    if(IS_CROSS){ CROSS_DECK = buildCrossDeck(NATIVE_LANG, TARGET_LANG); }
-  });
-}
-window.setLangPair = setLangPair;
-
-/* Statik arayüz metinlerini (sekmeler, kart başlıkları, quiz sorusu vb.)
-   NATIVE_LANG'e göre günceller. Kelime kartlarının İÇERİĞİNE (vocab verisi,
-   kategori adları) DOKUNMAZ — o Türkçe kalır, sadece arayüz kabuğu değişir. */
-function applyUIChrome(){
-  try {
-    document.documentElement.setAttribute('lang', NATIVE_LANG);
-    document.documentElement.setAttribute('dir', NATIVE_LANG==='ar' ? 'rtl' : 'ltr');
-    const $$ = (id)=>document.getElementById(id);
-    if($$('tabCards')) $$('tabCards').textContent = t('tab_cards');
-    if($$('tabQuiz')) $$('tabQuiz').textContent = t('tab_quiz');
-    if($$('tabPersonal')) $$('tabPersonal').textContent = t('tab_personal');
-    document.querySelectorAll('.speak-caption').forEach(el=>el.textContent=t('tap_to_listen'));
-    const hint = document.querySelector('.hint'); if(hint) hint.textContent = t('tap_to_flip');
-    document.querySelectorAll('.speak-lbl').forEach((el,i)=>{ el.textContent = (i%2===0)?t('normal_speed'):t('slow_speed'); });
-    const quizTag = document.querySelector('#quizView .tag'); if(quizTag) quizTag.textContent = t('quiz_prompt');
-    const catAll = $$('catAllChip'); if(catAll) catAll.textContent = t('cat_all');
-    /* dil butonlarının altındaki isimler (Almanca/German/Deutsch/...) */
-    const names = t('lang_names') || {};
-    document.querySelectorAll('.lang-opt').forEach(o=>{
-      const code = o.dataset.lang;
-      const nm = o.querySelector('.lname');
-      if(nm && names[code]) nm.textContent = names[code];
-    });
-    /* kart kontrol butonları */
-    if($$('prevBtn')) $$('prevBtn').textContent = t('prev');
-    if($$('shuffleBtn')) $$('shuffleBtn').textContent = t('shuffle');
-    if($$('nextBtn')) $$('nextBtn').textContent = t('next');
-    if($$('quizPrevBtn')) $$('quizPrevBtn').textContent = t('prev');
-    if($$('quizNextBtn')) $$('quizNextBtn').textContent = t('next');
-    /* footer / destek butonu / kategori modal başlığı / H1 alt başlık */
-    const rightsEl = $$('creditRights'); if(rightsEl) rightsEl.textContent = t('rights');
-    const supportBtnText = $$('supportBtnText'); if(supportBtnText) supportBtnText.textContent = t('support_app');
-    const catPanelTitle = $$('catPanelTitle'); if(catPanelTitle) catPanelTitle.textContent = t('cat_pick_title');
-    const h1 = document.querySelector('.app h1'); if(h1) h1.textContent = t('app_subtitle');
-    const spSub = $$('splashSubtitle'); if(spSub) spSub.textContent = t('splash_subtitle');
-    const spTap = $$('splashTap'); if(spTap) spTap.textContent = t('splash_tap');
-    const spGoe = $$('splashGoethe'); if(spGoe) spGoe.textContent = t('splash_goethe');
-    const spLbT = $$('splashLbTitle'); if(spLbT) spLbT.textContent = '🏆 '+t('rankings');
-    const spLbTime = $$('splashLbTimeLbl'); if(spLbTime) spLbTime.textContent = '⏱️ '+t('time_rank');
-    const spLbLevel = $$('splashLbLevelLbl'); if(spLbLevel) spLbLevel.textContent = '⭐ '+t('level_rank');
-    updateCatUI();
-    if(typeof rebuildLevelBox==='function') rebuildLevelBox();
-  } catch(e){}
-}
-window.applyUIChrome = applyUIChrome;
-/* Geriye dönük uyumluluk: eski çağrı biçimi hâlâ çalışsın (sadece native
-   verir, hedef otomatik 'tr' olur — splash.js artık setLangPair kullanıyor
-   ama başka bir yerden çağrılırsa diye bırakıldı). */
-function setNativeLang(code){ return setLangPair(code || 'tr', (code && code!=='tr') ? 'tr' : (TARGET_LANG||'de')); }
-window.setNativeLang = setNativeLang;
-window.FRONT_LABEL = FRONT_LABEL; window.BACK_LABEL = BACK_LABEL;
+let activeLang = "de";
 let activeLevel = "TÜMÜ";
 let activeCat = "Tümü";
 let deck = [];
@@ -2155,6 +1654,8 @@ function speakNative(text, lang, rate, onResult){
    ========================================================= */
 function speak(text, lang){
   if(!soundOn) return;
+  // Türkçe kelimeleri seslendirme
+  if(String(lang).toLowerCase().startsWith('tr')) return;
   // Önce cihazın kendi TTS sistemini dene
   speakNative(
     text,
@@ -2182,6 +1683,8 @@ function speak(text, lang){
    ========================================================= */
 function speakSlow(text, lang){
   if(!soundOn) return;
+  // Türkçe kelimeleri seslendirme
+  if(String(lang).toLowerCase().startsWith('tr')) return;
   // Önce cihazın kendi TTS sistemini dene
   speakNative(
     text,
@@ -2235,7 +1738,7 @@ function startSessionTimer(){
   function tick(){
     const elapsed = (window.LB_getActiveSeconds ? window.LB_getActiveSeconds() : (Date.now() - start) / 1000);
     const idle = (window.LB_isIdle ? window.LB_isIdle() : false);
-    el.textContent = `${t('session_time')(fmt(elapsed))}${idle ? ' ⏸' : ''}`;
+    el.textContent = `⏱ Bu oturumda: ${fmt(elapsed)}${idle ? ' ⏸' : ''}`;
   }
   tick();
   setInterval(tick, 1000);
@@ -2337,28 +1840,20 @@ function colorSplit(sentence, word, c1, c2){
   if(!sentence) return '';
   const range = findStemMatch(sentence, word);
   if(!range){
-    return `<span style="color:${c1}">${sentence}</span>`;
+    return `<span style="color:${c1}">${nbEsc(sentence)}</span>`;
   }
   const before = sentence.slice(0, range.start);
   const match = sentence.slice(range.start, range.end);
   const after = sentence.slice(range.end);
-  return `${before}<span style="color:${c1}">${match}</span><span style="color:${c2}">${after}</span>`;
+  return `${nbEsc(before)}<span style="color:${c1}">${nbEsc(match)}</span><span style="color:${c2}">${nbEsc(after)}</span>`;
 }
 
 /* ======================= RENDER: LANG / LEVEL / CHIPS ======================= */
 function renderLangPair(){
   const L = LANGS[activeLang];
-  const colorMap = { de:"var(--gold)", en:"var(--cyan-soft)", ar:"var(--green)", fr:"var(--pink)", es:"var(--red)", ru:"var(--violet)", tr:"#ff5a5a" };
-  if(isReversed()){
-    document.getElementById('langPair').innerHTML =
-      `<span class="a tr-flag-text">Türkçe</span> <span style="color:var(--muted)">⇄</span> <span class="a" style="color:${colorMap[activeLang]}">${L.native}</span>`;
-  } else if(isCross()){
-    document.getElementById('langPair').innerHTML =
-      `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a" style="color:${colorMap[NATIVE_LANG]}">${LANGS[NATIVE_LANG].native}</span>`;
-  } else {
-    document.getElementById('langPair').innerHTML =
-      `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a tr-flag-text">Türkçe</span>`;
-  }
+  const colorMap = { de:"var(--gold)", en:"var(--cyan-soft)", ar:"var(--green)", fr:"var(--pink)", es:"var(--red)", ru:"var(--violet)" };
+  document.getElementById('langPair').innerHTML =
+    `<span class="a" style="color:${colorMap[activeLang]}">${L.native}</span> <span style="color:var(--muted)">⇄</span> <span class="a tr-flag-text">Türkçe</span>`;
 }
 
 function rebuildLevelBox(){
@@ -2370,15 +1865,15 @@ function rebuildLevelBox(){
   allLevels.forEach(lv => {
     const d = document.createElement('div');
     d.className = 'level-opt' + (lv===activeLevel ? ' active' : '');
-    d.textContent = (lv === "TÜMÜ") ? t('level_all') : lv;
+    d.textContent = lv;
     d.onclick = () => { activeLevel = lv; activeCat='Tümü'; rebuildLevelBox(); rebuildChips(); applyFilter(); };
     box.appendChild(d);
   });
 }
 
 function poolForLevel(){
-  if(activeLevel === "TÜMÜ") return basePool();
-  return basePool().filter(v => v.level===activeLevel);
+  if(activeLevel === "TÜMÜ") return VOCAB.filter(v => v.lang===activeLang);
+  return VOCAB.filter(v => v.lang===activeLang && v.level===activeLevel);
 }
 
 function rebuildChips(){
@@ -2406,10 +1901,9 @@ function updateCatUI(){
   const allChip = document.getElementById('catAllChip');
   const trigger = document.getElementById('catTrigger');
   const isAll = activeCat === 'Tümü';
-  allChip.textContent = t('cat_all');
   allChip.classList.toggle('active', isAll);
   trigger.classList.toggle('active', !isAll);
-  trigger.textContent = isAll ? ('📂 '+t('cat_pick')) : ('📂 ' + activeCat);
+  trigger.textContent = isAll ? '📂 Kategori Seç' : ('📂 ' + activeCat);
   document.querySelectorAll('#catGrid .chip').forEach(c=>{
     c.classList.toggle('active', c.textContent===activeCat);
   });
@@ -2425,18 +1919,14 @@ document.getElementById('catOverlay').onclick = (e) => { if(e.target.id === 'cat
 
 document.querySelectorAll('.lang-opt').forEach(opt=>{
   opt.onclick = () => {
-    const target = opt.dataset.lang;
-    opt.style.opacity = '.55';
-    setLangPair(NATIVE_LANG, target).then(()=>{
-      opt.style.opacity = '';
-      document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('active', o===opt));
-      activeLevel = "TÜMÜ";
-      activeCat = 'Tümü';
-      renderLangPair();
-      rebuildLevelBox();
-      rebuildChips();
-      applyFilter();
-    }).catch(()=>{ opt.style.opacity = ''; });
+    activeLang = opt.dataset.lang;
+    document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('active', o===opt));
+    activeLevel = "TÜMÜ";
+    activeCat = 'Tümü';
+    renderLangPair();
+    rebuildLevelBox();
+    rebuildChips();
+    applyFilter();
   };
 });
 
@@ -2470,25 +1960,30 @@ function renderCard(){
      document.getElementById('trWord').textContent = "";
      document.getElementById('frontExample').textContent = "";
      document.getElementById('trExample').textContent = "";
+     ['frontPos','tagFront','levelBadgeFront','levelBadgeBack','cardCat'].forEach(id=>document.getElementById(id).textContent='');
+     document.getElementById('cardCount').textContent = '0 / 0';
+     document.getElementById('cardBar').style.width = '0%';
+     if(typeof nbUpdateFavStar === 'function') nbUpdateFavStar();
+     if(typeof nbRenderDifficultyBox === 'function') nbRenderDifficultyBox();
+     if(typeof nbUpdateFinishButton === 'function') nbUpdateFinishButton();
      return;
   }
   const v = deck[idx];
   const L = LANGS[v.lang];
   const frontWordEl = document.getElementById('frontWord');
-  frontWordEl.textContent = FRONT_W(v);
-  frontWordEl.setAttribute('dir', FRONT_DIR(v));
+  frontWordEl.textContent = v.w;
+  frontWordEl.setAttribute('dir', L.dir);
   document.getElementById('frontPos').textContent = v.cat || v.pos;
-  document.getElementById('tagFront').textContent = FRONT_LABEL();
-  document.getElementById('tagBack').textContent = BACK_LABEL();
-  document.getElementById('trWord').textContent = BACK_W(v);
+  document.getElementById('tagFront').textContent = L.native;
+  document.getElementById('trWord').textContent = v.tr;
 
   const frontEx = document.getElementById('frontExample');
-  frontEx.innerHTML = colorSplit(FRONT_EX(v), FRONT_W(v), v.c1, v.c2);
-  frontEx.setAttribute('dir', FRONT_DIR(v));
+  frontEx.innerHTML = colorSplit(v.ex, v.w, v.c1, v.c2);
+  frontEx.setAttribute('dir', L.dir);
 
   const trEx = document.getElementById('trExample');
-  trEx.innerHTML = colorSplit(BACK_EX(v), BACK_W(v), v.c1, v.c2);
-  trEx.setAttribute('dir', BACK_DIR(v));
+  trEx.innerHTML = colorSplit(v.exTr, v.tr, v.c1, v.c2);
+  trEx.setAttribute('dir','ltr');
 
   document.getElementById('cardCount').textContent = `${idx+1} / ${deck.length}`;
   document.getElementById('cardCat').textContent = activeCat;
@@ -2501,17 +1996,20 @@ function renderCard(){
   var _bbg = document.getElementById('backBgEmoji'); if(_bbg) _bbg.textContent = _catE;
   document.getElementById('card').classList.remove('flipped');
   flipped = false;
+  if(typeof nbUpdateFavStar === 'function') nbUpdateFavStar();
+  if(typeof nbRenderDifficultyBox === 'function') nbRenderDifficultyBox();
+     if(typeof nbUpdateFinishButton === 'function') nbUpdateFinishButton();
 }
 
 document.getElementById('rabbitBtn').onclick = (e) => {
   e.stopPropagation();
   const v = deck[idx]; if(!v) return;
-  speak(FRONT_W(v), FRONT_VOICE(v));
+  speak(v.w, LANGS[v.lang].voice);
 };
 document.getElementById('turtleBtn').onclick = (e) => {
   e.stopPropagation();
   const v = deck[idx]; if(!v) return;
-  speakSlow(FRONT_W(v), FRONT_VOICE(v));
+  speakSlow(v.w, LANGS[v.lang].voice);
 };
 
 document.getElementById('card').onclick = () => {
@@ -2519,7 +2017,7 @@ document.getElementById('card').onclick = () => {
   document.getElementById('card').classList.toggle('flipped', flipped);
   const v = deck[idx];
   if(!v) return;
-  if(!flipped){ speak(FRONT_W(v), FRONT_VOICE(v)); }
+  if(!flipped){ speak(v.w, LANGS[v.lang].voice); }
   saveCardPosition();
 };
 
@@ -2528,7 +2026,7 @@ document.getElementById('nextBtn').onclick = () => {
   idx = (idx+1) % deck.length;
   renderCard();
   const v = deck[idx];
-  speak(FRONT_W(v), FRONT_VOICE(v));
+  speak(v.w, LANGS[v.lang].voice);
   spawnShootingStar();
   saveCardPosition();
 };
@@ -2537,7 +2035,7 @@ document.getElementById('prevBtn').onclick = () => {
   idx = (idx-1+deck.length) % deck.length;
   renderCard();
   const v = deck[idx];
-  speak(FRONT_W(v), FRONT_VOICE(v));
+  speak(v.w, LANGS[v.lang].voice);
   saveCardPosition();
 };
 document.getElementById('shuffleBtn').onclick = () => {
@@ -2562,20 +2060,22 @@ function restoreCardPosition(){
     const raw = sessionStorage.getItem(CARD_POS_KEY);
     if(!raw) return;
     const saved = JSON.parse(raw);
-    if(saved.lang===activeLang && saved.level===activeLevel && saved.cat===activeCat && saved.idx < deck.length){
+    if(saved.lang===activeLang && saved.level===activeLevel && saved.cat===activeCat && Number.isInteger(saved.idx) && saved.idx >= 0 && saved.idx < deck.length){
       idx = saved.idx;
     }
   }catch(e){}
 }
 
 /* ======================= QUIZ ======================= */
+let quizAdvanceTimer = null;
 function buildQuizDeck(){
+  clearTimeout(quizAdvanceTimer);
   quizDeck = [...deck];
   mistakes = [];
   quizAnswers = [];
   for(let i=quizDeck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [quizDeck[i],quizDeck[j]]=[quizDeck[j],quizDeck[i]]; }
   qIdx = 0; score = 0; answered = false;
-  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active') || document.getElementById('tabNotebook').classList.contains('active');
   document.getElementById('doneView').style.display = 'none';
   document.getElementById('mistakesView').style.display = 'none';
   if(quizTabActive){ document.getElementById('quizView').style.display = 'block'; }
@@ -2587,9 +2087,34 @@ function buildQuizDeck(){
   renderQuiz();
 }
 
+function buildQuizOptions(v){
+  const normalize=s=>String(s||'').normalize('NFC').trim().toLocaleLowerCase('tr');
+  const seen=new Set([normalize(v.tr)]), result=[v.tr];
+  const sameLanguage=VOCAB.filter(x=>x.lang===v.lang && x.w!==v.w);
+  for(const pool of [sameLanguage.filter(x=>x.cat===v.cat),sameLanguage.filter(x=>x.level===v.level),sameLanguage]){
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    for(const x of pool){
+      const key=normalize(x.tr);
+      if(!key || seen.has(key)) continue;
+      seen.add(key);result.push(x.tr);
+      if(result.length===4) break;
+    }
+    if(result.length===4) break;
+  }
+  for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}
+  return result;
+}
+
 function renderQuiz(){
-  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
-  if(quizDeck.length===0) return;
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active') || document.getElementById('tabNotebook').classList.contains('active');
+  if(quizDeck.length===0){
+    document.getElementById('quizWord').textContent = 'Bu seçimde kelime yok';
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('quizCount').textContent = '0 / 0';
+    document.getElementById('quizBar').style.width = '0%';
+    ['quizNextBtn','quizPrevBtn','quizFinishBtn'].forEach(id=>document.getElementById(id).disabled=true);
+    return;
+  }
   if(qIdx >= quizDeck.length){
     const answeredCount = quizAnswers.filter(a=>a).length;
     /* huni ölçümü: quizi bitirenler */
@@ -2609,6 +2134,8 @@ function renderQuiz(){
       } else {
         mistakeBtn.style.display = 'none';
       }
+      const backNb = document.getElementById('nbBackToNotebookBtn');
+      if(backNb) backNb.style.display = (activeCat === 'Notlarım') ? 'block' : 'none';
     }
     document.getElementById('finalScore').textContent = `${score} / ${answeredCount} doğru cevap`;
     return;
@@ -2620,8 +2147,8 @@ function renderQuiz(){
   }
   const v = quizDeck[qIdx];
   const qWordEl = document.getElementById('quizWord');
-  qWordEl.textContent = FRONT_W(v);
-  qWordEl.setAttribute('dir', FRONT_DIR(v));
+  qWordEl.textContent = v.w;
+  qWordEl.setAttribute('dir', LANGS[v.lang].dir);
   document.getElementById('quizPos').textContent = v.cat || v.pos;
   document.getElementById('quizCount').textContent = `Soru ${qIdx+1} / ${quizDeck.length}`;
   document.getElementById('quizBar').style.width = `${((qIdx+1)/quizDeck.length)*100}%`;
@@ -2655,30 +2182,13 @@ function renderQuiz(){
   }
 
   answered = false;
-  const correctBack = BACK_W(v);
-  let opts = [correctBack];
-  /* Çeldiriciler artık sorunun KATEGORİSİNDEN seçiliyor — kategori yeterince
-     kalabalık değilse seviyeye, o da yetmezse dile geri düşülür. Amaç:
-     kelimeyi bilmeyen biri "hangisi tanıdık" diye rastgele doğru cevaba
-     basamasın, gerçekten anlamı bilmesi gereksin. */
-  let pool = basePool().filter(x => x.cat===v.cat && BACK_W(x) !== correctBack);
-  if(pool.length < 3){
-    let fallback = poolForLevel().filter(x => BACK_W(x) !== correctBack && !pool.some(p=>BACK_W(p)===BACK_W(x)));
-    pool = pool.concat(fallback);
-  }
-  if(pool.length < 3){
-    let fallback2 = basePool().filter(x => BACK_W(x) !== correctBack && !pool.some(p=>BACK_W(p)===BACK_W(x)));
-    pool = pool.concat(fallback2);
-  }
-  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
-  opts = opts.concat(pool.slice(0,3).map(x=>BACK_W(x)));
-  for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
+  const opts = buildQuizOptions(v);
 
   opts.forEach(o=>{
     const b = document.createElement('button');
     b.className = 'opt';
     b.textContent = o;
-    b.onclick = () => selectAnswer(o, correctBack, b, opts);
+    b.onclick = () => selectAnswer(o, v.tr, b, opts);
     optionsEl.appendChild(b);
   });
 }
@@ -2700,25 +2210,35 @@ function selectAnswer(chosen, correct, btnEl, opts){
     /* Her doğru cevap +1 XP */
     try{ if(typeof window.PR_addXp === 'function') window.PR_addXp(1); }catch(e){}
   } else {
-    mistakes.push({ word: FRONT_W(v), correct: correct, given: chosen });
+    mistakes.push({ word: v.w, correct: correct, given: chosen });
   }
   
   document.getElementById('scorePill').textContent = `${score} doğru`;
-  setTimeout(()=>{ qIdx++; renderQuiz(); }, 700);
+  const answeredIndex = qIdx, answeredDeck = quizDeck;
+  quizAdvanceTimer = setTimeout(()=>{
+    if(qIdx !== answeredIndex || quizDeck !== answeredDeck) return;
+    qIdx++; renderQuiz();
+  }, 700);
 }
 
 document.getElementById('quizPrevBtn').onclick = () => {
+  clearTimeout(quizAdvanceTimer);
   if(qIdx > 0){ qIdx--; renderQuiz(); }
 };
 document.getElementById('quizNextBtn').onclick = () => {
+  clearTimeout(quizAdvanceTimer);
   if(quizAnswers[qIdx]){ qIdx++; renderQuiz(); }
 };
 document.getElementById('quizFinishBtn').onclick = () => {
+  clearTimeout(quizAdvanceTimer);
   qIdx = quizDeck.length;
   renderQuiz();
 };
 
 document.getElementById('restartBtn').onclick = buildQuizDeck;
+if(document.getElementById('nbBackToNotebookBtn')) document.getElementById('nbBackToNotebookBtn').onclick = () => {
+  const t = document.getElementById('tabNotebook'); if(t) t.click();
+};
 
 document.getElementById('showMistakesBtn').onclick = () => {
     document.getElementById('doneView').style.display = 'none';
@@ -2730,9 +2250,9 @@ document.getElementById('showMistakesBtn').onclick = () => {
     mistakes.forEach(m => {
         list.innerHTML += `
         <div class="mistake-item">
-            <div class="mistake-word">${m.word}</div>
-            <div class="mistake-given">Senin Cevabın: <b>${m.given}</b></div>
-            <div class="mistake-correct">Doğrusu: <b>${m.correct}</b></div>
+            <div class="mistake-word">${nbEsc(m.word)}</div>
+            <div class="mistake-given">Senin Cevabın: <b>${nbEsc(m.given)}</b></div>
+            <div class="mistake-correct">Doğrusu: <b>${nbEsc(m.correct)}</b></div>
         </div>`;
     });
 };
@@ -2751,15 +2271,19 @@ function setDisplay(id, val){ const el = $(id); if(el) el.style.display = val; }
 function toggleActive(id, on){ const el = $(id); if(el) el.classList.toggle('active', on); }
 
 function deactivateAllTabs(){
+  clearTimeout(quizAdvanceTimer);
   try{document.body.classList.remove('pm-active');}catch(e){}
+  try{document.body.classList.remove('notebook-active');}catch(e){}
   toggleActive('tabCards', false);
   toggleActive('tabQuiz', false);
   toggleActive('tabPersonal', false);
+  toggleActive('tabNotebook', false);
   setDisplay('cardsView', 'none');
   setDisplay('quizView', 'none');
   setDisplay('doneView', 'none');
   setDisplay('mistakesView', 'none');
   setDisplay('personalView', 'none');
+  setDisplay('notebookView', 'none');
   // Kişisel mod farklı bir tema/arkaplan kullandığı için sekmeden çıkınca
   // ana chip/level seçicilerini tekrar görünür yapıyoruz.
   setDisplay('levelBox', '');
@@ -2772,6 +2296,10 @@ if($('tabCards')) $('tabCards').onclick = () => {
   setDisplay('cardsView', 'block');
   setDisplay('langBox', '');       /* dil butonları Kartlar'da görünür */
   setDisplay('langPair', '');
+  if(activeCat === 'Notlarım'){    /* Notlarım'dan geldiyse normal desteye dön */
+    activeCat = 'Tümü';
+    applyFilter();
+  }
 };
 if($('tabQuiz')) $('tabQuiz').onclick = () => {
   deactivateAllTabs();
@@ -2779,6 +2307,10 @@ if($('tabQuiz')) $('tabQuiz').onclick = () => {
   setDisplay('quizView', 'block');
   setDisplay('langBox', '');       /* dil butonları Quiz'de görünür */
   setDisplay('langPair', '');
+  if(activeCat === 'Notlarım'){
+    activeCat = 'Tümü';
+    applyFilter();
+  }
   buildQuizDeck();
 };
 if($('tabPersonal')) $('tabPersonal').onclick = () => {
@@ -2791,20 +2323,1063 @@ if($('tabPersonal')) $('tabPersonal').onclick = () => {
   setDisplay('langPair', 'none');
   if(window.PM_open) window.PM_open();
 };
+if($('tabNotebook')) $('tabNotebook').onclick = () => {
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('notebookView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  nbInitSync();
+  nbStudyPicking = false;
+  nbRender();
+};
 
-/* ======================= INIT =======================
-   TARGET_LANG 'de' değilse (ör. onboarding'de İngilizce/Fransızca vb.
-   seçilmişse veya CROSS moddaysa) gereken sözlük(ler) henüz senkron
-   yüklenmemiş olabilir — bu yüzden ilk render, gerekli dosyalar
-   yüklenene KADAR bekliyor. Türkçe-ana-dilli mevcut kullanıcılar için
-   (activeLang zaten 'de' önceden yüklü) bu bekleme anlık/gözle
-   görülmez şekilde geçer; davranış değişmez. */
-setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
-  renderLangPair();
-  rebuildLevelBox();
-  rebuildChips();
-  applyFilter();
+/* =========================================================================
+   📒 NOTLARIM — kullanıcının kendi eklediği kelime defteri + favoriler
+   Mevcut kelime kartı sistemine (deck / renderCard / nextBtn vb.) DOKUNMADAN,
+   sadece "Çalışmaya Başla" ile deck'i kullanıcının kendi kelimeleri +
+   favorilediği kelimelerle doldurup aynı kartlar arayüzünü yeniden
+   kullanıyoruz. Hazır kelime havuzlarıyla (VOCAB) hiç karışmaz.
+
+   HESABA BAĞLI: Veriler artık localStorage yerine Firebase Realtime
+   Database'de, giriş yapan kullanıcının UID'sine bağlı olarak saklanır
+   (progress/{uid}/notebook ve progress/{uid}/favorites) — böylece aynı
+   hesapla farklı cihazdan girildiğinde de kelimeler ve favoriler görünür.
+   Bu yollar zaten mevcut Firebase kuralındaki "progress/$uid" izniyle
+   (auth.uid === $uid) kapsandığı için kural değişikliği GEREKMEZ.
+
+   Önceki (sadece bu cihazda, localStorage) sürümden kalan kelimeler varsa,
+   ilk senkronizasyonda otomatik olarak hesaba taşınır (nbMigrateLocalOnce).
+   ========================================================= */
+const LANG_FLAGS = { de:'🇩🇪', en:'🇬🇧', ar:'🇸🇦', fr:'🇫🇷', es:'🇪🇸', ru:'🇷🇺' };
+const LANG_LANDMARK = { de:'🏛️', en:'🕰️', ar:'🕌', fr:'🗼', es:'⛪', ru:'🏰' };
+let nbWords = {};        /* {pushId: {w,tr,ex,lang,cat,ts}} — manuel eklenenler */
+let nbFavorites = {};    /* ARTIK KULLANILMIYOR (geriye dönük uyumluluk için bırakıldı) — favoriler artık nbWords içinde isFavorite bayrağıyla tutuluyor. */
+let nbSyncedUid = null;
+let nbEditingId = null;      /* düzenlenen manuel kelimenin pushId'si */
+let nbSelectedAddLang = null; /* ekleme formunda seçilen dil (zorunlu) */
+let nbPrefill = null;         /* Kelime Ara'dan seçilince formu önceden dolduran veri {w,tr,ex,cat} */
+let nbStudyPicking = false;   /* false | 'lang' | 'level' — "Çalışmaya Başla" akışının hangi adımda olduğu */
+let nbStudyLang = null;       /* çalışma akışında seçilen dil (geçici) */
+let nbFilterText = '';
+let nbFilterLang = '';
+let nbFilterCat = '';
+let nbFilterDiff = '';
+
+function nbSanitizeKey(s){
+  return Array.from(new TextEncoder().encode(String(s||'').normalize('NFC').toLowerCase().trim().replace(/\s+/g,' ')))
+    .map(b=>b.toString(16).padStart(2,'0')).join('') || 'empty';
+}
+function nbFavKey(lang, w){
+  const code = lang||'de', key = nbSanitizeKey(w);
+  const existing = Object.keys(nbWords||{}).find(id=>{
+    const item = nbWords[id];
+    return item && (item.lang||'de') === code && nbSanitizeKey(item.w) === key;
+  });
+  return existing || 'fav_' + code + '_' + key;
+}
+
+let nbSyncRef = null, nbSaving = false;
+function nbInitSync(){
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid || nbSyncedUid === uid) return;
+  if(nbSyncRef) nbSyncRef.off();
+  nbSyncedUid = uid;
+  nbMigrationAttempted = false; nbOldFavMigrationAttempted = false; nbDedupeAttempted = false;
+  try{ nbWords = JSON.parse(localStorage.getItem('lumira_nb_cache_'+uid)||'{}') || {}; }catch(e){ nbWords = {}; }
+  nbRenderIfOpen();
+  nbSyncRef = db.ref('progress/'+uid+'/notebook');
+  nbSyncRef.on('value', snap => {
+    if(nbSyncedUid !== uid) return;
+    nbWords = snap.val() || {};
+    try{ localStorage.setItem('lumira_nb_cache_'+uid, JSON.stringify(nbWords)); }catch(e){}
+    nbMigrateLocalOnce();
+    nbMigrateOldFavoritesOnce();
+    nbDedupeIfNeeded();
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+  });
+}
+/* ESKİ VERİ TAŞIMA: Favoriler önceden ayrı bir 'progress/{uid}/favorites'
+   düğümünde tutuluyordu ve favoriden çıkarınca kelime tamamen siliniyordu.
+   Artık favoriler de Kelime Defterinin (notebook) kalıcı bir parçası —
+   sadece 'isFavorite' bayrağıyla işaretleniyor; favoriden çıkarmak bayrağı
+   kaldırır, kelimeyi SİLMEZ. Eski düğümde kalmış veri varsa bir kereliğine
+   buraya taşınır. */
+let nbOldFavMigrationAttempted = false;
+function nbMigrateOldFavoritesOnce(){
+  if(nbOldFavMigrationAttempted) return;
+  nbOldFavMigrationAttempted = true;
+  try{
+    if(!nbSyncedUid) return;
+    const db = window.LB_getDb(); if(!db) return;
+    const migrationUid = nbSyncedUid;
+    db.ref('progress/'+migrationUid+'/favorites').once('value').then(snap => {
+      if(nbSyncedUid !== migrationUid) return;
+      const old = snap.val();
+      if(!old) return;
+      const updates = {};
+      Object.keys(old).forEach(key => {
+        const it = old[key] || {};
+        if(!it.w) return;
+        const favId = nbFavKey(it.lang||'de', it.w);
+        if(nbWords[favId]) return; /* zaten taşınmış */
+        updates['progress/'+nbSyncedUid+'/notebook/'+favId] = {
+          w: it.w, tr: it.tr||'', ex: it.ex||'', exTr: it.exTr||'', cat: it.cat||'',
+          level: it.level||'', difficulty: it.difficulty||'orta', lang: it.lang||'de',
+          isFavorite: true, ts: it.ts || Date.now()
+        };
+      });
+      updates['progress/'+nbSyncedUid+'/favorites'] = null;
+      return db.ref().update(updates);
+    }).catch(()=>{});
+  }catch(e){}
+}
+/* Kullanıcı henüz giriş sürecini tamamlamamış olabilir; uid hazır olana
+   kadar (giriş formunu doldurmak dahil, uzunca sürebilir) periyodik dener. */
+(function nbWatchAuth(){
+  let tries = 0;
+  const iv = setInterval(() => {
+    tries++;
+    const uid = window.LB_getUid ? window.LB_getUid() : null;
+    if(uid){ nbInitSync(); }
+    else if(tries > 600){ clearInterval(iv); } /* ~5 dakika sonra vazgeç */
+  }, 500);
+})();
+
+/* BUG NOTU (düzeltildi): nbMigrateLocalOnce daha önce yalnızca bir
+   localStorage bayrağıyla korunuyordu. localStorage.setItem herhangi bir
+   sebeple (gizli sekme, depolama kısıtlaması vb.) sessizce başarısız
+   olursa, bayrak hiç kalıcı olmuyor ve her push() sonrası tekrar tetiklenen
+   'value' olayı fonksiyonu YENİDEN çalıştırıp AYNI kelimeyi tekrar tekrar
+   ekliyordu (sonsuz döngü → yüzlerce kopya). Artık bellek-içi bir bayrakla
+   (nbMigrationAttempted) sayfa boyunca KESİN olarak bir kez çalışıyor. */
+let nbMigrationAttempted = false;
+let nbDedupeAttempted = false;
+
+function nbMigrateLocalOnce(){
+  if(nbMigrationAttempted || !nbSyncedUid) return;
+  nbMigrationAttempted = true;
+  const uid = nbSyncedUid;
+  try{
+    const flagKey = 'lumira_notebook_migrated_' + uid;
+    if(localStorage.getItem(flagKey)) return;
+    const raw = localStorage.getItem('lumira_notebook_v1');
+    const local = raw ? JSON.parse(raw) : [];
+    if(!Array.isArray(local) || !local.length) return;
+    // The old unscoped notebook belongs to the first account that imports it.
+    // Keep its recovery copy without importing it again into another account.
+    const ownerKey='lumira_notebook_legacy_owner';
+    let owner=localStorage.getItem(ownerKey);
+    if(!owner){
+      const completed=[];
+      for(let i=0;i<localStorage.length;i++){
+        const key=localStorage.key(i);
+        if(key && key.startsWith('lumira_notebook_migrated_') && localStorage.getItem(key)) completed.push(key.slice('lumira_notebook_migrated_'.length));
+      }
+      if(completed.length>1) return;
+      owner=completed[0]||uid;
+      localStorage.setItem(ownerKey,owner);
+    }
+    if(owner!==uid) return;
+    const db = window.LB_getDb(); if(!db) return;
+    const updates = {};
+    local.forEach(item=>{
+      if(!item || !item.w || !LANGS[item.lang||'de']) return;
+      const id = nbFavKey(item.lang||'de',item.w);
+      if(nbWords[id]) return;
+      updates[id] = {w:item.w,tr:item.tr||'',ex:item.ex||'',exTr:item.exTr||'',lang:item.lang||'de',cat:item.cat||'',ts:item.ts||Date.now()};
+    });
+    const save = Object.keys(updates).length ? db.ref('progress/'+uid+'/notebook').update(updates) : Promise.resolve();
+    save.then(()=>{
+      try{ localStorage.setItem(flagKey,'1'); }catch(e){}
+      // Keep the original local export as a recovery copy.
+    }).catch(()=>{ nbMigrationAttempted = false; });
+  }catch(e){ nbMigrationAttempted = false; }
+}
+
+/* Kendi kendini onaran temizlik: aynı (dil + kelime) için birden fazla
+   manuel kayıt varsa (ör. yukarıdaki eski bug'dan kalanlar) yalnızca en
+   eskisini tutup gerisini tek seferde siler. Sayfa başına bir kez çalışır. */
+function nbDedupeIfNeeded(){
+  if(nbDedupeAttempted) return;
+  nbDedupeAttempted = true;
+  try{
+    if(!nbSyncedUid) return;
+    const db = window.LB_getDb(); if(!db) return;
+    const seen = {};
+    const toDelete = [];
+    Object.keys(nbWords||{}).sort().forEach(id => {
+      const it = nbWords[id] || {};
+      const key = JSON.stringify(['lang','w','tr','ex','exTr','cat','level','difficulty','isFavorite','pos'].map(k=>it[k] ?? null));
+      if(seen[key]){ toDelete.push(id); }
+      else{ seen[key] = id; }
+    });
+    if(toDelete.length){
+      const updates = {};
+      toDelete.forEach(id => { updates[id] = null; });
+      db.ref('progress/'+nbSyncedUid+'/notebook').update(updates).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+function nbRenderIfOpen(){
+  if(nbSaving) return;
+  const focused = document.activeElement;
+  if(focused && /^nbInput/.test(focused.id||'')) return;
+  const tab = document.getElementById('tabNotebook');
+  if(tab && tab.classList.contains('active') && document.getElementById('notebookView').style.display !== 'none'){
+    nbRender();
+  }
+}
+
+function nbEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* nbWords + nbFavorites birleşik liste — her öğe {id, source, w, tr, ex, lang, cat} */
+function nbCombinedList(){
+  const out = [];
+  Object.keys(nbWords||{}).forEach(id => {
+    const it = nbWords[id] || {};
+    if(typeof it.w !== 'string' || !it.w.trim() || !LANGS[it.lang||'de']) return;
+    out.push({ id, source: it.isFavorite ? 'favorite' : 'manual', w:it.w, tr:it.tr||'', ex:it.ex||'', exTr:it.exTr||'', pos:it.pos||'', lang:it.lang||'de', cat:it.cat||'', level:it.level||'', difficulty:it.difficulty||'orta', ts:it.ts||0 });
+  });
+  out.sort((a,b) => (b.ts||0) - (a.ts||0));
+  return out;
+}
+function nbLangsPresent(list){
+  const seen = {};
+  list.forEach(it => { seen[it.lang||'de'] = true; });
+  return Object.keys(seen);
+}
+
+/* ---------------------- Özel açılır menü (native <select> yerine) ----------------------
+   Native <select>'in açılır listesi tarayıcı temasını kullanır ve uygulamanın
+   koyu temasıyla uyuşmuyordu. Bunun yerine uygulamanın kendi görsel diliyle
+   (arama sonucu kutusuyla aynı stil) tamamen özel, dokunmatik-uyumlu bir
+   açılır menü. */
+function nbCSelectHtml(id, options, selectedVal, placeholderLabel){
+  const sel = options.find(o => o[0] === selectedVal) || options[0];
+  let html = '<div class="nb-cselect" id="'+id+'Box">';
+  html += '<div class="nb-cselect-trigger" id="'+id+'Trigger"><span>'+(sel[2]?sel[2]+' ':'')+sel[1]+'</span><span class="nb-cselect-arrow">▾</span></div>';
+  html += '<div class="nb-cselect-panel" id="'+id+'Panel" style="display:none;">';
+  options.forEach(o => {
+    html += '<div class="nb-cselect-opt'+(o[0]===selectedVal?' active':'')+'" data-val="'+nbEsc(o[0])+'">'+(o[2]?o[2]+' ':'')+o[1]+'</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+function nbCSelectBind(id, onChange){
+  const trigger = document.getElementById(id+'Trigger');
+  const panel = document.getElementById(id+'Panel');
+  if(!trigger || !panel) return;
+  trigger.onclick = (e) => {
+    e.stopPropagation();
+    const isOpen = panel.style.display !== 'none';
+    document.querySelectorAll('.nb-cselect-panel').forEach(p => { p.style.display = 'none'; });
+    panel.style.display = isOpen ? 'none' : 'block';
+  };
+  panel.querySelectorAll('.nb-cselect-opt').forEach(opt => {
+    opt.onmousedown = (e) => {
+      e.preventDefault();
+      panel.style.display = 'none';
+      onChange(opt.getAttribute('data-val'));
+    };
+  });
+}
+if(!window._nbCSelectOutsideBound){
+  window._nbCSelectOutsideBound = true;
+  document.addEventListener('mousedown', (e) => {
+    if(e.target.closest && e.target.closest('.nb-cselect')) return;
+    document.querySelectorAll('.nb-cselect-panel').forEach(p => { p.style.display = 'none'; });
+  });
+}
+
+/* ---------------------- Hazır listede kelime arama ---------------------- */
+function nbEnsureSearchVocabReady(cb){
+  try{
+    const langs = nbSelectedAddLang ? [nbSelectedAddLang] : Object.keys(LANGS);
+    const need = langs.filter(l => !(window.VOCAB_LOADED && window.VOCAB_LOADED[l]));
+    if(!need.length || !window.ensureVocab){ cb(); return; }
+    Promise.all(need.map(l => window.ensureVocab(l))).then(cb).catch(cb);
+  }catch(e){ cb(); }
+}
+function nbSearchVocab(query){
+  const q = query.trim().toLowerCase();
+  if(!q || typeof VOCAB === 'undefined') return [];
+  const langFilter = nbSelectedAddLang;
+  const starts = [];
+  const contains = [];
+  for(let i=0; i<VOCAB.length; i++){
+    const v = VOCAB[i];
+    if(langFilter && v.lang !== langFilter) continue;
+    const w = (v.w||'').toLowerCase();
+    const tr = (v.tr||'').toLowerCase();
+    if(w.indexOf(q) === 0 || tr.indexOf(q) === 0){ starts.push(v); }
+    else if(w.indexOf(q) > -1 || tr.indexOf(q) > -1){ contains.push(v); }
+    if(starts.length >= 8) break;
+  }
+  return starts.concat(contains).slice(0, 8);
+}
+/* --------------------------- Akıllı otomatik doldurma ---------------------------
+   Not: Bu statik (sunucusuz) sitede gerçek bir üretken yapay zeka API'sini
+   güvenle çağıramayız — API anahtarını tarayıcıya koymak herkesin onu
+   çalıp kötüye kullanmasına açık kapı bırakır. Onun yerine "akıllı
+   doldurma" yapıyoruz: kelime hazır 30.000+ kelimelik veritabanımızda
+   varsa oradaki kategori/örnek cümleyi kullanıyoruz; yoksa basit ama
+   dilbilgisel olarak doğru bir şablon cümle üretip kategoriyi "Genel"
+   olarak bırakıyoruz. Kullanıcı istediği zaman elle değiştirebilir. */
+function nbFindExactVocabMatch(lang, word){
+  if(typeof VOCAB === 'undefined') return null;
+  const q = word.trim().toLowerCase();
+  for(let i=0;i<VOCAB.length;i++){
+    const v = VOCAB[i];
+    if(v.lang === lang && (v.w||'').toLowerCase() === q) return v;
+  }
+  return null;
+}
+const NB_TEMPLATE_EX = {
+  de: w => 'Ich habe heute das Wort "'+w+'" gelernt.',
+  en: w => 'I learned the word "'+w+'" today.',
+  ar: w => 'تعلمت اليوم كلمة "'+w+'".',
+  fr: w => 'J\'ai appris le mot "'+w+'" aujourd\'hui.',
+  es: w => 'Hoy aprendí la palabra "'+w+'".',
+  ru: w => 'Сегодня я выучил слово "'+w+'".'
+};
+const NB_TEMPLATE_EX_TR = w => 'Bugün "'+w+'" kelimesini öğrendim.';
+function nbAutoFill(lang, word, currentCat, currentEx, currentExTr){
+  let cat = currentCat, ex = currentEx, exTr = currentExTr||'', level = '', filled = false;
+  const match = nbFindExactVocabMatch(lang, word);
+  if(match){
+    if(!cat && match.cat){ cat = match.cat; filled = true; }
+    if(!ex && match.ex){ ex = match.ex; filled = true; }
+    if(!exTr && match.exTr && ex === match.ex){ exTr = match.exTr; filled = true; }
+    if(match.level){ level = match.level; }
+  }
+  if(!cat){ cat = 'Genel'; filled = true; }
+  if(!ex && NB_TEMPLATE_EX[lang]){
+    ex = NB_TEMPLATE_EX[lang](word);
+    if(!exTr) exTr = NB_TEMPLATE_EX_TR(word);
+    filled = true;
+  }
+  return { cat, ex, exTr, level, filled };
+}
+
+function nbQuickAdd(v){
+  try{
+    if(!v) return;
+    nbSelectedAddLang = v.lang;
+    nbEditingId = null;
+    nbPrefill = { w: v.w||'', tr: v.tr||'', ex: v.ex||'', cat: v.cat||'', exTr: v.exTr||'' };
+    nbRender();
+    const wi = document.getElementById('nbInputWord');
+    if(wi) wi.scrollIntoView({ behavior:'smooth', block:'center' });
+  }catch(e){ console.error('nbQuickAdd hata:', e); }
+}
+
+function nbExportWords(){
+  const data = {app:'Lumira',type:'notebook',version:1,exportedAt:new Date().toISOString(),words:nbCombinedList().map(x=>Object.assign({},x,{isFavorite:x.source === 'favorite'}))};
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a = document.createElement('a'); a.href=url; a.download='lumira-kelime-defteri.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function nbValidateImport(data){
+  if(!data || data.app !== 'Lumira' || data.type !== 'notebook' || data.version !== 1 || !Array.isArray(data.words) || data.words.length > 5000){
+    throw new Error('Geçerli bir Lumira kelime defteri yedeği seç.');
+  }
+  return data.words.map(x=>{
+    if(!x || !LANGS[x.lang] || typeof x.w !== 'string' || !x.w.trim() || x.w.length > 100 || typeof x.tr !== 'string' || x.tr.length > 300){
+      throw new Error('Yedekte geçersiz veya eksik kelime var; hiçbir kayıt eklenmedi.');
+    }
+    for(const field of ['ex','exTr','cat','pos']) if(x[field] != null && (typeof x[field] !== 'string' || x[field].length > 2000)) throw new Error('Yedekte geçersiz metin alanı var.');
+    return {w:x.w.trim(),tr:x.tr.trim(),lang:x.lang,ex:x.ex||'',exTr:x.exTr||'',cat:x.cat||'',pos:x.pos||'',level:['A1','A2','B1','B2'].includes(x.level)?x.level:'',difficulty:['kolay','orta','zor'].includes(x.difficulty)?x.difficulty:'orta',isFavorite:x.isFavorite===true,ts:Number.isSafeInteger(x.ts)&&x.ts>=0?x.ts:Date.now()};
+  });
+}
+function nbImportWords(){
+  const input=document.createElement('input'); input.type='file';input.accept='.json,application/json';
+  input.onchange=async()=>{
+    const file=input.files && input.files[0]; if(!file) return;
+    try{
+      if(file.size > 5*1024*1024) throw new Error('Yedek en fazla 5 MB olabilir.');
+      const records=nbValidateImport(JSON.parse(await file.text()));
+      const uid=window.LB_getUid(),db=window.LB_getDb();
+      if(!uid || !db) throw new Error('Önce giriş yapmalısın.');
+      const updates={};
+      for(const record of records){const id=nbFavKey(record.lang,record.w);if(!nbWords[id] && !updates[id])updates[id]=record;}
+      const count=Object.keys(updates).length;
+      if(!count){nbToast('Yedekteki kelimeler zaten defterinde.');return;}
+      await db.ref('progress/'+uid+'/notebook').update(updates);
+      nbToast(count+' kelime eklendi. Mevcut kayıtlar korundu.');
+    }catch(e){nbToast(e.message || 'Yedek içe aktarılamadı.','bad');}
+  };input.click();
+}
+
+function nbRender(){
+  const host = document.getElementById('notebookView');
+  if(!host) return;
+  if(window.PM_injectStyles) window.PM_injectStyles();
+
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!uid){
+    host.innerHTML = '<div class="nb-wrap"><div class="nb-empty">📒 Kelime Defterin hesabına bağlı olarak saklanır.<br>Devam edebilmek için önce giriş yapmalısın.</div></div>';
+    return;
+  }
+
+  const list = nbCombinedList();
+
+  if(nbStudyPicking === 'lang'){
+    const langs = nbLangsPresent(list);
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>🌍 Hangi Dilde Çalışmak İstiyorsun?</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">Kelime Defterindeki kelimeler arasından önce bir dil seç.</div>';
+    html += '<div class="lang-box">';
+    langs.forEach(code => {
+      const L = LANGS[code] || { label: code };
+      const count = list.filter(it => (it.lang||'de') === code).length;
+      html += '<div class="lang-opt" data-lang="'+code+'" data-nb-study-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(L.label)+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+count+' kelime</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbStudyCancel" style="width:100%;margin-top:14px;">Vazgeç</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-study-lang]').forEach(el => {
+      el.onclick = () => { nbStudyLang = el.getAttribute('data-nb-study-lang'); nbStudyPicking = 'level'; nbRender(); };
+    });
+    const cancelStudy = document.getElementById('nbStudyCancel');
+    if(cancelStudy) cancelStudy.onclick = () => { nbStudyPicking = false; nbRender(); };
+    return;
+  }
+
+  if(nbStudyPicking === 'level'){
+    const langWords = list.filter(it => (it.lang||'de') === nbStudyLang);
+    const levelsPresent = Array.from(new Set(langWords.map(it => it.level).filter(Boolean)));
+    const LEVEL_ORDER = ['A1','A2','B1','B2'];
+    levelsPresent.sort((a,b) => LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b));
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>📊 Hangi Seviyeyle Çalışmak İstiyorsun?</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+(LANG_FLAGS[nbStudyLang]||'')+' '+nbEsc((LANGS[nbStudyLang]||{}).label||nbStudyLang)+' kelimelerinin tümüyle ya da sadece bir seviyeyle çalışabilirsin.</div>';
+    html += '<div class="lang-box">';
+    html += '<div class="lang-opt" data-nb-study-level=""><div class="lname" style="font-size:15px;">TÜMÜ</div><div class="lname" style="opacity:.65;font-weight:600;">'+langWords.length+' kelime</div></div>';
+    levelsPresent.forEach(lv => {
+      const count = langWords.filter(it => it.level === lv).length;
+      html += '<div class="lang-opt" data-nb-study-level="'+lv+'"><div class="lname" style="font-size:15px;">'+lv+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+count+' kelime</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbStudyBack" style="width:100%;margin-top:14px;">← Dili Değiştir</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-study-level]').forEach(el => {
+      el.onclick = () => nbStartStudy(nbStudyLang, el.getAttribute('data-nb-study-level') || null);
+    });
+    const backL = document.getElementById('nbStudyBack');
+    if(backL) backL.onclick = () => { nbStudyPicking = 'lang'; nbRender(); };
+    return;
+  }
+
+  if(nbQuizPicking === 'lang'){
+    const langs = nbLangsPresent(list);
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>🧩 Quiz — Hangi Dilde?</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">Önce bir dil seç, sonra zorluk seviyesine göre quiz olacaksın.</div>';
+    html += '<div class="lang-box">';
+    langs.forEach(code => {
+      const L = LANGS[code] || { label: code };
+      const count = list.filter(it => (it.lang||'de') === code).length;
+      html += '<div class="lang-opt" data-lang="'+code+'" data-nb-quiz-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(L.label)+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+count+' kelime</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbQuizCancel" style="width:100%;margin-top:14px;">Vazgeç</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-quiz-lang]').forEach(el => {
+      el.onclick = () => { nbQuizLang = el.getAttribute('data-nb-quiz-lang'); nbQuizPicking = 'diff'; nbRender(); };
+    });
+    const c1 = document.getElementById('nbQuizCancel');
+    if(c1) c1.onclick = () => { nbQuizPicking = null; nbRender(); };
+    return;
+  }
+
+  if(nbQuizPicking === 'diff'){
+    const langWords = list.filter(it => (it.lang||'de') === nbQuizLang);
+    const counts = { kolay:0, orta:0, zor:0 };
+    langWords.forEach(it => { counts[it.difficulty||'orta']++; });
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>🧩 Quiz — Zorluk Seviyesi</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+(LANG_FLAGS[nbQuizLang]||'')+' '+nbEsc((LANGS[nbQuizLang]||{}).label||nbQuizLang)+' kelimelerinden hangi zorlukta quiz olmak istersin?</div>';
+    html += '<div class="nb-diff-row" style="margin-bottom:14px;">';
+    [['kolay','🙂','Kolay',counts.kolay],['orta','😐','Orta',counts.orta],['zor','☹️','Zor',counts.zor]].forEach(d => {
+      const disabled = d[3] === 0;
+      html += '<div class="nb-diff-opt'+(disabled?'':' ')+'" data-nb-quiz-diff="'+d[0]+'" style="'+(disabled?'opacity:.4;pointer-events:none;':'cursor:pointer;')+'"><span class="nb-diff-emoji">'+d[1]+'</span><div class="nb-diff-text"><div class="nb-diff-name">'+d[2]+'</div><div class="nb-diff-sub">'+d[3]+' kelime</div></div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn primary" data-nb-quiz-diff="" style="width:100%;margin-bottom:8px;">Tüm Zorluklarla Quiz Ol ('+langWords.length+' kelime)</button>';
+    html += '<button type="button" class="pm-btn small" id="nbQuizBack" style="width:100%;">← Dili Değiştir</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-quiz-diff]').forEach(el => {
+      el.onclick = () => nbStartQuiz(nbQuizLang, el.getAttribute('data-nb-quiz-diff') || null);
+    });
+    const back = document.getElementById('nbQuizBack');
+    if(back) back.onclick = () => { nbQuizPicking = 'lang'; nbRender(); };
+    return;
+  }
+
+  const editing = nbEditingId != null ? list.find(w => w.id === nbEditingId) : null;
+  if(editing && nbSelectedAddLang == null) nbSelectedAddLang = editing.lang;
+  const formSrc = editing || nbPrefill || null;
+
+  let html = '<div class="nb-wrap">';
+  html += '<p class="nb-intro">Kendi eklediğin kelimeler ve favorilerine attığın kartlar burada, hesabına bağlı olarak saklanır — herkesin gördüğü hazır listelerden ayrıdır. Farklı bir cihazdan aynı hesapla girsen de kelimelerin seninle gelir.</p>';
+
+  html += '<div class="pm-root">';
+  html += '<div class="pm-card" style="position:relative;">';
+  html += '<h4>'+(editing ? '✏️ Kelimeyi Düzenle' : '➕ Yeni Kelime Ekle')+'</h4>';
+
+  html += '<div class="pm-sub" style="margin-bottom:8px;">1) Hangi dilde? *</div>';
+  html += '<div class="lang-box">';
+  Object.keys(LANGS).forEach(code => {
+    const L = LANGS[code];
+    const active = nbSelectedAddLang === code;
+    html += '<div class="lang-opt'+(active?' active':'')+'" data-lang="'+code+'" data-nb-add-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(L.label)+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="nb-lang-required" id="nbLangWarn"></div>';
+
+  if(!editing){
+    html += '<div class="pm-sub" style="margin:14px 0 8px;">2) Hazır sözlükte ara (opsiyonel)</div>';
+    html += '<input type="text" class="pm-fill-input" id="nbSearchInput" placeholder="🔍 örn. Schmetterling, hello, manzana…" autocomplete="off" autocapitalize="off" spellcheck="false">';
+    html += '<div id="nbSearchResults" class="nb-search-results"></div>';
+    html += '<div class="pm-sub" style="margin:14px 0 8px;">3) Bilgileri gir</div>';
+  }
+
+  html += '<input type="text" class="pm-fill-input" id="nbInputWord" dir="auto" aria-label="Kelime" placeholder="Kelime * (örn. Schmetterling)" maxlength="60" style="margin-top:'+(editing?'14px':'0')+';margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.w:'')+'">';
+  html += '<input type="text" class="pm-fill-input" id="nbInputTr" aria-label="Türkçe anlamı" placeholder="Türkçe anlamı * (örn. kelebek)" maxlength="300" style="margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.tr:'')+'">';
+  html += '<input type="text" class="pm-fill-input" id="nbInputCat" placeholder="Kategori (opsiyonel, örn. Hayvanlar)" maxlength="30" style="margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.cat:'')+'">';
+  html += '<textarea class="pm-fill-input" id="nbInputEx" dir="auto" maxlength="2000" aria-label="Örnek cümle" placeholder="Örnek cümle (opsiyonel)" style="margin-bottom:14px;min-height:46px;resize:vertical;font-family:inherit;font-size:14px;">'+nbEsc(formSrc?formSrc.ex:'')+'</textarea>';
+  html += '<textarea class="pm-fill-input" id="nbInputExTr" maxlength="2000" aria-label="Örnek cümlenin Türkçe çevirisi" placeholder="Örnek cümlenin Türkçe çevirisi (opsiyonel)" style="margin-bottom:14px;resize:vertical;">'+nbEsc(formSrc?formSrc.exTr:'')+'</textarea>';
+  html += '<div style="display:flex;gap:10px;">';
+  if(editing){
+    html += '<button type="button" class="pm-btn small" id="nbCancelEdit" style="flex:1;">Vazgeç</button>';
+    html += '<button type="button" class="pm-btn primary" id="nbSaveWord" style="flex:1;">Kaydet</button>';
+  }else{
+    html += '<button type="button" class="pm-btn primary" id="nbSaveWord" style="width:100%;">Kelime Defterime Ekle</button>';
+  }
+  html += '</div></div></div>';
+
+  html += '<div class="nb-backup-actions"><button type="button" class="ctrl" id="nbExportWords">⬇️ Defteri Yedekle</button><button type="button" class="ctrl" id="nbImportWords">⬆️ Yedekten Ekle</button></div>';
+  html += '<button type="button" class="nb-start" id="nbStartStudy" '+(list.length===0?'disabled':'')+'>🚀 Çalışmaya Başla ('+list.length+' kelime)</button>';
+  html += '<button type="button" class="nb-start-secondary" id="nbQuizOl" '+(list.length===0?'disabled style="opacity:.4;"':'')+'>🧩 Quiz Ol</button>';
+  html += '<button type="button" class="nb-start-secondary" id="nbWritingBtn">✍️ Yazma Pratiği</button>';
+
+  const filterLangs = nbLangsPresent(list);
+  const filterCats = Array.from(new Set(list.map(it => it.cat).filter(Boolean))).sort();
+  let filtered = list;
+  if(nbFilterLang) filtered = filtered.filter(it => (it.lang||'de') === nbFilterLang);
+  if(nbFilterCat) filtered = filtered.filter(it => (it.cat||'') === nbFilterCat);
+  if(nbFilterDiff) filtered = filtered.filter(it => (it.difficulty||'orta') === nbFilterDiff);
+  if(nbFilterText.trim()){
+    const q = nbFilterText.trim().toLowerCase();
+    filtered = filtered.filter(it => (it.w||'').toLowerCase().includes(q) || (it.tr||'').toLowerCase().includes(q));
+  }
+
+  html += '<div class="nb-filter-bar">';
+  html += '<div class="nb-filter-search-wrap"><span class="nb-filter-search-icon">🔍</span><input type="text" class="nb-filter-search" id="nbFilterInput" placeholder="Kelime Defterimde ara…" value="'+nbEsc(nbFilterText)+'"></div>';
+  html += '<div class="nb-filter-row">';
+
+  const langOptions = [['','Tüm diller','']].concat(filterLangs.map(code => [code, nbEsc((LANGS[code]||{}).label||code), LANG_FLAGS[code]||'']));
+  html += nbCSelectHtml('nbFilterLang', langOptions, nbFilterLang, 'Tüm diller');
+
+  const catOptions = [['','Tüm kategoriler','']].concat(filterCats.map(cat => [cat, nbEsc(cat), '']));
+  html += nbCSelectHtml('nbFilterCat', catOptions, nbFilterCat, 'Tüm kategoriler');
+
+  const diffOptions = [['','Tüm seviyeler',''],['kolay','Kolay','🙂'],['orta','Orta','😐'],['zor','Zor','☹️']];
+  html += nbCSelectHtml('nbFilterDiff', diffOptions, nbFilterDiff, 'Tüm seviyeler');
+
+  html += '</div></div>';
+
+  html += '<div class="nb-list-title"><span>Kelime Defterim</span><span>'+filtered.length+' / '+list.length+' kelime</span></div>';
+  if(list.length === 0){
+    html += '<div class="nb-empty">Henüz kelime eklemedin.<br>İnternette, derste ya da günlük hayatta öğrendiğin bir kelimeyi yukarıdan ekleyebilir, ya da kartlardaki ⭐ ile favorilerine attığın kelimeleri burada görebilirsin.</div>';
+  }else if(filtered.length === 0){
+    html += '<div class="nb-empty">Bu filtrelere uyan kelime yok.</div>';
+  }else{
+    const diffLabel = { kolay:['🙂','Kolay'], orta:['😐','Orta'], zor:['☹️','Zor'] };
+    filtered.forEach(w => {
+      const dl = diffLabel[w.difficulty||'orta'];
+      html += '<div class="nb-item">';
+      html += '<div class="nb-item-main">';
+      html += '<div class="nb-item-w">'+nbEsc(w.w)+'</div>';
+      if(w.tr) html += '<div class="nb-item-tr">'+nbEsc(w.tr)+'</div>';
+      if(w.ex) html += '<div class="nb-item-ex">'+nbEsc(w.ex)+'</div>';
+      html += '<div>';
+      html += '<span class="nb-badge nb-badge-'+(w.source==='favorite'?'fav':'manual')+'">'+(w.source==='favorite'?'⭐ Favori':'📝 Eklenen')+'</span>';
+      html += '<span class="nb-badge nb-badge-lang">'+(LANG_FLAGS[w.lang]||'🌐')+' '+nbEsc((LANGS[w.lang]||{}).label||w.lang)+'</span>';
+      if(w.cat) html += '<span class="nb-badge nb-badge-cat">'+nbEsc(w.cat)+'</span>';
+      if(w.level) html += '<span class="nb-badge nb-badge-level">'+nbEsc(w.level)+'</span>';
+      html += '</div>';
+      html += '<div class="nb-diff-mini">';
+      ['kolay','orta','zor'].forEach(d => {
+        html += '<div class="nb-diff-mini-btn'+((w.difficulty||'orta')===d?' active':'')+'" data-diff="'+d+'" data-nb-diff-set="'+w.id+'" data-nb-diff-source="'+w.source+'" data-nb-diff-level="'+d+'">'+diffLabel[d][0]+' '+diffLabel[d][1]+'</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+      html += '<div class="nb-item-actions">';
+      html += '<div class="nb-icon-btn" data-nb-edit="'+w.id+'" title="Düzenle">✏️</div>';
+      html += '<div class="nb-icon-btn danger" data-nb-del="'+w.id+'" title="Sil">🗑️</div>';
+      html += '</div></div>';
+    });
+  }
+  html += '</div>';
+  host.innerHTML = html;
+
+  const filterInput = document.getElementById('nbFilterInput');
+  if(filterInput) filterInput.oninput = () => {
+    nbFilterText = filterInput.value;
+    const cursorPos = filterInput.selectionStart;
+    nbRender();
+    const freshInput = document.getElementById('nbFilterInput');
+    if(freshInput){ freshInput.focus(); try{ freshInput.setSelectionRange(cursorPos, cursorPos); }catch(e){} }
+  };
+
+  nbCSelectBind('nbFilterLang', val => { nbFilterLang = val; nbRender(); });
+  nbCSelectBind('nbFilterCat', val => { nbFilterCat = val; nbRender(); });
+  nbCSelectBind('nbFilterDiff', val => { nbFilterDiff = val; nbRender(); });
+
+  host.querySelectorAll('[data-nb-diff-set]').forEach(el => {
+    el.onclick = () => nbSetDifficultyDirect(el.getAttribute('data-nb-diff-set'), el.getAttribute('data-nb-diff-source'), el.getAttribute('data-nb-diff-level'));
+  });
+
+  const quizBtn = document.getElementById('nbQuizOl');
+  if(quizBtn) quizBtn.onclick = () => {
+    if(nbCombinedList().length === 0) return;
+    nbQuizPicking = 'lang';
+    nbRender();
+  };
+
+  const writingBtn = document.getElementById('nbWritingBtn');
+  if(writingBtn) writingBtn.onclick = () => {
+    /* tabPersonal'ın tıklama mantığıyla birebir aynı (bkz. yukarıdaki
+       $('tabPersonal').onclick), sadece sonunda ana sayfa yerine doğrudan
+       Yazma Pratiği'ni açar - iki ayrı openPersonalMode çağrısının yarış
+       durumuna (ve çift veri yüklemeye) yol açmaması için PM_open yerine
+       tek seferde PM_openWritingPractice çağrılır. */
+    deactivateAllTabs();
+    toggleActive('tabPersonal', true);
+    setDisplay('personalView', 'block');
+    setDisplay('levelBox', 'none');
+    setDisplay('chips', 'none');
+    setDisplay('langBox', 'none');
+    setDisplay('langPair', 'none');
+    if(window.PM_openWritingPractice) window.PM_openWritingPractice();
+  };
+
+  host.querySelectorAll('[data-nb-add-lang]').forEach(el => {
+    el.onclick = () => { nbSelectedAddLang = el.getAttribute('data-nb-add-lang'); nbRender(); };
+  });
+
+  const searchInput = document.getElementById('nbSearchInput');
+  const searchResults = document.getElementById('nbSearchResults');
+  if(searchInput && searchResults){
+    let searchSeq = 0;
+    const closeResults = () => { searchResults.innerHTML = ''; searchResults.style.display = 'none'; };
+    searchInput.oninput = () => {
+      const q = searchInput.value.trim();
+      const mySeq = ++searchSeq;
+      if(q.length < 2){ closeResults(); return; }
+      nbEnsureSearchVocabReady(() => {
+        if(mySeq !== searchSeq) return; /* kullanıcı yazmaya devam etmiş, eski sonucu atla */
+        const matches = nbSearchVocab(q);
+        if(!matches.length){
+          searchResults.innerHTML = '<div class="nb-search-empty">Hazır listelerde bulunamadı — aşağıdan elle ekleyebilirsin.</div>';
+          searchResults.style.display = 'block';
+          return;
+        }
+        searchResults.innerHTML = matches.map((v,i) =>
+          '<div class="nb-search-item" data-nb-pick="'+i+'"><span class="nb-search-flag">'+(LANG_FLAGS[v.lang]||'🌐')+'</span><div class="nb-search-text"><b>'+nbEsc(v.w)+'</b>'+(v.tr?(' — '+nbEsc(v.tr)):'')+'</div></div>'
+        ).join('');
+        searchResults.style.display = 'block';
+        /* Not: 'onclick' yerine 'onmousedown' + preventDefault kullanıyoruz.
+           Arama kutusu odaklıyken bir öğeye tıklamak önce 'blur' (odak
+           kaybı) tetikler; input'un blur'da sonucu gizlemesi click'ten
+           ÖNCE gerçekleşebiliyor ve tıklama hiç işlemiyormuş gibi
+           görünüyordu. mousedown + preventDefault, blur'un hiç
+           tetiklenmesini engelleyip seçimi güvenilir hale getiriyor. */
+        searchResults.querySelectorAll('[data-nb-pick]').forEach(el => {
+          el.onmousedown = (e) => {
+            e.preventDefault();
+            const v = matches[parseInt(el.getAttribute('data-nb-pick'), 10)];
+            if(!v) return;
+            closeResults();
+            searchInput.value = '';
+            nbQuickAdd(v);
+          };
+        });
+      });
+    };
+    /* Dışarı tıklanınca sonuç listesini kapat (dokümana bir kez bağlanır) */
+    if(!window._nbOutsideCloseBound){
+      window._nbOutsideCloseBound = true;
+      document.addEventListener('mousedown', (e) => {
+        const wrap = document.getElementById('nbSearchResults');
+        const input = document.getElementById('nbSearchInput');
+        if(!wrap || wrap.style.display === 'none') return;
+        if(e.target === input || wrap.contains(e.target)) return;
+        wrap.innerHTML = ''; wrap.style.display = 'none';
+      });
+    }
+    searchInput.onfocus = () => { if(searchResults.innerHTML) searchResults.style.display = 'block'; };
+  }
+
+  const wordInput = document.getElementById('nbInputWord');
+  const trInput = document.getElementById('nbInputTr');
+  const exInput = document.getElementById('nbInputEx');
+  const catInput = document.getElementById('nbInputCat');
+  const langWarn = document.getElementById('nbLangWarn');
+
+  const saveBtn = document.getElementById('nbSaveWord');
+  if(saveBtn) saveBtn.onclick = async () => {
+    if(nbSaving) return;
+    const w = (wordInput.value||'').trim();
+    const tr = (trInput.value||'').trim();
+    let ex = (exInput.value||'').trim();
+    let cat = (catInput.value||'').trim();
+    let exTr = (document.getElementById('nbInputExTr').value||'').trim();
+    if(!nbSelectedAddLang){
+      if(langWarn) langWarn.textContent = 'Lütfen önce bir dil seç.';
+      return;
+    }
+    if(!w){ wordInput.focus(); return; }
+    if(!tr){ trInput.focus(); nbToast('Türkçe karşılığını da yazmalısın.', 'bad'); return; }
+    if(w.length > 100 || tr.length > 300 || ex.length > 2000){ nbToast('Kelime en fazla 100, anlam 300, örnek cümle 2000 karakter olabilir.', 'bad'); return; }
+    const db = window.LB_getDb(); const uid2 = window.LB_getUid();
+    if(!db || !uid2){ nbToast('Kaydetmek için giriş yapmalısın.', 'bad'); return; }
+    const af = nbAutoFill(nbSelectedAddLang, w, cat, ex, exTr);
+    if(af.filled) nbToast('🤖 Kategori/örnek cümle otomatik dolduruldu — istersen sonra düzenleyebilirsin.');
+    cat = af.cat; ex = af.ex; exTr = af.exTr;
+    const level = af.level || '';
+    const duplicate = Object.keys(nbWords||{}).find(id=> id !== nbEditingId &&
+      (nbWords[id].lang||'de') === nbSelectedAddLang && nbSanitizeKey(nbWords[id].w) === nbSanitizeKey(w));
+    if(duplicate){ nbToast('Bu kelime zaten defterinde var. Mevcut kaydı düzenleyebilirsin.', 'bad'); return; }
+    nbSaving = true; saveBtn.disabled = true; saveBtn.textContent = 'Kaydediliyor…';
+    try{
+      const record = {w,tr,ex,exTr,cat,level,lang:nbSelectedAddLang};
+      if(nbEditingId != null){
+        await db.ref('progress/'+uid2+'/notebook/'+nbEditingId).update(record);
+      }else{
+        await db.ref('progress/'+uid2+'/notebook').push(Object.assign(record,{ts:Date.now()}));
+      }
+      nbEditingId = null; nbSelectedAddLang = null; nbPrefill = null;
+      nbSaving = false; nbRender(); nbToast('Kelime kaydedildi.');
+    }catch(e){
+      nbToast('Kaydedilemedi; yazdıkların formda duruyor. Tekrar deneyebilirsin.', 'bad');
+    }finally{
+      nbSaving = false; saveBtn.disabled = false; saveBtn.textContent = 'Kaydet';
+    }
+  };
+
+  const cancelBtn = document.getElementById('nbCancelEdit');
+  if(cancelBtn) cancelBtn.onclick = () => { nbEditingId = null; nbSelectedAddLang = null; nbPrefill = null; nbRender(); };
+
+  host.querySelectorAll('[data-nb-edit]').forEach(el => {
+    el.onclick = () => { nbEditingId = el.getAttribute('data-nb-edit'); nbSelectedAddLang = null; nbPrefill = null; nbRender(); };
+  });
+  host.querySelectorAll('[data-nb-del]').forEach(el => {
+    el.onclick = () => {
+      const id = el.getAttribute('data-nb-del');
+      const db = window.LB_getDb(); const uid2 = window.LB_getUid();
+      if(!db || !uid2) return;
+      /* Not: burası artık her zaman Kelime Defterinden (notebook) tam
+         silme demek — favori olsa bile. Sadece favoriden çıkarmak
+         isteyen kişi kartın üzerindeki ⭐'a basar (o, silmeden sadece
+         rozeti kaldırır). Bu yüzden burada onay istemiyoruz; işlem geri
+         alınamaz bir "favoriden çıkarma" değil, doğrudan bir "sil". */
+      let backupWord = nbWords[id];
+      delete nbWords[id];
+      if(nbEditingId === id) nbEditingId = null;
+      nbRender();
+      db.ref('progress/'+uid2+'/notebook/'+id).remove().then(() => {
+        if(window.LUM_toast && backupWord){
+          window.LUM_toast('Kelime silindi.', {duration:12000,action:'Geri Al',onAction:()=>{
+            if(window.LB_getUid() !== uid2) return;
+            db.ref('progress/'+uid2+'/notebook/'+id).set(backupWord)
+              .then(()=>nbToast('Kelime geri alındı.'))
+              .catch(()=>nbToast('Geri alınamadı. Bağlantını kontrol et.', 'bad'));
+          }});
+        }else nbToast('Kelime defterinden silindi.');
+      }).catch(err => {
+        console.error('Silinemedi:', err);
+        if(backupWord) nbWords[id] = backupWord;
+        nbRenderIfOpen();
+        nbToast('Silinemedi, tekrar dener misin?', 'bad');
+      });
+    };
+  });
+
+  document.getElementById('nbExportWords').onclick = nbExportWords;
+  document.getElementById('nbImportWords').onclick = nbImportWords;
+  const startBtn = document.getElementById('nbStartStudy');
+  if(startBtn) startBtn.onclick = () => {
+    if(nbCombinedList().length === 0) return;
+    nbStudyPicking = 'lang';
+    nbRender();
+  };
+}
+
+function nbStartStudy(lang, level){
+  let list = nbCombinedList().filter(it => (it.lang||'de') === lang);
+  if(level) list = list.filter(it => (it.level||'') === level);
+  if(list.length === 0) return;
+  deck = list.map((item, i) => {
+    const c = (typeof pair === 'function') ? pair(i) : ['#4fe8ff','#ff5fb8'];
+    return {
+      lang: item.lang || 'de',
+      level: 'ÖZEL',
+      cat: item.cat || 'Notlarım',
+      w: item.w,
+      tr: item.tr || '',
+      pos: item.source === 'favorite' ? (item.pos || 'Favori') : 'Kelime Defterim',
+      ex: item.ex || '',
+      exTr: item.exTr || '',
+      c1: c[0], c2: c[1],
+      _nbId: item.id, _nbSource: item.source, difficulty: item.difficulty || 'orta'
+    };
+  });
+  idx = 0; flipped = false;
+  activeCat = 'Notlarım';
+  nbStudyPicking = false;
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('cardsView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  renderCard();
+}
+
+function nbRenderDifficultyBox(){
+  const box = document.getElementById('nbDifficultyBox');
+  if(!box) return;
+  const v = deck[idx];
+  const stage = document.querySelector('.stage');
+  if(activeCat !== 'Notlarım' || !v || !v._nbId){
+    box.style.display = 'none';
+    if(stage) stage.classList.remove('stage-merged');
+    return;
+  }
+  box.style.display = '';
+  if(stage) stage.classList.add('stage-merged');
+  box.querySelectorAll('[data-diff]').forEach(el => {
+    el.classList.toggle('active', (v.difficulty||'orta') === el.getAttribute('data-diff'));
+  });
+}
+function nbUpdateFinishButton(){
+  const btn = document.getElementById('nbFinishStudyBtn');
+  if(!btn) return;
+  btn.style.display = (activeCat === 'Notlarım') ? '' : 'none';
+}
+(function(){
+  const btn = document.getElementById('nbFinishStudyBtn');
+  if(btn) btn.onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
+})();
+function nbSetDifficulty(level){
+  const v = deck[idx];
+  if(!v || !v._nbId) return;
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid) return;
+  v.difficulty = level;
+  if(nbWords[v._nbId]) nbWords[v._nbId].difficulty = level;
+  nbRenderDifficultyBox();
+  db.ref('progress/'+uid+'/notebook/'+v._nbId).update({ difficulty: level }).catch(err => {
+    console.error('Zorluk seviyesi kaydedilemedi:', err);
+    nbToast('Zorluk seviyesi kaydedilemedi.', 'bad');
+  });
+}
+(function(){
+  const box = document.getElementById('nbDifficultyBox');
+  if(box){
+    box.querySelectorAll('[data-diff]').forEach(el => {
+      el.onclick = () => nbSetDifficulty(el.getAttribute('data-diff'));
+    });
+  }
+})();
+
+/* Kelime Defterim listesinden (çalışma moduna girmeden) zorluk değiştirme */
+function nbSetDifficultyDirect(id, source, level){
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid) return;
+  if(nbWords[id]) nbWords[id].difficulty = level;
+  nbRenderIfOpen();
+  db.ref('progress/'+uid+'/notebook/'+id).update({ difficulty: level }).catch(err => {
+    console.error('Zorluk seviyesi kaydedilemedi:', err);
+    nbToast('Zorluk seviyesi kaydedilemedi.', 'bad');
+  });
+}
+
+/* --------------------------- QUIZ OL (dil + zorluk seçip quiz) --------------------------- */
+let nbQuizPicking = null;  /* null | 'lang' | 'diff' */
+let nbQuizLang = null;
+function nbStartQuiz(lang, difficulty){
+  let list = nbCombinedList().filter(it => (it.lang||'de') === lang && (it.tr||'').trim());
+  if(difficulty) list = list.filter(it => (it.difficulty||'orta') === difficulty);
+  if(list.length === 0){ nbToast('Quiz için önce kelimelerinin Türkçe anlamlarını tamamla.', 'bad'); return; }
+  deck = list.map((item, i) => {
+    const c = (typeof pair === 'function') ? pair(i) : ['#4fe8ff','#ff5fb8'];
+    return {
+      lang: item.lang || 'de', level:'ÖZEL', cat: item.cat || 'Notlarım',
+      w: item.w, tr: item.tr || '',
+      pos: item.source === 'favorite' ? (item.pos || 'Favori') : 'Kelime Defterim',
+      ex: item.ex || '', exTr: item.exTr || '', c1: c[0], c2: c[1],
+      _nbId: item.id, _nbSource: item.source, difficulty: item.difficulty || 'orta'
+    };
+  });
+  activeCat = 'Notlarım';
+  nbQuizPicking = null;
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('quizView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  buildQuizDeck();
+}
+
+/* --------------------------- FAVORİ YILDIZI (kartlar üzerinde) --------------------------- */
+function nbUpdateFavStar(){
+  const v = deck[idx];
+  const inNotebookStudy = (activeCat === 'Notlarım');
+  ['favStarFront','favStarBack'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(!v || inNotebookStudy){ el.style.display = 'none'; return; }
+    el.style.display = '';
+    const key = nbFavKey(v.lang, v.w);
+    const on = !!(nbWords && nbWords[key] && nbWords[key].isFavorite);
+    el.textContent = on ? '★' : '☆';
+    el.classList.toggle('on', on);
+    el.classList.toggle('off', !on);
+  });
+}
+function nbToast(msg, kind){
+  try{
+    if(window.LUM_toast){ window.LUM_toast(msg, kind ? {kind:kind} : undefined); return; }
+  }catch(e){}
+  /* pwa.js her nedenle yüklenmemiş olabilir — sessiz kalmak yerine en azından konsola yaz */
+  console.log('[Lumira]', msg);
+}
+
+/* Favoriler artık Kelime Defterinin (notebook) kalıcı bir parçası —
+   favoriden çıkarmak sadece 'isFavorite' bayrağını kaldırır, kelimeyi
+   Kelime Defterinden SİLMEZ. Silmek için Kelime Defterim'deki 🗑️ kullanılır. */
+function nbToggleFavorite(silent){
+  const v = deck[idx]; if(!v) return;
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid){
+    /* Giriş süreci tam bitmemiş olabilir (uygulama yeni açıldıysa) — hemen
+       pes etmek yerine birkaç saniye kısa aralıklarla tekrar dener, ancak
+       gerçekten giriş yoksa kullanıcıyı bilgilendirir. */
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      const db2 = window.LB_getDb ? window.LB_getDb() : null;
+      const uid2 = window.LB_getUid ? window.LB_getUid() : null;
+      if(db2 && uid2){ clearInterval(iv); if(deck[idx] === v) nbToggleFavorite(silent); }
+      else if(tries > 10){ clearInterval(iv); if(!silent) nbToast('Favorilere eklemek için önce giriş yapmalısın.', 'bad'); }
+    }, 300);
+    return;
+  }
+  const favId = nbFavKey(v.lang, v.w);
+  const existing = nbWords[favId];
+  const isFav = !!(existing && existing.isFavorite);
+  const ref = db.ref('progress/'+uid+'/notebook/'+favId);
+  if(isFav){
+    const backup = nbWords[favId];
+    nbWords[favId] = Object.assign({}, existing, { isFavorite: false });
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    ref.update({ isFavorite: false }).then(() => {
+      if(!silent) nbToast('Favorilerden çıkarıldı — kelime defterinden silinmedi.');
+    }).catch(err => {
+      console.error('Favori kaldırılamadı:', err);
+      nbWords[favId] = backup;
+      nbUpdateFavStar();
+      nbRenderIfOpen();
+      if(!silent) nbToast('Favoriden çıkarılamadı, tekrar dener misin?', 'bad');
+    });
+  }else{
+    const payload = existing ? Object.assign({}, existing, { isFavorite: true }) : {
+      w: v.w, tr: v.tr||'', ex: v.ex||'', exTr: v.exTr||'', pos: v.pos||'',
+      lang: v.lang, cat: v.cat||'', level: v.level||'', difficulty: 'orta',
+      isFavorite: true, ts: Date.now()
+    };
+    /* İyimser güncelleme: Firebase yanıtını beklemeden yıldızı doldur ve
+       açıksa Notlarım listesine hemen yansıt. */
+    const backup = nbWords[favId];
+    nbWords[favId] = payload;
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    ref.set(payload).then(() => {
+      if(!silent) nbToast('⭐ Favorilere eklendi — Notlarım\'da görebilirsin.');
+    }).catch(err => {
+      console.error('Favori eklenemedi:', err);
+      if(backup) nbWords[favId] = backup; else delete nbWords[favId];
+      nbUpdateFavStar();
+      nbRenderIfOpen();
+      if(!silent) nbToast('Favori eklenirken bir sorun oluştu, tekrar dener misin?', 'bad');
+    });
+  }
+}
+['favStarFront','favStarBack'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.onclick = (e) => { e.stopPropagation(); nbToggleFavorite(); };
 });
+/* pwa.js'teki önceden var olan #favBtn (Ayarlar > Favorilerim) tıklandığında
+   da ÇAĞRILIR — böylece tek bir yıldız/tek bir tıklama hem eski
+   localStorage sistemine hem de yeni Notlarım (Firebase) sistemine birden
+   yazar. "Notlarım" çalışma modundayken (kendi kelimeni favorileme
+   mantıksız olduğu için) hiçbir şey yapmaz. */
+window.NB_toggleFavoriteFromCard = function(){
+  if(activeCat === 'Notlarım') return;
+  nbToggleFavorite(true);
+};
+/* Ayarlar > Favorilerim listesinden bir kelime çıkarılınca (kartın kendisi
+   o an ekranda olmayabilir, bu yüzden deck[idx] değil doğrudan kelime
+   üzerinden çalışır) — sadece 'isFavorite' bayrağını kaldırır, Kelime
+   Defterinden SİLMEZ. */
+window.NB_unfavoriteByWord = function(lang, w){
+  try{
+    const db = window.LB_getDb ? window.LB_getDb() : null;
+    const uid = window.LB_getUid ? window.LB_getUid() : null;
+    if(!db || !uid || !lang || !w) return;
+    const favId = nbFavKey(lang, w);
+    if(!nbWords[favId] || !nbWords[favId].isFavorite) return;
+    nbWords[favId].isFavorite = false;
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    db.ref('progress/'+uid+'/notebook/'+favId).update({ isFavorite: false }).catch(err => {
+      console.error('Favori kaldırılamadı:', err);
+    });
+  }catch(e){}
+};
+
+/* ======================= INIT ======================= */
+renderLangPair();
+rebuildLevelBox();
+rebuildChips();
+applyFilter();
 
 /* ======================= SNOW / CRYSTAL EFFECT ======================= */
 (function(){
@@ -2821,6 +3396,7 @@ setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
     if(liteOn) document.documentElement.classList.add('lite');
   }catch(e){ liteOn = false; }
 
+  liteOn = liteOn || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = document.getElementById('snowCanvas');
   if(liteOn){ canvas.style.display = 'none'; }
   const ctx = canvas.getContext('2d');
@@ -2989,7 +3565,7 @@ setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
   }, { once:true });
 })();
 </script>
-<script src="progress.js?v=1.7.27"></script>
+<script src="progress.js?v=1.7.54"></script>
 
 <!-- Service Worker kaydı, güncelleme kontrolü, bildirimler ve geri tuşu
      yönetimi artık pwa.js içinde (sayfanın en altında yükleniyor). -->
@@ -3000,22 +3576,23 @@ setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
      sadece giriş koreografisi CSS ile yapılır. -->
 <!-- GSAP ve Lenis kaldırıldı: projede hiçbir yerde kullanılmıyordu ama her
      açılışta indirilip ayrıştırılıyordu (~130 KB). -->
-<script defer src="voice.js?v=1.7.27"></script>
-<script defer src="theme.js?v=1.7.27"></script>
+<script defer src="voice.js?v=1.7.52"></script>
+<script defer src="theme.js?v=1.7.52"></script>
 
 <!-- ===================== LUMIRA · PWA KATMANI =====================
      Service Worker, çevrimdışı paket, bildirimler, geri tuşu, kısayollar,
      deep link, favoriler, yedekleme ve güncelleme yönetimi. -->
-<script defer src="pwa.js?v=1.7.27"></script>
+<script defer src="pwa.js?v=1.7.54"></script>
 
 <!-- Destek rozetleri, seviye kilitleri ve PDF dışa aktarma -->
-<script defer src="support-badges.js?v=1.7.27"></script>
+<script defer src="support-badges.js?v=1.7.52"></script>
 
 <!-- Kullanım ölçümü (yönetici panelinde görüntülenir) -->
-<script defer src="splash.js?v=1.7.27"></script>
-<script defer src="analytics.js?v=1.7.27"></script>
+<script defer src="splash.js?v=1.7.52"></script>
+<script defer src="analytics.js?v=1.7.52"></script>
 
 <!-- Yönetici paneli (yalnızca yetkili hesapta açılır) -->
-<script defer src="admin.js?v=1.7.27"></script>
+<script defer src="admin.js?v=1.7.52"></script>
+<script defer src="improvements.js?v=1.7.54"></script>
 </body>
 </html>
