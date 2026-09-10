@@ -351,11 +351,13 @@
       lg.innerHTML = '';
       chosen.lang = null;
       s1.querySelector('.lms-cta').setAttribute('disabled', 'disabled');
+      var names = (window.t && window.t('lang_names')) || {};
       var opts = LANGS.filter(function (L) { return L.c !== chosen.native; });
       if (chosen.native !== 'tr') opts = opts.concat([{ c: 'tr', flag: '🇹🇷', name: 'Türkçe' }]);
       opts.forEach(function (L) {
         var o = document.createElement('div'); o.className = 'lms-opt';
-        o.innerHTML = '<span class="fl">' + L.flag + '</span>' + L.name;
+        var dispName = names[L.c] || L.name;
+        o.innerHTML = '<span class="fl">' + L.flag + '</span>' + dispName;
         o.onclick = function () {
           chosen.lang = L.c;
           lg.querySelectorAll('.lms-opt').forEach(function (x) { x.classList.remove('sel'); x.style.boxShadow=''; x.style.borderColor=''; });

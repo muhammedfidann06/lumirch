@@ -80,7 +80,7 @@
     var details = { total: { label: 'Toplam', amount: { currency: 'TRY', value: '0' } } };
     var request;
     try { request = new PaymentRequest(methodData, details); }
-    catch (e) { toast('Satın alma başlatılamadı.', { kind: 'bad' }); return; }
+    catch (e) { toast(window.t?window.t('purchase_start_failed'):'Satın alma başlatılamadı.', { kind: 'bad' }); return; }
 
     request.show().then(function (response) {
       var token = (response.details && (response.details.token || response.details.purchaseToken)) || null;
@@ -98,7 +98,7 @@
       /* kullanıcı iptal ettiyse sessiz geç, gerçek hataysa bilgilendir */
       var msg = String((e && e.message) || e || '');
       if (msg.toLowerCase().indexOf('cancel') === -1) {
-        toast('Satın alma tamamlanamadı.', { kind: 'bad', duration: 6000 });
+        toast(window.t?window.t('purchase_complete_failed'):'Satın alma tamamlanamadı.', { kind: 'bad', duration: 6000 });
       }
     });
   }
@@ -107,7 +107,7 @@
   /* ============================================================ DESTEK OL */
   function openSupport() {
     if (!(window.PWA && window.PWA.sheet)) return;
-    window.PWA.sheet('❤️ Lumira\'yı Destekle', '', function (b) {
+    window.PWA.sheet(window.t?window.t('support_title'):'❤️ Lumira\'yı Destekle', '', function (b) {
       var grid = document.createElement('div');
       grid.className = 'sup-grid';
 
@@ -130,7 +130,7 @@
       if (mine.length) {
         b.insertAdjacentHTML('beforeend',
           '<p class="pwa-note" style="text-align:center;font-size:15px;margin:14px 0 0">' +
-          'Rozetlerin: ' + mine.join(' ') + '</p>');
+          (window.t?window.t('your_badges')(mine.join(' ')):('Rozetlerin: ' + mine.join(' '))) + '</p>');
       }
 
       b.insertAdjacentHTML('beforeend',
@@ -158,28 +158,25 @@
     level: function (need, featureName) {
       var lvl = myLevel();
       if (lvl >= need) return true;
-      lockNotice(featureName,
-        'Bu özelliği kullanmak için en az <b>' + need + '. seviye</b> olmalısın. ' +
+      var T = window.t || function(k){ return k; };
+      lockNotice(featureName, window.t ? window.t('lock_level_msg')(need, lvl) :
+        ('Bu özelliği kullanmak için en az <b>' + need + '. seviye</b> olmalısın. ' +
         'Şu anki seviyen: <b>' + lvl + '</b>.<br><br>' +
-        '🎯 <b>Kişisel</b> sekmesinden çalışarak seviyeni yükseltebilirsin.');
+        '🎯 <b>Kişisel</b> sekmesinden çalışarak seviyeni yükseltebilirsin.'));
       return false;
     },
     pdfBadge: function () {
       if (hasAnyPdfBadge()) return true;
-      lockNotice('Kelime listesi PDF',
-        'Bu özellik için <b>💛</b>, <b>⭐️</b> veya <b>👑</b> rozetlerinden birine ' +
-        'sahip olman gerekiyor.<br><br>Rozetleri ❤️ <b>Lumira\'yı Destekle</b> ' +
-        'bölümünden edinebilirsin.');
+      var T = window.t || function(k){ return k; };
+      lockNotice(T('lock_pdf_feature_name'), T('lock_pdf_msg'));
       return false;
     },
     /* Herhangi bir destek rozeti yeterli olan özellikler için genel kilit
        (Çevrimdışı paket, Favoriler). En küçük rozet (👍🏻 Teşekkür) bile yeter. */
     anyBadge: function (featureName) {
       if (myBadges().length > 0) return true;
-      lockNotice(featureName,
-        'Bu özelliği kullanmak için herhangi bir destek rozetine sahip olman ' +
-        'gerekiyor — en küçüğü bile (👍🏻 Teşekkür) yeterli.<br><br>Rozetleri ' +
-        '❤️ <b>Lumira\'yı Destekle</b> bölümünden edinebilirsin.');
+      var T = window.t || function(k){ return k; };
+      lockNotice(featureName, T('lock_any_badge_msg'));
       return false;
     }
   };
@@ -301,10 +298,10 @@
   }
 
   function openPdfExport() {
-    if (!window.LUMIRA_LOCK.anyBadge('Kelime listesi PDF')) return;
+    if (!window.LUMIRA_LOCK.anyBadge(window.t?window.t('lock_pdf_feature_name'):'Kelime listesi PDF')) return;
     if (!(window.PWA && window.PWA.sheet)) return;
 
-    window.PWA.sheet('📄 Kelimeleri PDF olarak indir',
+    window.PWA.sheet(window.t?window.t('pdf_export_title'):'📄 Kelimeleri PDF olarak indir',
       'Dil ve seviye seç, kitap düzeninde bir kelime listesi oluşturulsun.', function (b) {
 
       var lang = 'de', level = 'TÜMÜ';
@@ -345,14 +342,14 @@
       var go = document.createElement('button');
       go.type = 'button';
       go.className = 'pwa-btn';
-      go.textContent = 'Listeyi oluştur';
+      go.textContent = window.t?window.t('pdf_generate_btn'):'Listeyi oluştur';
       go.onclick = function () {
-        go.disabled = true; go.textContent = 'Hazırlanıyor…';
-        var finish = function () { go.disabled = false; go.textContent = 'Listeyi oluştur'; };
+        go.disabled = true; go.textContent = window.t?window.t('pdf_generating'):'Hazırlanıyor…';
+        var finish = function () { go.disabled = false; go.textContent = window.t?window.t('pdf_generate_btn'):'Listeyi oluştur'; };
 
         var run = function () {
           var words = collectWords(lang, level);
-          if (!words.length) { finish(); toast('Bu seçimde kelime bulunamadı', { kind: 'bad' }); return; }
+          if (!words.length) { finish(); toast(window.t?window.t('pdf_words_not_found'):'Bu seçimde kelime bulunamadı', { kind: 'bad' }); return; }
           var html = buildPdfHtml(lang, level, words);
           var win = window.open('', '_blank');
           if (!win) {
@@ -373,7 +370,7 @@
                     { kind: 'good', duration: 8000 });
             } catch (e) {
               finish();
-              toast('Açılır pencere engellendi — tarayıcı ayarlarından izin ver', { kind: 'bad', duration: 7000 });
+              toast(window.t?window.t('pdf_popup_blocked'):'Açılır pencere engellendi — tarayıcı ayarlarından izin ver', { kind: 'bad', duration: 7000 });
             }
             return;
           }
@@ -388,7 +385,7 @@
         /* Seçilen dilin sözlüğü yüklü değilse önce indir */
         if (window.VOCAB_LOADED && !window.VOCAB_LOADED[lang] && typeof window.ensureVocab === 'function') {
           window.ensureVocab(lang).then(run).catch(function () {
-            finish(); toast('Sözlük yüklenemedi', { kind: 'bad' });
+            finish(); toast(window.t?window.t('pdf_dict_load_failed'):'Sözlük yüklenemedi', { kind: 'bad' });
           });
         } else run();
       };

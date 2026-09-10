@@ -12,8 +12,7 @@
 (function(){
 
   const BADGE_THRESHOLDS = [50, 100, 250, 500, 1000];
-  const PM_FLAGS = { de:'🇩🇪', en:'🇬🇧', ar:'🇸🇦', fr:'🇫🇷', es:'🇪🇸', ru:'🇷🇺' };
-  const PM_LANDMARK = { de:'🏛️', en:'🕰️', ar:'🕌', fr:'🗼', es:'⛪', ru:'🏰' };
+  const PM_FLAGS = { de:'🇩🇪', en:'🇬🇧', ar:'🇸🇦', fr:'🇫🇷', es:'🇪🇸', ru:'🇷🇺', tr:'🇹🇷' };
   const DEFAULT_DAILY_GOAL = 100;
   const BATCH_SIZE = 10;
   const RETRY_SESSION_GAP = 1; // 1: hemen bir sonraki oturumu atlar, ondan sonraki oturumda tekrar çıkar
@@ -72,41 +71,12 @@
       lastDueCount:0
     };
   }
-  function legacyWordKeyFor(v){
+  function wordKeyFor(v){
     const raw = v.lang+'_'+v.level+'_'+v.w;
     return raw.toLowerCase()
       .replace(/[.#$\[\]\/\s]+/g,'_')
       .replace(/[^a-z0-9_aoubcdefghijklmnopqrstuvwxyz]/gi,'_')
       .slice(0,120);
-  }
-  // Encode UTF-8 bytes without removing Arabic, Cyrillic or accented letters.
-  const wordKeyCache = new WeakMap();
-  let migratedVocabCount = -1;
-  function wordKeyFor(v){
-    if(wordKeyCache.has(v)) return wordKeyCache.get(v);
-    const key = 'u2_' + Array.from(new TextEncoder().encode(v.lang+'|'+v.level+'|'+v.w.normalize('NFC')))
-      .map(b=>b.toString(16).padStart(2,'0')).join('');
-    wordKeyCache.set(v, key); return key;
-  }
-  function migrateWordKeys(){
-    migratedVocabCount = VOCAB.length;
-    const groups = new Map();
-    VOCAB.forEach(v=>{
-      const key = legacyWordKeyFor(v);
-      if(!groups.has(key)) groups.set(key, new Map());
-      groups.get(key).set(wordKeyFor(v), v);
-    });
-    groups.forEach((words, oldKey)=>{
-      const old = wordProgress[oldKey];
-      if(!old) return;
-      const candidates = Array.from(words).filter(([,v])=>
-        (!old.lang || old.lang === v.lang) && (!old.level || old.level === v.level) && (!old.cat || old.cat === v.cat));
-      // Ambiguous legacy records remain stored; never mark several words known
-      // from one colliding record. Existing new-format records take precedence.
-      if(candidates.length === 1 && !wordProgress[candidates[0][0]]){
-        wordProgress[candidates[0][0]] = Object.assign({}, old);
-      }
-    });
   }
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -146,62 +116,38 @@
     return merged;
   }
 
-  let loadGeneration = 0;
-  let metaLoadPending = false;
-  let metaLoadDirty = false;
-  function mergeLoadedMeta(initial, current, incoming){
-    const initialXp = Number(initial.xp)||0;
-    const remoteXp = Number(incoming.xp)||0;
-    const earnedDuringLoad = Math.max(0,(Number(current.xp)||0)-initialXp);
-    const next = Object.assign({}, initial, remoteXp >= initialXp ? incoming : current);
-    Object.keys(current).forEach(key=>{
-      if(JSON.stringify(current[key]) !== JSON.stringify(initial[key])) next[key] = current[key];
-    });
-    next.xp = Math.max(initialXp,remoteXp) + earnedDuringLoad;
-    next.badges = Object.assign({},incoming.badges||{},current.badges||{});
-    next.awards = Object.assign({},incoming.awards||{},current.awards||{});
-    next.levelTest = Object.assign({},incoming.levelTest||{});
-    Object.keys(current.levelTest||{}).forEach(key=>{
-      const local=current.levelTest[key], remote=next.levelTest[key];
-      if(!remote || (local.ts||0) >= (remote.ts||0)) next.levelTest[key]=local;
-    });
-    return next;
-  }
   function loadUserData(name, cb){
-    const generation = ++loadGeneration;
-    currentName = name; currentKey = getKey(name); dataLoaded = false;
-    const key = currentKey;
-    const local = safeLocalGet('pm_data_'+key);
-    wordProgress = (local && local.words) || {};
-    meta = (local && local.meta) || null;
-    const ref = dbRef('progress/'+key);
-    metaLoadPending = Boolean(ref); metaLoadDirty = false;
-    finalizeLoad(null);
-    const initialMeta = JSON.parse(JSON.stringify(meta));
-    if(cb) cb();
-    const renderedRoot = root ? root.innerHTML : '';
+    currentName = name;
+    currentKey = getKey(name);
+    dataLoaded = false;
+    const local = safeLocalGet('pm_data_'+currentKey);
+    const localWords = (local && local.words) ? local.words : {};
+    const localMeta = (local && local.meta) ? local.meta : null;
+    wordProgress = localWords;
+    meta = localMeta;
+
+    const ref = dbRef('progress/'+currentKey);
     if(ref){
       ref.once('value').then(snap=>{
-        if(generation !== loadGeneration || currentKey !== key) return;
         const val = snap.val();
-        if(val && val.words) wordProgress = mergeWordProgress(wordProgress,val.words);
-        if(val && val.meta) meta = mergeLoadedMeta(initialMeta,meta,val.meta);
-        metaLoadPending = false;
-        const shouldPersist = metaLoadDirty; metaLoadDirty = false;
-        // A late response must never replace an editor or quiz in progress.
-        const stillSameView = root && root.innerHTML === renderedRoot && !root.contains(document.activeElement);
-        finalizeLoad(stillSameView ? cb : null);
-        if(shouldPersist) persistMeta();
-      }).catch(()=>{
-        if(generation !== loadGeneration || currentKey !== key) return;
-        metaLoadPending = false;
-        if(metaLoadDirty){ metaLoadDirty=false; persistMeta(); }
-      });
+        if(val){
+          if(val.words) wordProgress = mergeWordProgress(localWords, val.words);
+          // meta için de veri kaybını önle: hangi taraf daha ilerideyse
+          // (xp daha yüksekse) onu esas al; xp yoksa/eşitse yereli koru.
+          if(val.meta){
+            const localXp = (localMeta && localMeta.xp) || 0;
+            const remoteXp = val.meta.xp || 0;
+            meta = (remoteXp >= localXp) ? val.meta : localMeta;
+          }
+        }
+        finalizeLoad(cb);
+      }).catch(()=> finalizeLoad(cb));
+    } else {
+      finalizeLoad(cb);
     }
   }
   function finalizeLoad(cb){
     wordProgress = wordProgress || {};
-    migrateWordKeys();
     meta = Object.assign(defaultMeta(), meta || {});
     if(!meta.tasks) meta.tasks = {t1:false,t2:false,t3:false,t4:false,t5:false};
     ensureDailyRollover();
@@ -217,27 +163,28 @@
   }
   function persistMeta(){
     persistLocalMirror();
-    // Wait for the initial snapshot before writing defaults over server settings.
-    if(metaLoadPending){ metaLoadDirty = true; return; }
-    const owner = currentKey, generation = loadGeneration;
-    const outgoing = JSON.parse(JSON.stringify(meta));
-    const ref = dbRef('progress/'+owner+'/meta');
+    const ref = dbRef('progress/'+currentKey+'/meta');
     if(ref){
+      /* Sunucudaki XP bu cihazınkinden yüksekse (başka bir cihazda çalışılmış
+         ya da yöneticiden XP gelmişse) onu EZMEYELİM: önce yükseğe hizalanıp
+         öyle yazıyoruz. Aksi hâlde iki cihaz birbirinin değerini sürekli geri
+         alıyor ve sıralama oynuyordu. */
       ref.transaction(function(cur){
-        const candidate = Object.assign({},outgoing);
-        candidate.xp = Math.max((cur && Number(cur.xp))||0,Number(outgoing.xp)||0);
-        candidate.awards = Object.assign({},(cur && cur.awards)||{},outgoing.awards||{});
-        candidate.joinedAt = (cur && cur.joinedAt) || outgoing.joinedAt || Date.now();
-        return candidate;
-      }, function(error,committed,snapshot){
-        if(generation !== loadGeneration || currentKey !== owner) return;
-        if(!error && committed && snapshot){
-          const saved=snapshot.val();
-          if(saved) meta.xp=Math.max(Number(meta.xp)||0,Number(saved.xp)||0);
-        }
-        persistLocalMirror();
-      }, false);
+        var remoteXp = (cur && typeof cur.xp === 'number') ? cur.xp : 0;
+        if(remoteXp > (meta.xp||0)) meta.xp = remoteXp;
+        /* Sunucudaki özel rozetleri (admin verdiği ya da başka cihazda kazanılan)
+           KORU — yoksa bu cihazın kaydı onları silebilir. */
+        if(cur && cur.awards){ meta.awards = Object.assign({}, cur.awards, meta.awards||{}); }
+        /* İlk kayıt zamanı bir kez yazılır, bir daha değişmez — ileride
+           "ilk N kişi" gibi kayıt-sırası bazlı işler için gerekli. */
+        meta.joinedAt = (cur && cur.joinedAt) ? cur.joinedAt : Date.now();
+        return meta;
+      }, function(){ persistLocalMirror(); }, false);
     }
+    // Seviye liderlik tablosu 'leaderboard/{uid}/xp' alanını okur; her meta
+    // kaydında (görev tamamlama, XP kazanma, oturum bitişi vb.) burayı da
+    // güncel tutuyoruz ki ayrı bir okuma yapmadan tek dinleyiciyle hem süre
+    // hem seviye sıralaması hesaplanabilsin.
     if(window.LB_updateXp) window.LB_updateXp(meta.xp||0);
   }
   function ensureDailyRollover(){
@@ -258,13 +205,13 @@
     while(keys.length > 30){ delete meta.dailyCounts[keys.shift()]; }
   }
   function checkBadges(){
-    const known = Object.keys(wordProgress).filter(k=>k.startsWith('u2_')).map(k=>wordProgress[k]).filter(r=>r.known).length;
+    const known = Object.values(wordProgress).filter(r=>r.known).length;
     BADGE_THRESHOLDS.forEach(t=>{
       if(known>=t && !(meta.badges && meta.badges[t])){
         meta.badges = meta.badges || {};
         meta.badges[t] = true;
         sessionStats.newBadges.push(t);
-        showToast('Rozet kazandın: '+t+' kelime öğrenildi!');
+        showToast(window.t ? window.t('toast_badge_earned')(t) : ('Rozet kazandın: '+t+' kelime öğrenildi!'));
       }
     });
     checkStreakAwards();
@@ -279,7 +226,8 @@
       const key = 'streak'+a[0];
       if(s>=a[0] && !meta.awards[key]){
         meta.awards[key] = { e:a[1], n:a[2], ts:Date.now() };
-        showToast('Başarım açıldı: '+a[2]+' 🎉');
+        const dispName = window.t ? window.t('streak_award')(a[0]) : a[2];
+        showToast((window.t ? window.t('achievement_unlocked') : 'Başarım açıldı:')+' '+dispName+' 🎉');
       }
     });
   }
@@ -306,16 +254,13 @@
       setTimeout(()=>t.remove(), 400);
     }, 3200);
   }
-  function getRecord(v){
-    if(migratedVocabCount !== VOCAB.length) migrateWordKeys();
-    return wordProgress[wordKeyFor(v)] || null;
-  }
+  function getRecord(v){ return wordProgress[wordKeyFor(v)] || null; }
 
   function checkThresholdTasks(){
     const t = meta.todayCount||0;
-    if(t>=10 && !meta.tasks.t1){ meta.tasks.t1 = true; addXp(TASK_XP.t1, 'Görev: bugün 10 yeni kelime'); }
-    if(t>=50 && !meta.tasks.t2){ meta.tasks.t2 = true; addXp(TASK_XP.t2, 'Görev: bugün 50 yeni kelime'); }
-    if(t>=100 && !meta.tasks.t3){ meta.tasks.t3 = true; addXp(TASK_XP.t3, 'Görev: bugün 100 yeni kelime'); }
+    if(t>=10 && !meta.tasks.t1){ meta.tasks.t1 = true; addXp(TASK_XP.t1, window.t?window.t('toast_task_10'):'Görev: bugün 10 yeni kelime'); }
+    if(t>=50 && !meta.tasks.t2){ meta.tasks.t2 = true; addXp(TASK_XP.t2, window.t?window.t('toast_task_50'):'Görev: bugün 50 yeni kelime'); }
+    if(t>=100 && !meta.tasks.t3){ meta.tasks.t3 = true; addXp(TASK_XP.t3, window.t?window.t('toast_task_100'):'Görev: bugün 100 yeni kelime'); }
   }
   let _t5SessionBaseline = 0; /* bu sayfa yüklemesinde en son okunan oturum süresi (yinelemeyi önlemek için) */
   function checkTask5(){
@@ -333,14 +278,14 @@
       meta.todayActiveSeconds = (meta.todayActiveSeconds||0) + delta;
     }
     if((meta.todayActiveSeconds||0) >= TASK5_SECONDS){
-      meta.tasks.t5 = true; addXp(TASK_XP.t5, 'Görev: günde 60dk çalışma');
+      meta.tasks.t5 = true; addXp(TASK_XP.t5, window.t?window.t('toast_task_60min'):'Görev: günde 60dk çalışma');
       persistMeta();
     }
   }
   function awardTask4(reviewedCount){
     if(meta.tasks.t4 || reviewedCount<=0) return;
     meta.tasks.t4 = true;
-    addXp(reviewedCount*2, 'Görev: günlük tekrarı tamamla');
+    addXp(reviewedCount*2, window.t?window.t('toast_task_daily_review'):'Görev: günlük tekrarı tamamla');
   }
 
   function levelGroups(){
@@ -353,7 +298,7 @@
     return groups;
   }
 
-  function poolForActiveLang(){ return VOCAB.filter(v => v.lang === activeLang); }
+  function poolForActiveLang(){ return (window.basePool ? window.basePool() : VOCAB.filter(v => v.lang === activeLang)); }
   function poolForActiveFilter(){
     return (activeLevel === 'TUMU' || activeLevel === 'TÜMÜ') ? poolForActiveLang() : poolForActiveLang().filter(v=>v.level===activeLevel);
   }
@@ -361,17 +306,17 @@
     return list.filter(v=>{ const r=getRecord(v); return r && r.known; }).length;
   }
   function totalStudiedCount(){
-    return Object.keys(wordProgress).filter(k=>k.startsWith('u2_')).map(k=>wordProgress[k]).filter(r=>(r.seen||0) > 0).length;
+    return Object.values(wordProgress).filter(r=>(r.seen||0) > 0).length;
   }
   function accuracyOverall(){
     let c=0,w=0;
-    Object.keys(wordProgress).filter(k=>k.startsWith('u2_')).map(k=>wordProgress[k]).forEach(r=>{ c+=r.correct||0; w+=r.wrong||0; });
+    Object.values(wordProgress).forEach(r=>{ c+=r.correct||0; w+=r.wrong||0; });
     const tot = c+w;
     return tot>0 ? Math.round((c/tot)*100) : null;
   }
   function categoryAccuracy(){
     const byCat = {};
-    Object.keys(wordProgress).filter(k=>k.startsWith('u2_')).map(k=>wordProgress[k]).forEach(r=>{
+    Object.values(wordProgress).forEach(r=>{
       const cat = r.cat || '-';
       byCat[cat] = byCat[cat] || {c:0,w:0};
       byCat[cat].c += r.correct||0; byCat[cat].w += r.wrong||0;
@@ -596,58 +541,14 @@
       .pm-root .pm-empty{text-align:center;padding:30px 10px;color:#8291b3;font-size:13px;}
       .pm-root .pm-loading{text-align:center;padding:40px 10px;color:#8291b3;font-size:13px;}
       .pm-root .pm-back-link{display:block;text-align:center;font-size:11.5px;color:#8291b3;margin-top:4px;cursor:pointer;text-decoration:underline;}
-      .pm-root .wp-textarea{
-        width:100%;box-sizing:border-box;min-height:140px;resize:vertical;
-        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.6;color:#eef4ff;
-        background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:14px 16px;outline:none;
-      }
-      .pm-root .wp-textarea:focus{border-color:var(--pm-accent);}
-      .pm-root .wp-counter{text-align:right;font-size:10.5px;color:#8291b3;margin:4px 2px 12px;}
-      .pm-root .wp-section-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--pm-accent);margin:4px 0 8px;}
-      .pm-root .wp-original{
-        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.8;color:#eef4ff;
-        background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:14px 16px;margin-bottom:14px;
-        white-space:pre-wrap;word-break:break-word;
-      }
-      .pm-root .wp-original mark.wp-err{
-        background:rgba(255,95,122,0.22);color:#ffd2d9;border-bottom:2px solid var(--pm-bad);
-        border-radius:3px;padding:0 2px;cursor:help;
-      }
-      .pm-root .wp-corrected{
-        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.8;color:var(--pm-good);
-        background:rgba(61,255,160,0.06);border:1px solid rgba(61,255,160,0.35);border-radius:14px;padding:14px 16px;margin-bottom:14px;
-        white-space:pre-wrap;word-break:break-word;
-      }
-      .pm-root .wp-clean-msg{text-align:center;color:var(--pm-good);font-size:13px;font-weight:700;padding:16px 10px;}
-      .pm-root .wp-issue{display:flex;gap:10px;background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:left;}
-      .pm-root .wp-issue-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(255,95,122,0.18);border:1px solid var(--pm-bad);color:#ffd2d9;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
-      .pm-root .wp-issue-body{flex:1;min-width:0;}
-      .pm-root .wp-issue-orig{font-size:13.5px;color:#eef4ff;margin-bottom:3px;}
-      .pm-root .wp-issue-orig b{color:var(--pm-good);}
-      .pm-root .wp-issue-msg{font-size:11.5px;color:#8291b3;line-height:1.5;}
-      .pm-root .wp-loading{text-align:center;padding:26px 10px;color:#8291b3;font-size:13px;}
-      .pm-root .wp-error{text-align:center;padding:20px 10px;color:#ffd2d9;font-size:12.5px;background:rgba(255,95,122,0.1);border:1px solid rgba(255,95,122,0.35);border-radius:14px;margin-bottom:12px;}
-      .pm-root .wp-note{font-size:12px;line-height:1.65;color:#aebbd3;margin:12px 0;overflow-wrap:anywhere;}
-      .pm-root .wp-note a{color:var(--pm-accent);text-decoration:underline;}
-      .pm-root .wp-section-label{display:block;}
-      .pm-root .wp-issue-orig{overflow-wrap:anywhere;}
-      .pm-root [role="button"]:focus-visible,.pm-root button:focus-visible{outline:2px solid var(--pm-accent);outline-offset:4px;}
-      .pm-root .wp-speak-row{display:flex;gap:8px;margin-bottom:14px;}
-      .pm-root .wp-speak-row button{flex:1;}
     `;
     document.head.appendChild(style);
   }
-  /* Notlarım (index.html) sekmesi de aynı .pm-* görünümünü kullanıyor;
-     kullanıcı "Kişisel" sekmesini hiç açmadan doğrudan "Notlarım"a
-     girerse bu stil hiç eklenmemiş oluyordu (yalnızca renderHome/PM_open
-     içinde çağrılıyordu) ve form stilsiz/çıplak görünüyordu. Artık
-     dışarıdan da tetiklenebiliyor. */
-  window.PM_injectStyles = injectStyles;
 
   function renderHome(){
     injectStyles();
     if(!dataLoaded){
-      root.innerHTML = '<div class="pm-root"><div class="pm-loading">Kişisel alan yükleniyor...</div></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-loading">'+(window.t?window.t('pm_loading'):'Kişisel alan yükleniyor...')+'</div></div>';
       return;
     }
     checkTask5();
@@ -675,9 +576,9 @@
     });
 
     let badgeRow = '';
-    BADGE_THRESHOLDS.forEach(t=>{
-      const earned = meta.badges && meta.badges[t];
-      badgeRow += '<div class="pm-badge '+(earned?'':'locked')+'" title="'+t+' kelime">'+(earned?'🏅':'🔒')+'</div>';
+    BADGE_THRESHOLDS.forEach(th=>{
+      const earned = meta.badges && meta.badges[th];
+      badgeRow += '<div class="pm-badge '+(earned?'':'locked')+'" title="'+th+' '+window.t('pm_words_suffix')+'">'+(earned?'🏅':'🔒')+'</div>';
     });
 
     const groups = levelGroups();
@@ -685,64 +586,75 @@
     groups.forEach(g=>{
       const glist = poolForActiveLang().filter(v=>g.levels.includes(v.level));
       const gknown = knownCountIn(glist);
-      groupRow += '<div class="pm-group-btn" data-group="'+g.name+'">'+g.name+'<span class="g-count">'+gknown+' bilinen</span></div>';
+      groupRow += '<div class="pm-group-btn" data-group="'+g.name+'">'+g.name+'<span class="g-count">'+gknown+' '+window.t('pm_known_suffix')+'</span></div>';
     });
 
     const t = meta.tasks;
     const t4Sub = t.t4
-      ? ('Tamamlandı · +'+(due.length*2)+' XP')
-      : (due.length>0 ? (due.length+' kelime bekliyor · kelime başına +2 XP') : '[Geçen gün öğrenilen kelime yok]');
+      ? window.t('task_completed')(due.length*2)
+      : (due.length>0 ? window.t('task_words_waiting')(due.length) : window.t('task_no_words_yesterday'));
     const taskDefs = [
-      { icon:'📋', label:'Günlük tekrarı tamamla', sub: t4Sub, done:t.t4, pct: t.t4?100:0 },
-      { icon:'💵', label:'Bugün 10 yeni kelime öğren', sub:Math.min(today,10)+'/10 · +'+TASK_XP.t1+' XP', done:t.t1, pct:Math.min(100,Math.round(today/10*100)) },
-      { icon:'💰', label:'Bugün 50 yeni kelime öğren', sub:Math.min(today,50)+'/50 · +'+TASK_XP.t2+' XP', done:t.t2, pct:Math.min(100,Math.round(today/50*100)) },
-      { icon:'🏆', label:'Bugün 100 yeni kelime öğren', sub:Math.min(today,100)+'/100 · +'+TASK_XP.t3+' XP', done:t.t3, pct:Math.min(100,Math.round(today/100*100)) },
-      { icon:'⏱️', label:'Bugün 60 dakika çalış', sub:Math.min(60,Math.floor((meta.todayActiveSeconds||0)/60))+'/60 dk · +'+TASK_XP.t5+' XP', done:t.t5, pct:t.t5?100:Math.min(100,Math.round(((meta.todayActiveSeconds||0)/TASK5_SECONDS)*100)) },
+      { icon:'📋', label:window.t('task_daily_review'), sub: t4Sub, done:t.t4, pct: t.t4?100:0 },
+      { icon:'💵', label:window.t('task_learn_words')(10), sub:Math.min(today,10)+'/10 · +'+TASK_XP.t1+' XP', done:t.t1, pct:Math.min(100,Math.round(today/10*100)) },
+      { icon:'💰', label:window.t('task_learn_words')(50), sub:Math.min(today,50)+'/50 · +'+TASK_XP.t2+' XP', done:t.t2, pct:Math.min(100,Math.round(today/50*100)) },
+      { icon:'🏆', label:window.t('task_learn_words')(100), sub:Math.min(today,100)+'/100 · +'+TASK_XP.t3+' XP', done:t.t3, pct:Math.min(100,Math.round(today/100*100)) },
+      { icon:'⏱️', label:window.t('task_study_minutes'), sub:Math.min(60,Math.floor((meta.todayActiveSeconds||0)/60))+'/60 '+window.t('min_abbr')+' · +'+TASK_XP.t5+' XP', done:t.t5, pct:t.t5?100:Math.min(100,Math.round(((meta.todayActiveSeconds||0)/TASK5_SECONDS)*100)) },
     ];
 
     try{document.body.classList.add('pm-active');}catch(e){}
     try{['langBox','langPair','levelBox','chips'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});}catch(e){}
     let html = '<div class="pm-root">';
     html += '<div class="pm-head">';
-    html += '<div class="pm-eyebrow">Kişisel Öğrenme Alanı</div>';
-    html += '<div class="pm-title">👤 '+escapeHtml(currentName)+'\'e Özel</div>';
-    html += '<div class="pm-sub">'+L.native+' öğrenimi - ilerlemen tüm cihazlarında senkron</div>';
-    html += '<div class="lang-box" id="pmLangSelect">';
-    Object.keys(LANGS).forEach(code=>{
-      html += '<div class="lang-opt '+(code===activeLang?'active':'')+'" data-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(PM_LANDMARK[code]||'')+'</span><div class="flag">'+(PM_FLAGS[code]||'🌐')+'</div><div class="lname">'+LANGS[code].label+'</div></div>';
+    html += '<div class="pm-eyebrow">'+window.t('pm_personal_space')+'</div>';
+    html += '<div class="pm-title">'+(window.t ? window.t('pm_home_title')(escapeHtml(currentName)) : ('👤 '+escapeHtml(currentName)+'\'e Özel'))+'</div>';
+    const learningLabel = window.FRONT_LABEL ? window.FRONT_LABEL() : L.native;
+    const speaksLabel = window.BACK_LABEL ? window.BACK_LABEL() : 'Türkçe';
+    const pairSentence = window.t ? window.t('lang_change_sub')(speaksLabel, learningLabel) : (speaksLabel+' konuşuyorsun, '+learningLabel+' öğreniyorsun');
+    const syncNote = window.t ? window.t('pm_sync_note') : 'ilerlemen tüm cihazlarında senkron';
+    html += '<div class="pm-sub">'+pairSentence+' - '+syncNote+'</div>';
+    html += '<div class="pm-lang-grid" id="pmLangSelect">';
+    /* Ana dil hariç kalan tüm diller + (ana dil Türkçe değilse) Türkçe
+       seçeneği — ana ekrandaki dil kutusuyla BİREBİR aynı mantık. */
+    const nativeCode = (window.NATIVE_LANG || 'tr');
+    let pmOpts = Object.keys(LANGS).filter(c=>c!==nativeCode);
+    if(nativeCode !== 'tr') pmOpts = pmOpts.concat(['tr']);
+    pmOpts.forEach(code=>{
+      const label = (code==='tr') ? (window.t?window.t('lang_names').tr:'Türkçe') : (window.t?window.t('lang_names')[code]:LANGS[code].label);
+      html += '<div class="pm-lang-card '+(code===(window.isReversed&&window.isReversed()?'tr':activeLang)?'active':'')+'" data-lang="'+code+'"><span class="fl">'+(PM_FLAGS[code]||'🌐')+'</span><span class="nm">'+label+'</span></div>';
     });
     html += '</div>';
     html += '<div class="pm-level-seg" id="pmLevelSelect">';
-    html += '<div class="lvl '+(activeLevel==='TÜMÜ'?'active':'')+'" data-level="TÜMÜ">TÜMÜ</div>';
+    html += '<div class="lvl '+(activeLevel==='TÜMÜ'?'active':'')+'" data-level="TÜMÜ">'+(window.t?window.t('level_all'):'TÜMÜ')+'</div>';
     L.levels.forEach(lv=>{
       html += '<div class="lvl '+(lv===activeLevel?'active':'')+'" data-level="'+lv+'">'+lv+'</div>';
     });
     html += '</div>';
-    html += '<div class="pm-pill-row"><div class="pm-pill flame">🔥 '+(meta.streak||0)+' günlük seri</div><div class="pm-pill">⭐ Seviye '+(Math.floor((meta.xp||0)/200)+1)+' - '+(meta.xp||0)+' XP</div></div>';
-    html += '<div class="pm-goal-wrap"><div class="pm-goal-row"><span>Bugün öğrenilen</span><span>'+today+' / '+goal+' kelime</span></div><div class="pm-bar"><div class="pm-bar-fill" style="width:'+goalPct+'%"></div></div></div>';
+    html += '<div class="pm-pill-row"><div class="pm-pill flame">🔥 '+(window.t?window.t('streak_days')(meta.streak||0):((meta.streak||0)+' günlük seri'))+'</div><div class="pm-pill">⭐ '+(window.t?window.t('level_xp')(Math.floor((meta.xp||0)/200)+1, meta.xp||0):('Seviye '+(Math.floor((meta.xp||0)/200)+1)+' - '+(meta.xp||0)+' XP'))+'</div></div>';
+    html += '<div class="pm-goal-wrap"><div class="pm-goal-row"><span>'+window.t('pm_today_learned')+'</span><span>'+today+' / '+goal+' '+window.t('pm_words_suffix')+'</span></div><div class="pm-bar"><div class="pm-bar-fill" style="width:'+goalPct+'%"></div></div></div>';
     html += '</div>';
 
     if(due.length > 0 && !t.t4){
-      html += '<div class="pm-due-banner"><div class="pm-due-text">📋 Dün öğrendiğin <b>'+due.length+'</b> kelimenin günlük tekrarı var</div><button id="pmDueBtn">Tekrar Et</button></div>';
+      html += '<div class="pm-due-banner"><div class="pm-due-text">📋 '+(window.t?window.t('due_review_banner')(due.length):('Dün öğrendiğin <b>'+due.length+'</b> kelimenin günlük tekrarı var'))+'</div><button id="pmDueBtn">'+(window.t?window.t('review_btn'):'Tekrar Et')+'</button></div>';
     }
 
-    html += '<div class="pm-card"><h4>İlerleme - '+activeLevel+' - '+filterKnown+' / '+filterPool.length+' kelime (%'+filterPct+')</h4>';
-    html += levelRows || '<div class="pm-empty">Bu dil icin henuz seviye tanimli degil.</div>';
+    const levelLabelDisp = (activeLevel === 'TÜMÜ') ? (window.t ? window.t('level_all') : 'TÜMÜ') : activeLevel;
+    html += '<div class="pm-card"><h4>'+window.t('pm_progress')+' - '+levelLabelDisp+' - '+filterKnown+' / '+filterPool.length+' '+window.t('pm_words_suffix')+' (%'+filterPct+')</h4>';
+    html += levelRows || '<div class="pm-empty">'+window.t('pm_no_level_defined')+'</div>';
     html += '</div>';
 
-    html += '<div class="pm-card"><h4>Genel Tekrar</h4><div class="pm-weak-meta">Bildiğini varsaydığımız kelimeleri tekrar sorar; yanlış yaparsan çalışma listene geri döner.</div><div class="pm-group-row" id="pmGroupRow">'+groupRow+'</div></div>';
+    html += '<div class="pm-card"><h4>'+window.t('pm_general_review')+'</h4><div class="pm-weak-meta">'+window.t('pm_general_review_desc')+'</div><div class="pm-group-row" id="pmGroupRow">'+groupRow+'</div></div>';
 
-    html += '<div class="pm-card"><h4>Istatistikler</h4><div class="pm-stat-grid">';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">Öğrenilen ('+L.label+')</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+today+'</div><div class="pm-stat-label">Bugün öğrenilen</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalStudied+'</div><div class="pm-stat-label">Toplam çalışılan</div></div>';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+(acc===null?'-':acc+'%')+'</div><div class="pm-stat-label">Doğruluk oranı</div></div>';
+    html += '<div class="pm-card"><h4>'+window.t('pm_statistics')+'</h4><div class="pm-stat-grid">';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">'+window.t('pm_learned_in')(L.label)+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+today+'</div><div class="pm-stat-label">'+window.t('pm_today_learned')+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalStudied+'</div><div class="pm-stat-label">'+window.t('pm_total_studied')+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+(acc===null?'-':acc+'%')+'</div><div class="pm-stat-label">'+window.t('pm_accuracy')+'</div></div>';
     html += '</div>';
-    html += '<div class="pm-weak-meta" style="margin-top:10px;">'+(catInfo.best ? ('💪 En guclu kategori: <b>'+escapeHtml(catInfo.best.cat)+'</b>') : 'Henuz yeterli veri yok.')+'<br>'+(catInfo.worst ? ('🎯 Gelistirilecek kategori: <b>'+escapeHtml(catInfo.worst.cat)+'</b>') : '')+'</div>';
-    html += '<div class="pm-weak-meta" id="pmTotalTime" style="margin-top:6px;">⏱ Toplam çalışma süresi yükleniyor...</div>';
+    html += '<div class="pm-weak-meta" style="margin-top:10px;">'+(catInfo.best ? ('💪 '+window.t('pm_strongest_cat')+' <b>'+escapeHtml(catInfo.best.cat)+'</b>') : window.t('pm_not_enough_data'))+'<br>'+(catInfo.worst ? ('🎯 '+window.t('pm_weakest_cat')+' <b>'+escapeHtml(catInfo.worst.cat)+'</b>') : '')+'</div>';
+    html += '<div class="pm-weak-meta" id="pmTotalTime" style="margin-top:6px;">⏱ '+window.t('pm_total_time_loading')+'</div>';
     html += '</div>';
 
-    html += '<div class="pm-card"><h4>Bugünkü Görevler</h4>';
+    html += '<div class="pm-card"><h4>'+window.t('pm_daily_tasks')+'</h4>';
     taskDefs.forEach(td=>{
       const rp = Math.max(0, Math.min(100, td.pct||0));
       const R = 16, C = 2*Math.PI*R, off = C - (C*rp/100);
@@ -761,11 +673,13 @@
     var supHtml = '';
     if(_tiers.length){
       var supRow = '';
-      _tiers.forEach(function(t){
-        var owned = !!(window.LUMIRA_BADGES && window.LUMIRA_BADGES.has(t.badge));
-        supRow += '<div class="pm-sup-badge'+(owned?' owned':'')+'"><span class="e">'+t.badge+'</span>'+(owned?'':'<span class="lock">🔒</span>')+'<span class="nm">'+String(t.name||'').replace(/</g,'')+'</span></div>';
+      _tiers.forEach(function(tier){
+        var owned = !!(window.LUMIRA_BADGES && window.LUMIRA_BADGES.has(tier.badge));
+        var tierNames = window.t ? window.t('tier_names') : null;
+        var dispName = (tierNames && tierNames[tier.sku]) ? tierNames[tier.sku] : tier.name;
+        supRow += '<div class="pm-sup-badge'+(owned?' owned':'')+'"><span class="e">'+tier.badge+'</span>'+(owned?'':'<span class="lock">🔒</span>')+'<span class="nm">'+String(dispName||'').replace(/</g,'')+'</span></div>';
       });
-      supHtml = '<div class="pm-card"><h4>Rozetler</h4><div class="pm-sup-grid">'+supRow+'</div></div>';
+      supHtml = '<div class="pm-card"><h4>'+window.t('pm_badges_header')+'</h4><div class="pm-sup-grid">'+supRow+'</div></div>';
     }
     var awHtml = '';
     const awards = meta.awards || {};
@@ -775,30 +689,38 @@
       let awRow = '';
       awardKeys.forEach(k=>{
         const a = awards[k] || {};
-        awRow += '<div class="pm-award" title="'+String(a.n||'').replace(/"/g,'')+'"><span class="pm-award-e">'+(a.e||'🏅')+'</span><span class="pm-award-n">'+String(a.n||'').replace(/</g,'')+'</span></div>';
+        /* "streakN" anahtarlı ödüller (seri başarımları) görüntülenirken
+           güncel arayüz diline çevrilir; diğerleri (yönetici tarafından
+           özel verilenler gibi) olduğu gibi (kaydedildiği hâliyle) kalır. */
+        const streakMatch = /^streak(\d+)$/.exec(k);
+        const dispName = (streakMatch && window.t) ? window.t('streak_award')(streakMatch[1]) : (a.n||'');
+        awRow += '<div class="pm-award" title="'+String(dispName).replace(/"/g,'')+'"><span class="pm-award-e">'+(a.e||'🏅')+'</span><span class="pm-award-n">'+String(dispName).replace(/</g,'')+'</span></div>';
       });
-      awHtml = '<div class="pm-card"><h4>Başarımlar</h4><div class="pm-awards">'+awRow+'</div></div>';
+      awHtml = '<div class="pm-card"><h4>'+window.t('pm_achievements_header')+'</h4><div class="pm-awards">'+awRow+'</div></div>';
     }
 
-    html += '<button class="pm-btn primary" id="pmStartBtn">🚀 Çalışmaya Başla</button>';
-    html += '<button class="pm-btn small" id="pmLevelTestBtn">🎓 Seviye Tespit Sınavı</button>';
-    html += '<button class="pm-btn small" id="pmKnownBtn">✅ Öğrendiğim Kelimeler ('+totalKnownLang+')</button>';
-    html += '<button class="pm-btn small" id="pmWeakBtn">📉 Hata Yaptığım Kelimeler</button>';
+    html += '<button class="pm-btn primary" id="pmStartBtn">'+window.t('pm_start_studying')+'</button>';
+    html += '<button class="pm-btn small" id="pmLevelTestBtn">'+window.t('pm_level_test_btn')+'</button>';
+    html += '<button class="pm-btn small" id="pmKnownBtn">✅ '+window.t('pm_known')+' ('+totalKnownLang+')</button>';
+    html += '<button class="pm-btn small" id="pmWeakBtn">📉 '+window.t('pm_weak')+'</button>';
     html += awHtml;    /* Başarımlar (mistakes butonunun altında) */
     html += supHtml;   /* Rozetler */
     html += '</div>';
 
     root.innerHTML = html;
 
-    document.querySelectorAll('#pmLangSelect .lang-opt').forEach(el=>{
+    document.querySelectorAll('#pmLangSelect .pm-lang-card').forEach(el=>{
       el.onclick = () => {
-        activeLang = el.dataset.lang;
-        activeLevel = 'TÜMÜ';
-        if(typeof renderLangPair==='function') renderLangPair();
-        if(typeof rebuildLevelBox==='function') rebuildLevelBox();
-        if(typeof rebuildChips==='function') rebuildChips();
-        if(typeof applyFilter==='function') applyFilter();
-        renderHome();
+        const target = el.dataset.lang;
+        const go = window.setLangPair ? window.setLangPair(NATIVE_LANG, target) : Promise.resolve();
+        go.then(()=>{
+          activeLevel = 'TÜMÜ';
+          if(typeof renderLangPair==='function') renderLangPair();
+          if(typeof rebuildLevelBox==='function') rebuildLevelBox();
+          if(typeof rebuildChips==='function') rebuildChips();
+          if(typeof applyFilter==='function') applyFilter();
+          renderHome();
+        });
       };
     });
     document.querySelectorAll('#pmLevelSelect .lvl').forEach(el=>{
@@ -826,7 +748,7 @@
         if(!el) return;
         const s = Math.floor(secs);
         const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
-        el.textContent = '⏱ Toplam çalışma süresi: '+(h>0?h+'s ':'')+m+'dk';
+        el.textContent = '⏱ '+window.t('pm_total_time')+' '+(h>0?h+(window.t('hour_abbr')||'s')+' ':'')+m+(window.t('min_abbr')||'dk');
       });
     }
   }
@@ -881,7 +803,7 @@
   const LT_COOLDOWN_MS = 24*60*60*1000; /* 24 saat (önceden 3 gün) */
   let ltState = null; // { level, order:[...], idx, correct, learnedKeys:[] }
 
-  function ltProgressKey(){ return 'lumira_lt_inprogress_v2_'+currentKey+'_'+activeLang; }
+  function ltProgressKey(){ return 'lumira_lt_inprogress_'+activeLang; }
   function ltSaveProgress(){
     if(!ltState) return;
     safeLocalSet(ltProgressKey(), {
@@ -898,7 +820,7 @@
     if(!saved || saved.level !== level || !Array.isArray(saved.orderKeys)) return null;
     /* anahtarlardan gerçek kelime nesnelerini VOCAB'dan geri kur */
     const byKey = {};
-    VOCAB.filter(v=>v.lang===activeLang && v.level===level).forEach(v=>{ byKey[wordKeyFor(v)] = v; });
+    poolForActiveLang().filter(v=>v.level===level).forEach(v=>{ byKey[wordKeyFor(v)] = v; });
     const order = saved.orderKeys.map(k=>byKey[k]).filter(Boolean);
     if(order.length !== saved.orderKeys.length) return null; /* veri tutarsızsa güvenli şekilde vazgeç */
     return { level, categories: saved.categories||null, order, idx: saved.idx, correct: saved.correct, learnedKeys: saved.learnedKeys||[] };
@@ -914,16 +836,16 @@
   }
   function ltFmtLeft(ms){
     const d = Math.ceil(ms / (24*60*60*1000));
-    return d <= 1 ? '1 gün' : d+' gün';
+    return window.t ? window.t('day_count')(d) : (d <= 1 ? '1 gün' : d+' gün');
   }
   function ltWordCount(level){
-    return VOCAB.filter(v=>v.lang===activeLang && v.level===level).length;
+    return poolForActiveLang().filter(v=>v.level===level).length;
   }
 
   function openLevelTestPicker(){
     let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">Seviye Tespit Sınavı</div>'+
-      '<div class="pm-title">🎓 Seviyeni Test Et</div>'+
-      '<div class="pm-sub">Bir seviye seç · o seviyedeki TÜM kelimeler sorulur · tamamlayınca +100 XP · doğru bildiğin kelimeler bilinenler listene eklenir</div></div>';
+      '<div class="pm-title">'+(window.t?window.t('pm_level_test_header'):'🎓 Seviyeni Test Et')+'</div>'+
+      '<div class="pm-sub">'+(window.t?window.t('pm_level_test_desc'):'Bir seviye seç · o seviyedeki TÜM kelimeler sorulur · tamamlayınca +100 XP · doğru bildiğin kelimeler bilinenler listene eklenir')+'</div></div>';
     html += '<div class="pm-lang-grid" style="grid-template-columns:1fr 1fr;">';
     LANGS[activeLang].levels.forEach(lv=>{
       const left = ltCooldownLeft(lv);
@@ -932,14 +854,14 @@
       const inProgress = !locked && ltLoadProgress(lv);
       let sub;
       if(locked) sub = '🔒 '+ltFmtLeft(left);
-      else if(inProgress) sub = '▶ Devam et · '+inProgress.idx+'/'+inProgress.order.length;
+      else if(inProgress) sub = (window.t?window.t('pm_continue'):'▶ Devam et · ')+inProgress.idx+'/'+inProgress.order.length;
       else sub = cnt+' kelime';
       html += '<div class="pm-lang-card lt-lv-opt'+(locked?' locked':'')+(inProgress?' active':'')+'" data-level="'+lv+'" style="'+(locked?'opacity:.5;cursor:default;':'cursor:pointer;')+'">'+
         '<span class="nm" style="font-size:16px;font-weight:800;">'+lv+'</span>'+
         '<span class="nm" style="font-size:10px;">'+sub+'</span></div>';
     });
     html += '</div>';
-    html += '<button type="button" class="ctrl primary" id="pmBackHome" style="width:100%;margin-top:18px;">← Ana Sayfaya Dön</button></div>';
+    html += '<button type="button" class="ctrl primary" id="pmBackHome" style="width:100%;margin-top:18px;">'+(window.t?window.t('pm_back_home_btn'):'← Ana Sayfaya Dön')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHome').onclick = renderHome;
     document.querySelectorAll('.lt-lv-opt').forEach(el=>{
@@ -957,7 +879,7 @@
      fazla kategoriden sınava girebilir. Sadece seçilen kategorilerdeki
      kelimeler sorulur ve doğru bilinenler bilinenler listesine geçer. */
   function openLevelTestCategoryPicker(level){
-    const pool = VOCAB.filter(v=>v.lang===activeLang && v.level===level);
+    const pool = poolForActiveLang().filter(v=>v.level===level);
     const catCounts = {};
     pool.forEach(v=>{ const c = v.cat||'Genel'; catCounts[c] = (catCounts[c]||0)+1; });
     const cats = Object.keys(catCounts).sort((a,b)=>catCounts[b]-catCounts[a]);
@@ -965,9 +887,9 @@
 
     let html = '<div class="pm-root"><div class="pm-head">'+
       '<div class="pm-eyebrow">🎓 '+level+' · Adım 2/2</div>'+
-      '<div class="pm-title">Kategori Seç</div>'+
-      '<div class="pm-sub">İstediğin kategorileri seç, ya da tümünden sınava gir. Sadece seçtiğin kategorilerin kelimeleri test edilir.</div></div>';
-    html += '<button type="button" class="ctrl primary" id="pmLtAllCats" style="width:100%;margin-bottom:14px;">🎯 Tüm Kategorilerden Gir ('+pool.length+' kelime)</button>';
+      '<div class="pm-title">'+(window.t?window.t('cat_pick_title'):'Kategori Seç')+'</div>'+
+      '<div class="pm-sub">'+(window.t?window.t('pm_lt_category_desc'):'İstediğin kategorileri seç, ya da tümünden sınava gir. Sadece seçtiğin kategorilerin kelimeleri test edilir.')+'</div></div>';
+    html += '<button type="button" class="ctrl primary" id="pmLtAllCats" style="width:100%;margin-bottom:14px;">'+(window.t?window.t('pm_all_categories_btn')(pool.length):('🎯 Tüm Kategorilerden Gir ('+pool.length+' kelime)'))+'</button>';
     html += '<div class="pm-lang-grid" id="pmLtCatGrid">';
     cats.forEach(c=>{
       const emoji = (window.CAT_EMOJI && window.CAT_EMOJI[c]) || '📖';
@@ -978,8 +900,8 @@
         '<span class="nm" style="font-size:9.5px;opacity:.7;">'+catCounts[c]+' kelime</span></div>';
     });
     html += '</div>';
-    html += '<button type="button" class="ctrl primary" id="pmLtStartCats" style="width:100%;margin-top:16px;opacity:.4;" disabled>Sınava Başla</button>';
-    html += '<button type="button" class="ctrl primary" id="pmBackLevels" style="width:100%;margin-top:10px;">← Seviye Seçime Dön</button></div>';
+    html += '<button type="button" class="ctrl primary" id="pmLtStartCats" style="width:100%;margin-top:16px;opacity:.4;" disabled>'+(window.t?window.t('pm_start_exam'):'Sınava Başla')+'</button>';
+    html += '<button type="button" class="ctrl primary" id="pmBackLevels" style="width:100%;margin-top:10px;">'+(window.t?window.t('pm_back_to_levels'):'← Seviye Seçime Dön')+'</button></div>';
     root.innerHTML = html;
 
     document.getElementById('pmBackLevels').onclick = openLevelTestPicker;
@@ -988,7 +910,7 @@
     const startBtn = document.getElementById('pmLtStartCats');
     function refreshStartBtn(){
       const n = selected.size;
-      startBtn.textContent = n>0 ? ('Sınava Başla ('+n+' kategori)') : 'Sınava Başla';
+      startBtn.textContent = n>0 ? (window.t?window.t('pm_start_exam_n')(n):('Sınava Başla ('+n+' kategori)')) : (window.t?window.t('pm_start_exam'):'Sınava Başla');
       startBtn.disabled = n===0;
       startBtn.style.opacity = n>0 ? '1' : '.4';
     }
@@ -1004,12 +926,12 @@
   }
 
   function startLevelTest(level, categories){
-    let pool = VOCAB.filter(v=>v.lang===activeLang && v.level===level);
+    let pool = poolForActiveLang().filter(v=>v.level===level);
     if(categories && categories.length){
       pool = pool.filter(v=>categories.includes(v.cat));
     }
     if(pool.length < 4){
-      showToast('Bu seçimde yeterli kelime yok'); openLevelTestCategoryPicker(level); return;
+      showToast(window.t?window.t('toast_not_enough_words'):'Bu seçimde yeterli kelime yok'); openLevelTestCategoryPicker(level); return;
     }
     const order = shuffle(pool.slice());
     ltState = { level, categories: categories||null, order, idx:0, correct:0, learnedKeys:[] };
@@ -1022,16 +944,17 @@
     if(ltState.idx >= ltState.order.length){ finishLevelTest(); return; }
     const v = ltState.order[ltState.idx];
     const distractors = pickCategoryDistractors(v, 3);
-    const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
+    const correctBack = BACK_W(v);
+    const opts = shuffle([correctBack].concat(distractors.map(d=>BACK_W(d))));
     let answered = false;
     const barHtml = '<div class="pm-session-bar"><span>Soru '+(ltState.idx+1)+' / '+ltState.order.length+'</span><span>🎓 '+ltState.level+' Seviye Tespit</span></div>'+
       '<div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((ltState.idx/ltState.order.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div>'+
-      '<div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">'+t('quiz_prompt')+'</div>'+
+      '<div class="pm-word" dir="'+FRONT_DIR(v)+'">'+escapeHtml(FRONT_W(v))+'</div>'+
       '<div class="pm-word-sub">'+escapeHtml(v.cat||v.pos||'')+'</div></div>'+
       '<div class="pm-options" id="pmOptions"></div>'+
-      '<button type="button" class="ctrl primary" id="pmLtExit" style="width:100%;margin-top:16px;">← Kaydet ve Çık</button></div>';
+      '<button type="button" class="ctrl primary" id="pmLtExit" style="width:100%;margin-top:16px;">'+(window.t?window.t('pm_save_exit'):'← Kaydet ve Çık')+'</button></div>';
     const wrap = document.getElementById('pmOptions');
     document.getElementById('pmLtExit').onclick = () => { ltSaveProgress(); ltState = null; renderHome(); };
     opts.forEach(o=>{
@@ -1040,19 +963,17 @@
       b.onclick = () => {
         if(answered) return;
         answered = true;
-        const ok = (o === v.tr);
+        const ok = (o === correctBack);
         if(ok){
           ltState.correct++;
           ltState.learnedKeys.push(wordKeyFor(v));
         }
         document.querySelectorAll('#pmOptions .pm-opt').forEach(x=>{
           x.disabled = true;
-          if(x.textContent === v.tr) x.classList.add('correct');
+          if(x.textContent === correctBack) x.classList.add('correct');
           else if(x===b && !ok) x.classList.add('wrong');
         });
-        const state = ltState;
-        state.idx++; ltSaveProgress();
-        setTimeout(()=>{ if(ltState === state && wrap.isConnected) renderLevelTestQuestion(); }, 650);
+        setTimeout(()=>{ ltState.idx++; ltSaveProgress(); renderLevelTestQuestion(); }, 650);
       };
       wrap.appendChild(b);
     });
@@ -1068,13 +989,12 @@
       let rec = wordProgress[k] || { seen:0, correct:0, wrong:0, known:false, lang:v?v.lang:activeLang, level:v?v.level:level, cat:v?v.cat:null };
       rec.seen = (rec.seen||0)+1;
       rec.correct = (rec.correct||0)+1;
-      rec.lastSeen = Date.now();
       if(!rec.known){ rec.known = true; rec.learnedDate = y; }
       wordProgress[k] = rec;
     });
     meta.levelTest = meta.levelTest || {};
     meta.levelTest[ltKey(level)] = { ts: Date.now(), lastScore: correct, lastTotal: order.length };
-    addXp(100, 'Seviye tespit sınavı: '+level+' tamamlandı');
+    addXp(100, window.t ? window.t('toast_level_test_done')(level) : ('Seviye tespit sınavı: '+level+' tamamlandı'));
     persistMeta();
     try{
       const ref = dbRef('progress/'+currentKey+'/words');
@@ -1082,11 +1002,11 @@
     }catch(e){}
 
     const pct = Math.round((correct/order.length)*100);
-    const scopeTxt = (categories && categories.length) ? (categories.length+' kategori') : 'tüm kategoriler';
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">Sınav Tamamlandı</div>'+
-      '<div class="pm-title">🎓 '+level+' Seviye Sonucun</div>'+
-      '<div class="pm-sub">'+correct+' / '+order.length+' doğru ('+pct+'%) · '+scopeTxt+' · +100 XP kazandın · '+learnedKeys.length+' kelime bilinenler listene eklendi</div></div>'+
-      '<button type="button" class="ctrl primary" id="pmBackHome2" style="width:100%;margin-top:8px;">← Ana Sayfaya Dön</button></div>';
+    const scopeTxt = (categories && categories.length) ? t('pm_scope_categories')(categories.length) : t('pm_scope_all_categories');
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">'+t('pm_exam_completed')+'</div>'+
+      '<div class="pm-title">'+t('pm_level_result')(level)+'</div>'+
+      '<div class="pm-sub">'+t('pm_result_summary')(correct, order.length, pct, scopeTxt, 100, learnedKeys.length)+'</div></div>'+
+      '<button type="button" class="ctrl primary" id="pmBackHome2" style="width:100%;margin-top:8px;">'+t('pm_back_home')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHome2').onclick = renderHome;
     ltState = null;
@@ -1095,7 +1015,7 @@
   function startSession(){
     batch = pickBatch();
     if(batch.length === 0){
-      root.innerHTML = '<div class="pm-root"><div class="pm-empty">🎉 Bu seviyede çalışılacak yeni kelime kalmadı - harika iş çıkardın!<br><br>İstersen Genel Tekrar yaparak bildiklerini tazeleyebilirsin.</div><span class="pm-back-link" id="pmBackHome">← Ana sayfaya dön</span></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-empty">'+t('pm_no_new_words_level')+'<br><br>'+t('pm_try_general_review')+'</div><span class="pm-back-link" id="pmBackHome">'+t('pm_back_home')+'</span></div>';
       document.getElementById('pmBackHome').onclick = renderHome;
       return;
     }
@@ -1106,7 +1026,7 @@
     const list = dailyReviewWords();
     if(list.length === 0){ renderHome(); return; }
     shuffle(list);
-    reviewMode = { kind:'daily', group:'Günlük Tekrar', order:list, idx:0, stats:{ total:list.length, correct:0, wrong:0 } };
+    reviewMode = { kind:'daily', group:(window.t?window.t('pm_daily_review_group'):'Günlük Tekrar'), order:list, idx:0, stats:{ total:list.length, correct:0, wrong:0 } };
     renderReviewCard();
   }
 
@@ -1127,7 +1047,7 @@
     }
     const v = batch[cardIdx].v;
     const L = LANGS[v.lang];
-    const barHtml = '<div class="pm-session-bar"><span>Tanışma '+(cardIdx+1)+' / '+batch.length+'</span><span>Adım 1/4</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((cardIdx/batch.length)*100)+'%"></div></div>';
+    const barHtml = '<div class="pm-session-bar"><span>'+(window.t?window.t('pm_intro_label'):'Tanışma')+' '+(cardIdx+1)+' / '+batch.length+'</span><span>'+(window.t?window.t('pm_step')(1,4):'Adım 1/4')+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((cardIdx/batch.length)*100)+'%"></div></div>';
     let flipped = false;
     const catEmoji = (window.CAT_EMOJI && window.CAT_EMOJI[v.cat]) || '📖';
     function draw(){
@@ -1136,19 +1056,19 @@
       html += '<div class="stage"><div class="card'+(flipped?' flipped':'')+'" id="pmCard">'+
         '<div class="face face-front"><div class="card-bg-emoji">'+catEmoji+'</div>'+
         '<div class="level-badge">'+(v.level||'')+'</div>'+
-        '<div class="tag">'+L.native+'</div>'+
-        '<div class="word" dir="'+L.dir+'">'+escapeHtml(v.w)+'</div>'+
+        '<div class="tag">'+FRONT_LABEL()+'</div>'+
+        '<div class="word" dir="'+FRONT_DIR(v)+'">'+escapeHtml(FRONT_W(v))+'</div>'+
         '<div class="pos">'+escapeHtml(v.cat||v.pos||'')+'</div>'+
-        '<div class="example" dir="'+L.dir+'">'+(v.ex ? colorSplit(v.ex, v.w, v.c1, v.c2) : '')+'</div>'+
+        '<div class="example" dir="'+FRONT_DIR(v)+'">'+(FRONT_EX(v) ? colorSplit(FRONT_EX(v), FRONT_W(v), v.c1, v.c2) : '')+'</div>'+
         '<div class="speak-controls">'+
-          '<div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Normal hızda dinle">🔊</button><span class="speak-lbl">Normal</span></div>'+
-          '<div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavaş dinle">🐢</button><span class="speak-lbl">Yavaş</span></div>'+
-        '</div><div class="speak-caption">Dinlemek İçin Tıkla</div></div>'+
+          '<div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Normal hızda dinle">🔊</button><span class="speak-lbl">'+t('normal_speed')+'</span></div>'+
+          '<div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavaş dinle">🐢</button><span class="speak-lbl">'+t('slow_speed')+'</span></div>'+
+        '</div><div class="speak-caption">'+t('tap_to_listen')+'</div></div>'+
         '<div class="face face-back"><div class="card-bg-emoji">'+catEmoji+'</div>'+
         '<div class="level-badge">'+(v.level||'')+'</div>'+
-        '<div class="tag">Türkçe</div>'+
-        '<div class="word">'+escapeHtml(v.tr)+'</div>'+
-        '<div class="example">'+(v.exTr ? escapeHtml(v.exTr) : '')+'</div></div>'+
+        '<div class="tag">'+BACK_LABEL()+'</div>'+
+        '<div class="word" dir="'+BACK_DIR(v)+'">'+escapeHtml(BACK_W(v))+'</div>'+
+        '<div class="example" dir="'+BACK_DIR(v)+'">'+(BACK_EX(v) ? escapeHtml(BACK_EX(v)) : '')+'</div></div>'+
         '</div></div>';
       html += '<div class="hint">Çevirmek için karta dokun</div>';
       html += '<button class="pm-btn primary" id="pmNextCard">Sonraki Kelime</button>';
@@ -1160,7 +1080,7 @@
       document.getElementById('pmCard').onclick = () => {
         flipped = !flipped;
         draw();
-        if(!flipped) pmSpeak(v.w, LANGS[v.lang].voice, false);
+        if(!flipped) pmSpeak(FRONT_W(v), FRONT_VOICE(v), false);
       };
       document.getElementById('pmNextCard').onclick = (e) => {
         e.stopPropagation();
@@ -1168,11 +1088,11 @@
         renderCardsPhase();
       };
       const rb = document.getElementById('pmRabbit'), tb = document.getElementById('pmTurtle');
-      if(rb) rb.onclick = (e)=>{ e.stopPropagation(); pmSpeak(v.w, LANGS[v.lang].voice, false); };
-      if(tb) tb.onclick = (e)=>{ e.stopPropagation(); pmSpeak(v.w, LANGS[v.lang].voice, true); };
+      if(rb) rb.onclick = (e)=>{ e.stopPropagation(); pmSpeak(FRONT_W(v), FRONT_VOICE(v), false); };
+      if(tb) tb.onclick = (e)=>{ e.stopPropagation(); pmSpeak(FRONT_W(v), FRONT_VOICE(v), true); };
     }
     draw();
-    pmSpeak(v.w, LANGS[v.lang].voice, false);
+    pmSpeak(FRONT_W(v), FRONT_VOICE(v), false);
   }
 
   /* ============================== ÇELDİRİCİ ÜRETİMİ (akıllı yanlış şıklar)
@@ -1184,29 +1104,37 @@
         Quiz/Dinleme): 2 şık kategoriden, 1 şık o an çalışılan diğer
         kelimelerden (tuzak) — "bugün öğrendiğim kelime" ezberiyle rastgele
         doğru cevaba basmayı zorlaştırır. */
-  function optionKey(text){ return String(text||'').normalize('NFC').trim().toLocaleLowerCase('tr'); }
   function pickCategoryDistractors(v, count, exclude){
-    const used = new Set([optionKey(v.tr), ...(exclude||[]).map(x=>optionKey(x.tr))]);
-    const result = [];
-    const sameLang = VOCAB.filter(x=>x.lang === v.lang && x.w !== v.w);
-    const tiers = [sameLang.filter(x=>x.cat === v.cat), sameLang.filter(x=>x.level === v.level), sameLang];
-    for(const tier of tiers){
-      for(const x of shuffle(tier)){
-        const key = optionKey(x.tr);
-        if(!key || used.has(key)) continue;
-        used.add(key); result.push(x);
-        if(result.length >= count) return result;
-      }
+    exclude = exclude || [];
+    let pool = poolForActiveLang().filter(x=>x.cat===v.cat && x.w!==v.w && !exclude.some(e=>e.w===x.w));
+    if(pool.length < count){
+      let fallback = poolForActiveLang().filter(x=>x.level===v.level && x.w!==v.w &&
+                                      !exclude.some(e=>e.w===x.w) && !pool.some(p=>p.w===x.w));
+      shuffle(fallback);
+      pool = pool.concat(fallback);
     }
-    return result;
+    if(pool.length < count){
+      let fallback2 = poolForActiveLang().filter(x=>x.w!==v.w &&
+                                       !exclude.some(e=>e.w===x.w) && !pool.some(p=>p.w===x.w));
+      shuffle(fallback2);
+      pool = pool.concat(fallback2);
+    }
+    shuffle(pool);
+    return pool.slice(0, count);
   }
   function pickBatchDistractors(v, count, batchWords){
-    const result = pickCategoryDistractors(v, Math.max(1,count-1));
-    const used = new Set([optionKey(v.tr), ...result.map(x=>optionKey(x.tr))]);
-    const trap = shuffle((batchWords||[]).filter(x=>x.lang === v.lang && x.w !== v.w && !used.has(optionKey(x.tr))))[0];
-    if(trap) result.push(trap);
-    if(result.length < count) result.push(...pickCategoryDistractors(v,count-result.length,result));
-    return shuffle(result).slice(0,count);
+    const catPicks = pickCategoryDistractors(v, Math.max(0, count-1));
+    let result = catPicks.slice();
+    const usedWords = [v].concat(result);
+    const trapPool = shuffle((batchWords||[]).filter(x=>x.w!==v.w && !usedWords.some(u=>u.w===x.w)));
+    if(trapPool[0]){
+      result.push(trapPool[0]);
+    } else {
+      const extra = pickCategoryDistractors(v, 1, result);
+      if(extra[0]) result.push(extra[0]);
+    }
+    shuffle(result);
+    return result.slice(0, count);
   }
 
   function renderQuizPhase(){
@@ -1220,13 +1148,14 @@
     const item = batch[quizOrder[quizIdx]];
     const v = item.v;
     const distractors = pickBatchDistractors(v, 3, batch.map(it=>it.v));
-    const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
-    const barHtml = '<div class="pm-session-bar"><span>Soru '+(quizIdx+1)+' / '+batch.length+'</span><span>Adım 2/4 - Anlam Testi</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((quizIdx/batch.length)*100)+'%"></div></div>';
+    const correctBack = BACK_W(v);
+    const opts = shuffle([correctBack].concat(distractors.map(d=>BACK_W(d))));
+    const barHtml = '<div class="pm-session-bar"><span>'+(window.t?window.t('pm_question_label'):'Soru')+' '+(quizIdx+1)+' / '+batch.length+'</span><span>'+(window.t?window.t('pm_step_meaning')(2,4):'Adım 2/4 - Anlam Testi')+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((quizIdx/batch.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.cat||v.pos||'')+'</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit">🔊</button><span class="speak-lbl">Normal</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle">🐢</button><span class="speak-lbl">Yavaş</span></div></div><div class="speak-caption">Dinlemek İçin Tıkla</div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">'+t('quiz_prompt')+'</div><div class="pm-word" dir="'+FRONT_DIR(v)+'">'+escapeHtml(FRONT_W(v))+'</div><div class="pm-word-sub">'+escapeHtml(v.cat||v.pos||'')+'</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit">🔊</button><span class="speak-lbl">'+t('normal_speed')+'</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle">🐢</button><span class="speak-lbl">'+t('slow_speed')+'</span></div></div><div class="speak-caption">'+t('tap_to_listen')+'</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
-    document.getElementById('pmRabbit').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
-    document.getElementById('pmTurtle').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
+    document.getElementById('pmRabbit').onclick = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), false);
+    document.getElementById('pmTurtle').onclick = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), true);
     const wrap = document.getElementById('pmOptions');
     opts.forEach(o=>{
       const b = document.createElement('button');
@@ -1234,15 +1163,14 @@
       b.onclick = () => {
         if(currentAnswered) return;
         currentAnswered = true;
-        const ok = (o === v.tr);
+        const ok = (o === correctBack);
         batchResult[item.key].quizOk = ok;
         document.querySelectorAll('#pmOptions .pm-opt').forEach(x=>{
           x.disabled = true;
-          if(x.textContent === v.tr) x.classList.add('correct');
+          if(x.textContent === correctBack) x.classList.add('correct');
           else if(x===b && !ok) x.classList.add('wrong');
         });
-        const currentBatch = batch;
-        setTimeout(()=>{ if(batch === currentBatch && wrap.isConnected){ quizIdx++; renderQuizPhase(); } }, 650);
+        setTimeout(()=>{ quizIdx++; renderQuizPhase(); }, 650);
       };
       wrap.appendChild(b);
     });
@@ -1259,13 +1187,14 @@
     const item = batch[listenOrder[listenIdx]];
     const v = item.v;
     const distractors = pickBatchDistractors(v, 3, batch.map(it=>it.v));
-    const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
-    const barHtml = '<div class="pm-session-bar"><span>Soru '+(listenIdx+1)+' / '+batch.length+'</span><span>Adım 3/4 - Dinleme</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((listenIdx/batch.length)*100)+'%"></div></div>';
+    const correctBack = BACK_W(v);
+    const opts = shuffle([correctBack].concat(distractors.map(d=>BACK_W(d))));
+    const barHtml = '<div class="pm-session-bar"><span>'+(window.t?window.t('pm_question_label'):'Soru')+' '+(listenIdx+1)+' / '+batch.length+'</span><span>'+(window.t?window.t('pm_step_listening')(3,4):'Adım 3/4 - Dinleme')+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((listenIdx/batch.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">🎧 Duydugun kelimenin anlami ne?</div><div class="pm-word" style="font-size:34px;">🎙️</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Hizli tekrar dinle">🔊</button><span class="speak-lbl">Normal</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavas tekrar dinle">🐢</button><span class="speak-lbl">Yavaş</span></div></div><div class="speak-caption">Dinlemek İçin Tıkla</div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">🎧 '+(window.t?window.t('pm_listening_prompt'):'Duydugun kelimenin anlami ne?')+'</div><div class="pm-word" style="font-size:34px;">🎙️</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Hizli tekrar dinle">🔊</button><span class="speak-lbl">'+t('normal_speed')+'</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavas tekrar dinle">🐢</button><span class="speak-lbl">'+t('slow_speed')+'</span></div></div><div class="speak-caption">'+t('tap_to_listen')+'</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
-    const playFast = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
-    const playSlow = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
+    const playFast = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), false);
+    const playSlow = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), true);
     document.getElementById('pmRabbit').onclick = playFast;
     document.getElementById('pmTurtle').onclick = playSlow;
     playFast();
@@ -1276,15 +1205,14 @@
       b.onclick = () => {
         if(currentAnswered) return;
         currentAnswered = true;
-        const ok = (o === v.tr);
+        const ok = (o === correctBack);
         batchResult[item.key].listenOk = ok;
         document.querySelectorAll('#pmOptions .pm-opt').forEach(x=>{
           x.disabled = true;
-          if(x.textContent === v.tr) x.classList.add('correct');
+          if(x.textContent === correctBack) x.classList.add('correct');
           else if(x===b && !ok) x.classList.add('wrong');
         });
-        const currentBatch = batch;
-        setTimeout(()=>{ if(batch === currentBatch && wrap.isConnected){ listenIdx++; renderListenPhase(); } }, 650);
+        setTimeout(()=>{ listenIdx++; renderListenPhase(); }, 650);
       };
       wrap.appendChild(b);
     });
@@ -1293,22 +1221,31 @@
   /* ============================== ADIM 4 — BOŞLUK DOLDURMA (yazarak)
      Örnek cümledeki kelime boşluk yapılır ("İch bin ___" gibi), kullanıcı
      yazarak doldurur — tıpkı Duolingo'daki gibi. v.ex yoksa bu kelime
-     doğrudan Türkçe karşılıktan yazma alıştırması gösterilir. */
+     atlanır (tüm kelimelerde örnek cümle olmayabilir). */
   function blankSentence(sentence, word){
-    const clean = String(word||'').replace(/^(der|die|das)\s+/i,'').trim();
-    if(!clean) return null;
-    const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = new RegExp('(^|[^\\p{L}\\p{M}])('+escaped+')(?=$|[^\\p{L}\\p{M}])','iu').exec(sentence);
-    if(!match) return null;
-    const start = match.index + match[1].length;
-    return {before:sentence.slice(0,start),answer:match[2],after:sentence.slice(start+match[2].length)};
+    const range = (typeof findStemMatch === 'function') ? findStemMatch(sentence, word) : null;
+    if(!range) return null;
+    return {
+      before: sentence.slice(0, range.start),
+      answer: sentence.slice(range.start, range.end),
+      after: sentence.slice(range.end)
+    };
   }
 
-  // Preserve spelling and accents. Case and surrounding punctuation are neutral.
+  /* ============================== BOŞLUK DOLDURMA — AKILLI EŞLEŞTİRME
+     Amaç kelimeyi doğru YAZMAK, gramer çekimini test etmek değil. Bu yüzden:
+     1) Noktalama işaretleri yok sayılır ("Leihen?" ~ "leihen").
+     2) Küçük yazım hataları (özellikle ä/ö/ü gibi tek harf farkları)
+        tolere edilir — kelime uzunluğuna göre ölçeklenen bir eşik ile.
+     3) Cümledeki çekimli hâl (ör. "bedeutet") YERİNE öğrenilen sözlük
+        hâli (v.w, ör. "bedeuten") de kabul edilir. */
   function fillNormalize(s){
-    return String(s||'').normalize('NFC').trim().toLowerCase()
-      .replace(/^[.,!?;:،؟؛"'„“«»…()[\]\s]+|[.,!?;:،؟؛"'„“«»…()[\]\s]+$/g,'')
-      .replace(/\s+/g,' ').trim();
+    return String(s||'')
+      .trim()
+      .toLocaleLowerCase('tr')
+      .replace(/[.,!?;:"'„"«»…()\[\]]/g, '')  /* noktalama tamamen at */
+      .replace(/\s+/g, ' ')
+      .trim();
   }
   function levenshtein(a, b){
     if(a === b) return 0;
@@ -1328,8 +1265,15 @@
     return prev[bl];
   }
   function fillWordsMatch(userRaw, correctRaw){
-    const u = fillNormalize(userRaw), c = fillNormalize(correctRaw);
-    return Boolean(u) && u === c;
+    const u = fillNormalize(userRaw);
+    const c = fillNormalize(correctRaw);
+    if(!u) return false;
+    if(u === c) return true;
+    /* uzunluğa göre ölçeklenen tolerans: çok kısa kelimede yazım hatası
+       payı verilmez (anlamsız hâle gelir), uzun kelimede 1-2 harf affedilir */
+    const maxLen = Math.max(u.length, c.length);
+    const tolerance = maxLen <= 3 ? 0 : (maxLen <= 7 ? 1 : 2);
+    return levenshtein(u, c) <= tolerance;
   }
 
   function renderFillPhase(){
@@ -1339,37 +1283,34 @@
     }
     const item = batch[fillOrder[fillIdx]];
     const v = item.v;
-    const sentenceBlank = v.ex ? blankSentence(v.ex, v.w) : null;
-    const blanked = sentenceBlank || {before:'',answer:v.w,after:''}; // örnek cümlesi yoksa atla
+    const blanked = FRONT_EX(v) ? blankSentence(FRONT_EX(v), FRONT_W(v)) : null;
+    if(!blanked){ fillIdx++; renderFillPhase(); return; } // örnek cümlesi yoksa atla
 
-    const barHtml = '<div class="pm-session-bar"><span>Soru '+(fillIdx+1)+' / '+batch.length+'</span><span>Adım 4/4 - Boşluk Doldurma</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((fillIdx/batch.length)*100)+'%"></div></div>';
+    const barHtml = '<div class="pm-session-bar"><span>'+(window.t?window.t('pm_question_label'):'Soru')+' '+(fillIdx+1)+' / '+batch.length+'</span><span>'+(window.t?window.t('pm_step_fill')(4,4):'Adım 4/4 - Boşluk Doldurma')+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((fillIdx/batch.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">'+(sentenceBlank ? 'Boşluğu doldur' : 'Türkçe karşılığından kelimeyi yaz')+'</div>'+
-      '<div class="pm-fill-row" id="pmFillRow" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(blanked.before)+'<b>_____</b>'+escapeHtml(blanked.after)+'</div>'+
-      '<div class="pm-word-sub" style="margin-top:10px;">'+escapeHtml(sentenceBlank ? (v.exTr||v.tr||'') : (v.tr||''))+'</div>'+
-      '<div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Normal hızda dinle">🔊</button><span class="speak-lbl">Normal</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavaş dinle">🐢</button><span class="speak-lbl">Yavaş</span></div></div><div class="speak-caption">Cümleyi Dinlemek İçin Tıkla</div></div>'+
-      '<input type="text" class="pm-fill-input" id="pmFillInput" aria-label="Cevabın" dir="auto" maxlength="200" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Buraya yaz…" style="margin-bottom:12px;">'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">'+t('fill_blank')+'</div>'+
+      '<div class="pm-fill-row" id="pmFillRow" dir="'+FRONT_DIR(v)+'">'+escapeHtml(blanked.before)+'<b>_____</b>'+escapeHtml(blanked.after)+'</div>'+
+      '<div class="pm-word-sub" style="margin-top:10px;">'+escapeHtml(BACK_EX(v)||BACK_W(v)||'')+'</div>'+
+      '<div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit" title="Normal hızda dinle">🔊</button><span class="speak-lbl">'+t('normal_speed')+'</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle" title="Yavaş dinle">🐢</button><span class="speak-lbl">'+t('slow_speed')+'</span></div></div><div class="speak-caption">'+t('tap_to_listen')+'</div></div>'+
+      '<input type="text" class="pm-fill-input" id="pmFillInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Buraya yaz…" style="margin-bottom:12px;">'+
       '<div class="pm-fill-fb" id="pmFillFb"></div>'+
       '<button class="pm-btn primary" id="pmFillCheck">Kontrol Et</button>'+
       '<button class="pm-btn primary" id="pmFillNext" style="display:none;">Devam</button></div>';
 
-    document.getElementById('pmRabbit').onclick = () => pmSpeak(v.ex, LANGS[v.lang].voice, false);
-    document.getElementById('pmTurtle').onclick = () => pmSpeak(v.ex, LANGS[v.lang].voice, true);
-    pmSpeak(v.ex, LANGS[v.lang].voice, false); /* soru gelince otomatik bir kez oku */
+    document.getElementById('pmRabbit').onclick = () => pmSpeak(FRONT_EX(v), FRONT_VOICE(v), false);
+    document.getElementById('pmTurtle').onclick = () => pmSpeak(FRONT_EX(v), FRONT_VOICE(v), true);
+    pmSpeak(FRONT_EX(v), FRONT_VOICE(v), false); /* soru gelince otomatik bir kez oku */
 
     const input = document.getElementById('pmFillInput');
     const fb = document.getElementById('pmFillFb');
     const checkBtn = document.getElementById('pmFillCheck');
     const nextBtn = document.getElementById('pmFillNext');
     input.focus();
-    let checked = false;
     function check(){
-      if(checked) return;
       const typed = input.value || '';
-      /* Cümlede gösterilen biçim kontrol edilir; yakın yazım puan kazandırmaz. */
-      if(!typed.trim()){ fb.textContent = 'Önce cevabını yaz.'; return; }
-      checked = true;
-      const ok = fillWordsMatch(typed, blanked.answer);
+      /* Hem cümledeki çekimli hâl hem de öğrenilen sözlük hâli (FRONT_W)
+         kabul edilir — amaç kelimeyi doğru yazmak, çekimi test etmek değil. */
+      const ok = fillWordsMatch(typed, blanked.answer) || fillWordsMatch(typed, FRONT_W(v));
       batchResult[item.key].fillOk = ok;
       /* Kontrol Et'e basınca boşluk, doğru kelimeyle ve farklı renkte
          dolduruluyor — kelime doğru şekliyle görsel olarak pekişsin. */
@@ -1379,8 +1320,7 @@
           '<b style="color:'+(ok?'#3dffa0':'#ff8a8a')+'">'+escapeHtml(blanked.answer)+'</b>' +
           escapeHtml(blanked.after);
       }
-      const near = !ok && levenshtein(fillNormalize(typed),fillNormalize(blanked.answer)) <= 2;
-      fb.textContent = ok ? '✅ Doğru!' : ((near ? 'Çok yaklaştın; yazımı kontrol et. ' : '')+'Doğrusu: '+blanked.answer);
+      fb.textContent = ok ? (window.t?window.t('fill_correct'):'✅ Doğru!') : ((window.t?window.t('pm_correct_answer'):'Doğrusu:')+' '+blanked.answer);
       fb.className = 'pm-fill-fb ' + (ok ? 'ok' : 'bad');
       input.disabled = true; checkBtn.style.display = 'none'; nextBtn.style.display = '';
     }
@@ -1420,7 +1360,7 @@
         rec.known = false;
         rec.retryAfterSession = meta.studySessionCount + RETRY_SESSION_GAP;
         sessionStats.wrong++;
-        sessionStats.mistakes.push({ word:v.w, tr:v.tr });
+        sessionStats.mistakes.push({ word:FRONT_W(v), tr:BACK_W(v) });
       }
       rec.lastSeen = now;
       wordProgress[key] = rec;
@@ -1443,24 +1383,24 @@
     try{document.body.classList.add('pm-active');}catch(e){}
     try{['langBox','langPair','levelBox','chips'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});}catch(e){}
     let html = '<div class="pm-root">';
-    html += '<div class="pm-head"><div class="pm-eyebrow">Oturum Tamamlandı</div><div class="pm-title">🎉 Harika İş!</div><div class="pm-sub">'+s.newKnown+' yeni kelime öğrendin - +'+s.xp+' XP</div></div>';
-    html += '<div class="pm-card"><h4>Sonuç</h4><div class="pm-stat-grid"><div class="pm-stat-box"><div class="pm-stat-num">'+s.newKnown+'</div><div class="pm-stat-label">Yeni öğrenilen</div></div><div class="pm-stat-box"><div class="pm-stat-num">'+s.wrong+'</div><div class="pm-stat-label">Tekrar gerekiyor</div></div></div></div>';
+    html += '<div class="pm-head"><div class="pm-eyebrow">'+t('pm_session_complete')+'</div><div class="pm-title">'+t('pm_great_job')+'</div><div class="pm-sub">'+t('pm_session_summary')(s.newKnown, s.xp)+'</div></div>';
+    html += '<div class="pm-card"><h4>'+t('pm_result')+'</h4><div class="pm-stat-grid"><div class="pm-stat-box"><div class="pm-stat-num">'+s.newKnown+'</div><div class="pm-stat-label">'+t('pm_newly_learned')+'</div></div><div class="pm-stat-box"><div class="pm-stat-num">'+s.wrong+'</div><div class="pm-stat-label">'+t('pm_needs_review')+'</div></div></div></div>';
     if(s.newBadges.length){
-      html += '<div class="pm-card"><h4>Yeni Rozetler</h4><div class="pm-weak-meta">'+s.newBadges.map(t=>'🏅 '+t+' kelime rozeti').join('<br>')+'</div></div>';
+      html += '<div class="pm-card"><h4>'+t('pm_new_badges')+'</h4><div class="pm-weak-meta">'+s.newBadges.map(function(n){ return '🏅 '+t('pm_word_badge')(n); }).join('<br>')+'</div></div>';
     }
     if(s.mistakes.length){
-      html += '<button class="pm-btn small" id="pmSeeMistakes">Tekrar Gereken Kelimeleri Gor ('+s.mistakes.length+')</button>';
+      html += '<button class="pm-btn small" id="pmSeeMistakes">'+t('pm_see_review_words')(s.mistakes.length)+'</button>';
     }
-    html += '<button class="pm-btn primary" id="pmBackHomeBtn">Ana Sayfaya Dön</button></div>';
+    html += '<button class="pm-btn primary" id="pmBackHomeBtn">'+t('pm_back_home_btn')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHomeBtn').onclick = renderHome;
     if(s.mistakes.length){
       document.getElementById('pmSeeMistakes').onclick = () => {
-        let h2 = '<div class="pm-root"><div class="pm-head"><div class="pm-title">Tekrar Gereken Kelimeler</div><div class="pm-sub">Bir sonraki oturumu atlayıp, ondan sonrasında tekrar karşına çıkacaklar.</div></div>';
+        let h2 = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+t('pm_review_words_title')+'</div><div class="pm-sub">'+t('pm_review_words_desc')+'</div></div>';
         s.mistakes.forEach(m=>{
-          h2 += '<div class="pm-weak-item"><div class="pm-weak-word">'+escapeHtml(m.word)+'</div><div class="pm-weak-meta">Doğrusu: '+escapeHtml(m.tr)+'</div></div>';
+          h2 += '<div class="pm-weak-item"><div class="pm-weak-word">'+escapeHtml(m.word)+'</div><div class="pm-weak-meta">'+t('pm_correct_answer')+' '+escapeHtml(m.tr)+'</div></div>';
         });
-        h2 += '<button class="pm-btn primary" id="pmBackSummary">Geri Don</button></div>';
+        h2 += '<button class="pm-btn primary" id="pmBackSummary">'+t('pm_go_back')+'</button></div>';
         root.innerHTML = h2;
         document.getElementById('pmBackSummary').onclick = renderSessionSummary;
       };
@@ -1473,7 +1413,7 @@
     const list = poolForActiveLang().filter(v=>group.levels.includes(v.level));
     const known = list.filter(v=>{ const r=getRecord(v); return r && r.known; });
     if(known.length === 0){
-      root.innerHTML = '<div class="pm-root"><div class="pm-empty">Bu grupta henüz bilinen kelime yok. Önce biraz çalışman gerekiyor.</div><span class="pm-back-link" id="pmBackHome">← Ana sayfaya dön</span></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-empty">'+t('pm_no_known_in_group')+'</div><span class="pm-back-link" id="pmBackHome">'+t('pm_back_home')+'</span></div>';
       document.getElementById('pmBackHome').onclick = renderHome;
       return;
     }
@@ -1487,13 +1427,14 @@
     currentAnswered = false;
     const v = reviewMode.order[reviewMode.idx];
     const distractors = pickCategoryDistractors(v, 3);
-    const opts = shuffle([v.tr].concat(distractors.map(d=>d.tr)));
+    const correctBack = BACK_W(v);
+    const opts = shuffle([correctBack].concat(distractors.map(d=>BACK_W(d))));
     const barHtml = '<div class="pm-session-bar"><span>Genel Tekrar ('+reviewMode.group+')</span><span>'+(reviewMode.idx+1)+' / '+reviewMode.order.length+'</span></div><div class="pm-bar" style="margin-bottom:14px;"><div class="pm-bar-fill" style="width:'+Math.round((reviewMode.idx/reviewMode.order.length)*100)+'%"></div></div>';
     root.innerHTML = '<div class="pm-root">'+barHtml+
-      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">Bu kelimenin anlami nedir?</div><div class="pm-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+'</div><div class="pm-word-sub">'+escapeHtml(v.cat||v.pos||'')+'</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit">🔊</button><span class="speak-lbl">Normal</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle">🐢</button><span class="speak-lbl">Yavaş</span></div></div><div class="speak-caption">Dinlemek İçin Tıkla</div></div>'+
+      '<div class="pm-study-card" style="cursor:default;"><div class="pm-mode-tag">'+t('quiz_prompt')+'</div><div class="pm-word" dir="'+FRONT_DIR(v)+'">'+escapeHtml(FRONT_W(v))+'</div><div class="pm-word-sub">'+escapeHtml(v.cat||v.pos||'')+'</div><div class="speak-controls"><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmRabbit">🔊</button><span class="speak-lbl">'+t('normal_speed')+'</span></div><div class="speak-item"><button type="button" class="speak-icon-btn" id="pmTurtle">🐢</button><span class="speak-lbl">'+t('slow_speed')+'</span></div></div><div class="speak-caption">'+t('tap_to_listen')+'</div></div>'+
       '<div class="pm-options" id="pmOptions"></div></div>';
-    document.getElementById('pmRabbit').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, false);
-    document.getElementById('pmTurtle').onclick = () => pmSpeak(v.w, LANGS[v.lang].voice, true);
+    document.getElementById('pmRabbit').onclick = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), false);
+    document.getElementById('pmTurtle').onclick = () => pmSpeak(FRONT_W(v), FRONT_VOICE(v), true);
     const wrap = document.getElementById('pmOptions');
     opts.forEach(o=>{
       const b = document.createElement('button');
@@ -1501,7 +1442,7 @@
       b.onclick = () => {
         if(currentAnswered) return;
         currentAnswered = true;
-        const ok = (o === v.tr);
+        const ok = (o === correctBack);
         const key = wordKeyFor(v);
         let rec = wordProgress[key];
         if(rec){
@@ -1518,7 +1459,7 @@
         }
         document.querySelectorAll('#pmOptions .pm-opt').forEach(x=>{
           x.disabled = true;
-          if(x.textContent === v.tr) x.classList.add('correct');
+          if(x.textContent === correctBack) x.classList.add('correct');
           else if(x===b && !ok) x.classList.add('wrong');
         });
         setTimeout(()=>{ reviewMode.idx++; renderReviewCard(); }, 650);
@@ -1540,13 +1481,13 @@
       awardTask4(stats.total);
     }
     persistMeta();
-    const titleEyebrow = isDaily ? 'Günlük Tekrar Tamamlandı' : 'Genel Tekrar Tamamlandı';
+    const titleEyebrow = isDaily ? (window.t?window.t('pm_daily_review_completed'):'Günlük Tekrar Tamamlandı') : (window.t?window.t('pm_general_review_completed'):'Genel Tekrar Tamamlandı');
     const titleIcon = isDaily ? '📋' : '🔁';
     let html = '<div class="pm-root"><div class="pm-head"><div class="pm-eyebrow">'+titleEyebrow+'</div><div class="pm-title">'+titleIcon+' '+reviewMode.group+'</div><div class="pm-sub">'+stats.correct+' / '+stats.total+' doğru'+(isDaily ? (' · +'+(stats.total*2)+' XP') : '')+'</div></div>';
     if(stats.wrong>0){
-      html += '<div class="pm-weak-meta" style="text-align:center;margin-bottom:14px;">'+stats.wrong+' kelime bilinmiyor listesine geri döndü, normal çalışmada tekrar karşına çıkacak.</div>';
+      html += '<div class="pm-weak-meta" style="text-align:center;margin-bottom:14px;">'+(window.t?window.t('pm_returned_to_unknown')(stats.wrong):(stats.wrong+' kelime bilinmiyor listesine geri döndü, normal çalışmada tekrar karşına çıkacak.'))+'</div>';
     }
-    html += '<button class="pm-btn primary" id="pmBackHomeBtn">Ana Sayfaya Dön</button></div>';
+    html += '<button class="pm-btn primary" id="pmBackHomeBtn">'+(window.t?window.t('pm_back_home_btn'):'Ana Sayfaya Dön')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHomeBtn').onclick = renderHome;
     reviewMode = null;
@@ -1554,22 +1495,22 @@
 
   function renderKnownWords(){
     const list = poolForActiveLang().filter(v=>{ const r=getRecord(v); return r && r.known; });
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✅ Öğrendiğin Kelimeler</div><div class="pm-sub">'+list.length+' kelime ('+LANGS[activeLang].label+')</div></div>';
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✅ '+t('pm_known')+'</div><div class="pm-sub">'+list.length+' kelime ('+(window.isReversed && window.isReversed() ? 'Türkçe' : LANGS[activeLang].label)+')</div></div>';
     if(list.length===0){
-      html += '<div class="pm-empty">Henüz öğrenilmiş kelime yok - çalışmaya başla!</div>';
+      html += '<div class="pm-empty">'+(window.t?window.t('pm_no_known_words'):'Henüz öğrenilmiş kelime yok - çalışmaya başla!')+'</div>';
     } else {
       list.slice(0,300).forEach(v=>{
-        html += '<div class="pm-known-item" dir="'+LANGS[v.lang].dir+'"><b>'+escapeHtml(v.w)+'</b><span>'+escapeHtml(v.tr)+'</span></div>';
+        html += '<div class="pm-known-item" dir="'+FRONT_DIR(v)+'"><b>'+escapeHtml(FRONT_W(v))+'</b><span>'+escapeHtml(BACK_W(v))+'</span></div>';
       });
       if(list.length>300) html += '<div class="pm-weak-meta" style="text-align:center;">...ve '+(list.length-300)+' kelime daha</div>';
     }
-    html += '<button class="pm-btn primary" id="pmBackHomeBtn" style="margin-top:14px;">Ana Sayfaya Dön</button></div>';
+    html += '<button class="pm-btn primary" id="pmBackHomeBtn" style="margin-top:14px;">'+(window.t?window.t('pm_back_home_btn'):'Ana Sayfaya Dön')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHomeBtn').onclick = renderHome;
   }
 
   function renderWeakWords(){
-    const entries = Object.keys(wordProgress).filter(k=>k.startsWith('u2_'))
+    const entries = Object.keys(wordProgress)
       .map(k=>({key:k, rec:wordProgress[k]}))
       .filter(e => e.rec.lang === activeLang && (e.rec.wrong||0) > 0)
       .sort((a,b)=> (b.rec.wrong||0) - (a.rec.wrong||0))
@@ -1578,274 +1519,34 @@
     const lookup = {};
     VOCAB.forEach(v=>{ lookup[wordKeyFor(v)] = v; });
 
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">📉 Hata Yaptığın Kelimeler</div><div class="pm-sub">En çok yanlış yaptığın kelimeler</div></div>';
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">📉 '+(window.t?t('pm_weak'):'Hata Yaptığın Kelimeler')+'</div><div class="pm-sub">En çok yanlış yaptığın kelimeler</div></div>';
     if(entries.length===0){
-      html += '<div class="pm-empty">Hic hata yapmamissin - harika! 🎉</div>';
+      html += '<div class="pm-empty">'+(window.t?window.t('pm_no_mistakes'):'Hic hata yapmamissin - harika! 🎉')+'</div>';
     } else {
       entries.forEach(e=>{
         const v = lookup[e.key];
         if(!v) return;
-        const status = e.rec.known ? '✅ Su an bilinen kelimeler arasinda' : '⏳ Tekrar bekliyor';
-        html += '<div class="pm-weak-item"><div class="pm-weak-word" dir="'+LANGS[v.lang].dir+'">'+escapeHtml(v.w)+' <span style="color:var(--pm-accent);font-size:12px;">- '+escapeHtml(v.tr)+'</span></div><div class="pm-weak-meta">❌ Yanlış: '+(e.rec.wrong||0)+' - ✅ Doğru: '+(e.rec.correct||0)+' - 👁 Görülme: '+(e.rec.seen||0)+'<br>'+status+'</div></div>';
+        const status = e.rec.known ? (window.t?window.t('pm_currently_known'):'✅ Su an bilinen kelimeler arasinda') : (window.t?window.t('pm_waiting_retry'):'⏳ Tekrar bekliyor');
+        html += '<div class="pm-weak-item"><div class="pm-weak-word" dir="'+FRONT_DIR(v)+'">'+escapeHtml(FRONT_W(v))+' <span style="color:var(--pm-accent);font-size:12px;">- '+escapeHtml(BACK_W(v))+'</span></div><div class="pm-weak-meta">❌ '+(window.t?window.t('pm_wrong_label'):'Yanlış:')+' '+(e.rec.wrong||0)+' - ✅ '+(window.t?window.t('pm_correct_label'):'Doğru:')+' '+(e.rec.correct||0)+' - 👁 '+(window.t?window.t('pm_seen_label'):'Görülme:')+' '+(e.rec.seen||0)+'<br>'+status+'</div></div>';
       });
     }
-    html += '<button class="pm-btn primary" id="pmBackHomeBtn2">Ana Sayfaya Dön</button></div>';
+    html += '<button class="pm-btn primary" id="pmBackHomeBtn2">'+(window.t?window.t('pm_back_home_btn'):'Ana Sayfaya Dön')+'</button></div>';
     root.innerHTML = html;
     document.getElementById('pmBackHomeBtn2').onclick = renderHome;
   }
 
-  /* =========================================================
-     YAZMA PRATİĞİ — Çok dilli Metin Düzeltici (CheckYourWrite benzeri)
-     Akış: Dil Seç → Seviye Seç (A1-B2) → Yaz & Kontrol Et
-     LanguageTool'un ücretsiz, herkese açık kontrol API'sini kullanır
-     (https://api.languagetool.org/v2/check, level=picky - en geniş
-     kural kapsamı). API anahtarı GEREKMEZ, kurulum istemez.
-     A1/A2'de sadece gramer/yazım/noktalama/büyük-küçük harf hataları
-     gösterilir; B1/B2'de üslup (STYLE) önerileri de eklenir.
-     Not: Bu ücretsiz, kural tabanlı bir servistir - bir dil modeli
-     (AI) kadar derin anlam/bağlam analizi yapmaz, ama anahtarsız ve
-     anında çalışır. Türkçe ve Arapça'da kapsamı diğer dillere göre
-     daha dar olabilir. ========================================= */
-  const WP_LANGS = [
-    { code:'en', tts:'en-US', lt:'en-US' },
-    { code:'de', tts:'de-DE', lt:'de-DE' },
-    { code:'ar', tts:'ar-SA', lt:'ar'    },
-    { code:'fr', tts:'fr-FR', lt:'fr'    },
-    { code:'es', tts:'es-ES', lt:'es'    },
-    { code:'ru', tts:'ru-RU', lt:'ru-RU' }
-  ];
-  const WP_LEVELS = ['A1','A2','B1','B2'];
-  let wpLang = null;
-  let wpLevel = null;
-  let wpBusy = false;
-  let wpRequest = 0;
-  let wpController = null;
-  const wpDrafts = {};
-  function wpCancelCheck(){
-    wpRequest++;
-    if(wpController) wpController.abort();
-    wpController = null;
-    wpBusy = false;
-  }
-  function wpKeyboardCards(selector){
-    root.querySelectorAll(selector).forEach(el=>{
-      el.setAttribute('role','button'); el.tabIndex = 0;
-      el.onkeydown = e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); el.click(); } };
-    });
-  }
-
-  function wpFindLang(code){
-    const w = WP_LANGS.find(x=>x.code===code);
-    if(!w) return null;
-    const L = (typeof LANGS !== 'undefined' && LANGS[code]) ? LANGS[code] : { label: code };
-    const flag = (typeof LANG_FLAGS !== 'undefined' && LANG_FLAGS[code]) ? LANG_FLAGS[code] : '🌐';
-    return { code: w.code, tts: w.tts, lt: w.lt, label: L.label, flag: flag };
-  }
-
-  function wpLevelShowsStyle(level){
-    return level === 'B1' || level === 'B2';
-  }
-
-  /* ---- 1. adım: dil seçimi ---- */
-  function renderWritingLangSelect(){
-    wpCancelCheck();
-    injectStyles();
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✍️ Yazma Pratiği</div><div class="pm-sub">Hangi dilde yazma pratiği yapmak istersin?</div></div>';
-    html += '<div class="lang-box">';
-    WP_LANGS.forEach(l=>{
-      const L = (typeof LANGS !== 'undefined' && LANGS[l.code]) ? LANGS[l.code] : { label: l.code };
-      const landmark = (typeof LANG_LANDMARK !== 'undefined' && LANG_LANDMARK[l.code]) ? LANG_LANDMARK[l.code] : '';
-      const flag = (typeof LANG_FLAGS !== 'undefined' && LANG_FLAGS[l.code]) ? LANG_FLAGS[l.code] : '🌐';
-      html += '<div class="lang-opt" data-lang="'+l.code+'" data-wp-lang="'+l.code+'"><span class="landmark" aria-hidden="true">'+landmark+'</span><div class="flag">'+flag+'</div><div class="lname">'+escapeHtml(L.label)+'</div></div>';
-    });
-    html += '</div>';
-    html += '<button class="pm-btn small" id="wpBackHomeBtn" style="margin-top:16px;">← Notlarım\'a Dön</button></div>';
-    root.innerHTML = html;
-    root.querySelectorAll('[data-wp-lang]').forEach(el=>{
-      el.onclick = () => { wpLang = el.getAttribute('data-wp-lang'); wpLevel = null; renderWritingLevelSelect(); };
-    });
-    wpKeyboardCards('[data-wp-lang], [data-lvl]');
-    document.getElementById('wpBackHomeBtn').onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
-  }
-
-  /* ---- 2. adım: seviye seçimi ---- */
-  function renderWritingLevelSelect(){
-    wpCancelCheck();
-    injectStyles();
-    const lang = wpFindLang(wpLang);
-    if(!lang){ renderWritingLangSelect(); return; }
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+lang.flag+' '+lang.label+'</div><div class="pm-sub">Seviyeni seç</div></div>';
-    html += '<div class="pm-lang-grid" style="grid-template-columns:repeat(2,1fr);">';
-    WP_LEVELS.forEach(l=>{
-      html += '<div class="pm-lang-card" data-lvl="'+l+'"><div class="nm" style="font-size:16px;font-weight:800;color:#eef4ff;">'+l+'</div></div>';
-    });
-    html += '</div>';
-    html += '<button class="pm-btn small" id="wpBackLangBtn" style="margin-top:16px;">← Dili Değiştir</button></div>';
-    root.innerHTML = html;
-    root.querySelectorAll('.pm-lang-card').forEach(el=>{
-      el.onclick = () => { wpLevel = el.getAttribute('data-lvl'); renderWritingPractice(); };
-    });
-    wpKeyboardCards('[data-lvl]');
-    document.getElementById('wpBackLangBtn').onclick = renderWritingLangSelect;
-  }
-
-  /* LanguageTool'un offset/length tabanlı 'matches' listesinden orijinal
-     metin üzerinde vurgulu görünüm, açıklama listesi ve önerilen düzeltme
-     üretir. */
-  function wpBuildViews(text, matches){
-    const sorted = matches.slice().sort((a,b)=> a.offset - b.offset);
-    let cursor = 0, origHtml = '', corrected = '', issuesHtml = '', count = 0;
-    sorted.forEach(m=>{
-      const overlaps = m.offset < cursor;
-      const errText = text.slice(m.offset, m.offset + m.length);
-      const repl = (m.replacements && m.replacements[0] && m.replacements[0].value != null) ? m.replacements[0].value : null;
-      if(!overlaps){
-      origHtml += escapeHtml(text.slice(cursor, m.offset));
-      origHtml += '<mark class="wp-err" title="'+escapeHtml(m.message||'')+'">'+escapeHtml(errText || '▏')+'</mark>';
-      corrected += text.slice(cursor, m.offset);
-      corrected += (repl !== null) ? repl : errText;
-      }
-      count++;
-      issuesHtml += '<div class="wp-issue"><div class="wp-issue-num">'+count+'</div><div class="wp-issue-body">'+
-        '<div class="wp-issue-orig">❌ '+escapeHtml(errText || '(ekleme)')+(repl!==null ? ' → <b>'+escapeHtml(repl)+'</b>' : '')+'</div>'+
-        '<div class="wp-issue-msg">'+escapeHtml(m.shortMessage || m.message || '')+(overlaps ? ' · Çakışan öneri: metne otomatik uygulanmadı.' : '')+'</div></div></div>';
-      if(!overlaps) cursor = m.offset + m.length;
-    });
-    origHtml += escapeHtml(text.slice(cursor));
-    corrected += text.slice(cursor);
-    return { origHtml, corrected, issuesHtml, count };
-  }
-
-  async function wpRunCheck(){
-    if(wpBusy) return;
-    const lang = wpFindLang(wpLang);
-    const ta = document.getElementById('wpInput');
-    const resultBox = document.getElementById('wpResult');
-    const btn = document.getElementById('wpCheckBtn');
-    if(!lang || !ta || !resultBox) return;
-    const text = ta.value;
-    const showError = msg => { resultBox.innerHTML = '<div class="wp-error">'+escapeHtml(msg)+'</div>'; };
-    if(!text.trim()){ showError('Önce kontrol etmek istediğin metni yaz.'); return; }
-    if(text.length > 4000){ showError('En fazla 4000 karakter kontrol edebilirsin.'); return; }
-    if(navigator.onLine === false){ showError('Kontrol için internet bağlantısı gerekiyor. Metnin bu oturumda korunuyor.'); return; }
-    wpCancelCheck();
-    const request = wpRequest;
-    const level = wpLevel;
-    const controller = new AbortController();
-    wpController = controller;
-    wpBusy = true;
-    const isCurrent = () => request === wpRequest && ta.isConnected && ta.value === text;
-    btn.disabled = true; btn.textContent = 'Kontrol ediliyor…';
-    resultBox.setAttribute('aria-busy','true');
-    resultBox.innerHTML = '<div class="wp-loading">📝 Metnin kontrol ediliyor…</div>';
-    const timer = setTimeout(()=>controller.abort(), 20000);
-    try{
-      const response = await fetch('https://api.languagetool.org/v2/check', {
-        method:'POST', signal:controller.signal,
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:new URLSearchParams({text, language:lang.lt, level:'picky'}).toString()
-      });
-      if(!response.ok){
-        const error = new Error('HTTP '+response.status); error.wpStatus = response.status; throw error;
-      }
-      const data = await response.json();
-      if(!data || !Array.isArray(data.matches) || data.matches.some(m =>
-        !m || !Number.isInteger(m.offset) || !Number.isInteger(m.length) ||
-        m.offset < 0 || m.length < 0 || m.offset + m.length > text.length)){
-        throw new Error('Geçersiz servis yanıtı');
-      }
-      if(!isCurrent()) return;
-      const detected = data.language && data.language.detectedLanguage;
-      if(detected && detected.code && Number(detected.confidence) >= 0.8 && detected.code.split('-')[0] !== lang.code){
-        showError('Metnin dili seçtiğin dille uyuşmuyor. Dil seçimini ve metni kontrol et.'); return;
-      }
-      const matches = data.matches.filter(m=> wpLevelShowsStyle(level) ||
-        !['STYLE','REDUNDANCY'].includes(m.rule && m.rule.category && m.rule.category.id));
-      const views = wpBuildViews(text, matches);
-      const partial = data.warnings && data.warnings.incompleteResults;
-      const filtered = data.matches.length - matches.length;
-      let notice = 'Otomatik kontrol bazı hataları kaçırabilir; anlamı ve dil seviyesini doğrulamaz.';
-      if(partial) notice = 'Kontrol tamamlanamadı; sonuçlar eksik olabilir. Daha kısa bir metinle tekrar dene. ' + notice;
-      if(filtered) notice += ' Bu seviyede '+filtered+' üslup önerisi gizlendi.';
-      resultBox.innerHTML = '<p class="wp-note">'+escapeHtml(notice)+'</p>' +
-        (views.count ? '<div class="wp-section-label">Bulunan öneriler ('+views.count+')</div>'+ 
-          '<div class="wp-original" dir="auto">'+views.origHtml+'</div>'+
-          '<div class="wp-section-label">Açıklamalar</div>'+views.issuesHtml+
-          '<div class="wp-section-label">Önerilen metin · ilk öneriler uygulanmıştır</div>' :
-          '<div class="wp-clean-msg">'+(partial ? 'Kontrol eksik; doğruluk sonucu verilemiyor.' : 'Bu kontrolde gösterilecek hata bulunamadı.')+'</div>')+
-        '<div class="wp-corrected" dir="auto">'+escapeHtml(views.corrected)+'</div>'+
-        '<div class="wp-speak-row"><button class="pm-btn small" id="wpListenBtn">🔊 Dinle</button></div>';
-      document.getElementById('wpListenBtn').onclick = ()=>pmSpeak(views.corrected,lang.tts);
-    }catch(err){
-      if(!isCurrent()) return;
-      showError(err.name === 'AbortError' ? 'Kontrol zaman aşımına uğradı. Tekrar deneyebilirsin.' :
-        err.wpStatus === 429 ? 'Kontrol sınırına ulaşıldı. Biraz bekleyip tekrar dene.' :
-        'Metin kontrol edilemedi. Bağlantıyı kontrol edip tekrar dene; doğruluk sonucu verilmedi.');
-    }finally{
-      clearTimeout(timer);
-      if(request === wpRequest){
-        wpBusy = false; wpController = null;
-        btn.disabled = false; btn.textContent = 'Kontrol Et';
-        resultBox.setAttribute('aria-busy','false');
-      }
-    }
-  }
-
-  /* ---- 3. adım: yazma & kontrol ---- */
-  function renderWritingPractice(){
-    wpCancelCheck();
-    injectStyles();
-    const lang = wpFindLang(wpLang);
-    if(!lang || !wpLevel){ renderWritingLangSelect(); return; }
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✍️ Yazma Pratiği</div>'+
-      '<div class="pm-sub">'+lang.flag+' '+lang.label+' · Seviye '+wpLevel+'</div></div>';
-    html += '<label for="wpInput" class="wp-section-label">Kontrol edilecek metin</label><textarea class="wp-textarea" id="wpInput" dir="auto" lang="'+lang.lt+'" aria-describedby="wpHelp wpCounter" maxlength="4000" placeholder="Buraya '+lang.label+' bir metin yaz..."></textarea>';
-    html += '<div class="wp-counter" id="wpCounter">0 / 4000</div>';
-    html += '<button class="pm-btn primary" id="wpCheckBtn">Kontrol Et</button>';
-    html += '<p class="wp-note" id="wpHelp">Kontrol Et ile metnin <a href="https://languagetool.org" target="_blank" rel="noopener noreferrer">LanguageTool</a> servisine gönderilir. <a href="https://languagetool.org/legal/privacy" target="_blank" rel="noopener noreferrer">Gizlilik</a> · İnternet gerekir. Seviye seçimi yalnızca üslup önerilerini filtreler. Ctrl/⌘ + Enter ile kontrol edebilirsin.</p>';
-    html += '<div id="wpResult" role="status" aria-live="polite" aria-busy="false"></div>';
-    html += '<button class="pm-btn small" id="wpBackLevelBtn">← Seviye Değiştir</button>';
-    html += '<button class="pm-btn primary" id="wpBackHomeBtn">📒 Notlarım\'a Dön</button></div>';
-    root.innerHTML = html;
-
-    wpKeyboardCards('[data-wp-lang], [data-lvl]');
-    document.getElementById('wpBackHomeBtn').onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
-    document.getElementById('wpBackLevelBtn').onclick = renderWritingLevelSelect;
-    document.getElementById('wpCheckBtn').onclick = wpRunCheck;
-    const ta = document.getElementById('wpInput');
-    const counter = document.getElementById('wpCounter');
-    if(ta && counter){
-      const draftKey = currentName + ':' + wpLang + ':' + wpLevel;
-      ta.value = wpDrafts[draftKey] || '';
-      counter.textContent = ta.value.length + ' / 4000';
-      ta.addEventListener('input', ()=>{
-        wpDrafts[draftKey] = ta.value;
-        counter.textContent = ta.value.length + ' / 4000';
-        wpCancelCheck();
-        const btn = document.getElementById('wpCheckBtn');
-        btn.disabled = false; btn.textContent = 'Kontrol Et';
-        const result = document.getElementById('wpResult');
-        result.innerHTML = ''; result.setAttribute('aria-busy','false');
-      });
-      ta.addEventListener('keydown', e=>{
-        if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); wpRunCheck(); }
-      });
-    }
-  }
-
-  function openPersonalMode(landingFn){
-    landingFn = (typeof landingFn === 'function') ? landingFn : renderHome;
+  function openPersonalMode(){
     if(!root) return;
     injectStyles();
     const name = window.LB_getUserName ? window.LB_getUserName() : '';
     if(!name){
-      root.innerHTML = '<div class="pm-root"><div class="pm-empty">Kişisel alanı kullanmak için önce adını girmen gerekiyor.</div><button class="pm-btn primary" id="pmAskNameBtn">Adımı Gir</button></div>';
+      root.innerHTML = '<div class="pm-root"><div class="pm-empty">'+(window.t?window.t('pm_need_name'):'Kişisel alanı kullanmak için önce adını girmen gerekiyor.')+'</div><button class="pm-btn primary" id="pmAskNameBtn">'+(window.t?window.t('pm_enter_name_btn'):'Adımı Gir')+'</button></div>';
       document.getElementById('pmAskNameBtn').onclick = () => { if(window.LB_checkName) window.LB_checkName(); };
       return;
     }
-    if(dataLoaded && currentName === name){ landingFn(); return; }
-    root.innerHTML = '<div class="pm-root"><div class="pm-loading">Kişisel alan yükleniyor...</div></div>';
-    loadUserData(name, landingFn);
+    if(dataLoaded && currentName === name){ renderHome(); return; }
+    root.innerHTML = '<div class="pm-root"><div class="pm-loading">'+(window.t?window.t('pm_loading'):'Kişisel alan yükleniyor...')+'</div></div>';
+    loadUserData(name, renderHome);
   }
 
   window.LB_onNameReady = function(name){
@@ -1857,12 +1558,7 @@
     loadUserData(name, isVisible ? renderHome : null);
   };
 
-  window.PM_open = function(){ openPersonalMode(); };
-
-  /* Notlarım sekmesinden doğrudan Yazma Pratiği akışını açmak için:
-     Kişisel sekmesine geçer (isim/veri kontrolü dahil) ve Ana Sayfa
-     yerine doğrudan dil seçim ekranını gösterir. */
-  window.PM_openWritingPractice = function(){ openPersonalMode(renderWritingLangSelect); };
+  window.PM_open = openPersonalMode;
 
   /* Dışarıdan XP eklemek için ortak kapı: quiz doğru cevapları ve
      destek rozetleri bunu kullanır. Kaydetme ve sunucuya yazma dahil. */

@@ -75,8 +75,7 @@ function toast(msg, opts) {
   opts = opts || {};
   var el = document.createElement('div');
   el.className = 'pwa-toast' + (opts.kind ? ' ' + opts.kind : '');
-  var message = document.createElement('span');
-  message.textContent = msg; el.appendChild(message);
+  el.innerHTML = '<span>' + msg + '</span>';
   if (opts.action) {
     var b = document.createElement('button');
     b.className = 't-act';
@@ -94,9 +93,6 @@ function toast(msg, opts) {
   }
   return close;
 }
-/* Notlarım/favoriler gibi index.html'in kendi inline script'i de aynı
-   toast sistemini kullanabilsin diye dışarı açıyoruz. */
-window.LUM_toast = toast;
 
 /* ------------------------------------------------------- ALT SAYFA ------ */
 var openSheets = [];
@@ -107,14 +103,11 @@ function sheet(title, subtitle, buildBody) {
     if (openSheets[i].title === title) { openSheets[i].close(); return null; }
   }
 
-  var previousFocus = document.activeElement;
   var back = document.createElement('div');
   back.className = 'pwa-sheet-backdrop';
   var box = document.createElement('div');
   box.className = 'pwa-sheet';
   box.setAttribute('role', 'dialog');
-  box.setAttribute('aria-modal', 'true');
-  box.setAttribute('aria-label', String(title));
   box.innerHTML = '<div class="grab"></div>' +
                   '<button type="button" class="pwa-sheet-x" aria-label="Kapat">✕</button>' +
                   '<h3>' + title + '</h3>' +
@@ -149,7 +142,6 @@ function sheet(title, subtitle, buildBody) {
       if (i > -1) openSheets.splice(i, 1);
       if (settingsOpen === api) settingsOpen = null;
       back.classList.remove('in'); box.classList.remove('in');
-      if(previousFocus && previousFocus.isConnected) previousFocus.focus();
       setTimeout(function () { back.remove(); box.remove(); }, 380);
     }
   };
@@ -161,16 +153,6 @@ function sheet(title, subtitle, buildBody) {
   /* İçerik, api hazır olduktan SONRA kuruluyor: aksi hâlde geri çağrıya
      gönderilen api tanımsız oluyordu (var hoisting). */
   try { buildBody(body, api); } catch (e) { logError(e); }
-  if(xBtn) xBtn.focus();
-  box.addEventListener('keydown', function(e){
-    if(e.key === 'Escape'){ e.preventDefault(); api.close(); return; }
-    if(e.key !== 'Tab') return;
-    var all = Array.from(box.querySelectorAll('button:not([disabled]),input:not([disabled]),select,textarea,a[href],[tabindex="0"]')).filter(function(el){return el.getClientRects().length;});
-    if(!all.length) return;
-    var first=all[0], last=all[all.length-1];
-    if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}
-    else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
-  });
   return api;
 }
 function row(icon, title, desc, right) {
@@ -245,7 +227,7 @@ function registerSW() {
   navigator.serviceWorker.addEventListener('message', function (ev) {
     var d = ev.data || {};
     if (d.type === 'CACHE_PROGRESS') onCacheProgress(d.done, d.total);
-    if (d.type === 'CACHE_DONE')     onCacheDone(d);
+    if (d.type === 'CACHE_DONE')     onCacheDone();
     if (d.type === 'NOTIFICATION_OPEN') route(new URL(d.url, location.href).searchParams, true);
     if (d.type === 'BACK_ONLINE')    refreshOnlineState();
   });
@@ -418,7 +400,7 @@ function setupBackButton() {
     }
     lastBack = now;
     vibrate(18);
-    toast('Çıkmak için geri tuşuna tekrar bas');
+    toast(window.t ? window.t('back_to_exit') : 'Çıkmak için geri tuşuna tekrar bas');
     pushGuard();
   });
 
@@ -481,20 +463,21 @@ function route(params, force) {
 function handleSharedText(txt) {
   if (!txt) return;
   var word = txt.split(/\s+/).slice(0, 3).join(' ');
-  sheet('📥 Paylaşılan metin', 'Başka bir uygulamadan gönderdiğin içerik:', function (b) {
+  var T = window.t || function(k){ return k; };
+  sheet(T('shared_content_title'), T('shared_content_desc'), function (b) {
     var box = document.createElement('div');
     box.className = 'pwa-row';
     box.innerHTML = '<div class="ic">📝</div><div class="tx"><b>' + escapeHtml(word) + '</b><span>' +
                     escapeHtml(txt.slice(0, 140)) + '</span></div>';
     b.appendChild(box);
-    var save = row('⭐', 'Favorilere ekle', 'Kendi kelime listene kaydet');
+    var save = row('⭐', T('add_to_favs'), T('save_to_word_list'));
     save.onclick = function () {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.anyBadge('Favorilere ekleme')) return;
       addFavorite({ w: word, tr: txt.slice(0, 120), lang: activeLangCode(), pos: 'not' });
-      toast('⭐ Favorilere eklendi', { kind: 'good' });
+      toast(T('added_to_favs_toast'), { kind: 'good' });
     };
     b.appendChild(save);
-    var copy = row('📋', 'Panoya kopyala', '');
+    var copy = row('📋', T('copy_to_clipboard'), '');
     copy.onclick = function () { copyText(txt); };
     b.appendChild(copy);
   });
@@ -521,7 +504,7 @@ function setupInstall() {
     deferredPrompt = null;
     hideInstallBanner();
     store('pwa_installed', true);
-    toast('🎉 Uygulama ana ekranına eklendi!', { kind: 'good' });
+    toast(window.t ? window.t('install_added') : '🎉 Uygulama ana ekranına eklendi!', { kind: 'good' });
   });
 
   /* iOS: beforeinstallprompt yok → yönergeli rehber */
@@ -536,10 +519,11 @@ function showInstallBanner() {
   if ($('pwa-install') || !deferredPrompt) return;
   var el = document.createElement('div');
   el.id = 'pwa-install';
+  var T = window.t || function(k){ return k; };
   el.innerHTML =
     '<img src="icon-192.png" alt="">' +
-    '<div class="txt"><b>Ana ekrana ekle</b><span>Tam ekran, çevrimdışı ve daha hızlı</span></div>' +
-    '<button class="go">Yükle</button><button class="x" aria-label="Kapat">✕</button>';
+    '<div class="txt"><b>' + T('install_add_title') + '</b><span>' + T('install_add_desc') + '</span></div>' +
+    '<button class="go">' + T('install_go') + '</button><button class="x" aria-label="' + T('close') + '">✕</button>';
   document.body.appendChild(el);
   requestAnimationFrame(function () { el.classList.add('in'); });
   qs('.go', el).onclick = function () { doInstall(); };
@@ -558,20 +542,19 @@ function doInstall() {
   if (!deferredPrompt) { iosInstallGuide(); return; }
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(function (c) {
-    if (c && c.outcome === 'accepted') toast('Kuruluyor…', { kind: 'good' });
+    if (c && c.outcome === 'accepted') toast(window.t ? window.t('installing') : 'Kuruluyor…', { kind: 'good' });
     deferredPrompt = null;
     hideInstallBanner();
   }).catch(function () {});
 }
 function iosInstallGuide() {
-  sheet('📲 Ana ekrana ekle', 'Uygulamayı tam ekran ve çevrimdışı kullanmak için:', function (b) {
-    [['1️⃣', 'Safari\'de paylaş simgesine dokun', 'Alt çubuktaki ⬆️ simgesi'],
-     ['2️⃣', '"Ana Ekrana Ekle"yi seç', 'Listede aşağı kaydırman gerekebilir'],
-     ['3️⃣', '"Ekle"ye dokun', 'Uygulama ana ekranında belirir']]
+  var T = window.t || function(k){ return k; };
+  sheet('📲 ' + T('install_add_title'), T('ios_install_desc'), function (b) {
+    [['1️⃣', T('ios_step1_title'), T('ios_step1_desc')],
+     ['2️⃣', T('ios_step2_title'), T('ios_step2_desc')],
+     ['3️⃣', T('ios_step3_title'), T('ios_step3_desc')]]
       .forEach(function (r) { b.appendChild(row(r[0], r[1], r[2])); });
-    b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note">Not: iOS\'ta bu adım yalnızca Safari üzerinden çalışır. ' +
-      'Ekledikten sonra bildirimler de (iOS 16.4+) etkinleştirilebilir.</p>');
+    b.insertAdjacentHTML('beforeend', '<p class="pwa-note">' + T('ios_install_note') + '</p>');
   });
 }
 
@@ -632,9 +615,11 @@ function fireReminder() {
   if (studiedToday()) return;
   store('pwa_reminder_last', today());
   var w = pickDailyWord();
+  var fw = w ? (window.FRONT_W ? window.FRONT_W(w) : w.w) : '';
+  var bw = w ? (window.BACK_W ? window.BACK_W(w) : w.tr) : '';
   showNotification(
     'Bugün birkaç kelime? 🌙',
-    w ? (w.w + ' — ' + (w.tr || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
+    w ? (fw + ' — ' + (bw || '') + '  ·  serini bozma!') : 'Serini bozma, 5 dakika yeter.',
     './?src=reminder&tab=cards'
   );
 }
@@ -690,24 +675,19 @@ function urlB64(base64String) {
 /* ================================ 7 · ÇEVRİMDIŞI PAKET ================== */
 var cacheBar = null;
 function downloadOfflinePack() {
-  if (!swReg || !swReg.active) { toast('Service Worker henüz hazır değil', { kind: 'bad' }); return; }
-  if (!navigator.onLine) { toast('İndirmek için internet gerekli', { kind: 'bad' }); return; }
+  var T = window.t || function(k){ return k; };
+  if (!swReg || !swReg.active) { toast(T('sw_not_ready'), { kind: 'bad' }); return; }
+  if (!navigator.onLine) { toast(T('need_internet_download'), { kind: 'bad' }); return; }
   swReg.active.postMessage({ type: 'CACHE_ALL' });
-  toast('📦 Sözlükler indiriliyor…');
+  toast(T('downloading_dicts'));
 }
 function onCacheProgress(done, total) {
   if (cacheBar) cacheBar.style.width = Math.round(done / total * 100) + '%';
 }
-function onCacheDone(result) {
-  if (result && result.failed > 0) {
-    if (cacheBar) cacheBar.style.width = Math.round((result.total - result.failed) / result.total * 100) + '%';
-    store('pwa_offline_pack', null);
-    toast('Paket tamamlanamadı: ' + result.failed + ' sözlük indirilemedi. Bağlantını kontrol edip tekrar dene.', { kind: 'bad', duration: 6000 });
-    return;
-  }
+function onCacheDone() {
   if (cacheBar) cacheBar.style.width = '100%';
   store('pwa_offline_pack', today());
-  toast('✅ Çevrimdışı paket hazır — internet olmadan da çalışır', { kind: 'good', duration: 5000 });
+  toast(window.t ? window.t('offline_pack_ready') : '✅ Çevrimdışı paket hazır — internet olmadan da çalışır', { kind: 'good', duration: 5000 });
 }
 function estimateStorage() {
   if (!navigator.storage || !navigator.storage.estimate) return Promise.resolve(null);
@@ -761,15 +741,11 @@ function setupFavButton() {
     e.stopPropagation();
     var c = currentCard();
     if (!c) return;
-    if (isFav(c)) { removeFavorite(c); toast('Favorilerden çıkarıldı'); }
+    if (isFav(c)) { removeFavorite(c); toast(window.t ? window.t('removed_from_favs') : 'Favorilerden çıkarıldı'); }
     else {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.anyBadge('Favorilere ekleme')) return;
       addFavorite(c); vibrate(24); toast('⭐ ' + c.w + ' favorilere eklendi', { kind: 'good' });
     }
-    /* Aynı tıklama, Notlarım'daki hesaba-bağlı (Firebase) favori sistemine
-       de yazsın — böylece kartlardan favorilenen kelimeler artık
-       Notlarım'da da görünür. */
-    try{ window.NB_toggleFavoriteFromCard && window.NB_toggleFavoriteFromCard(); }catch(e2){}
     syncFavButton();
   };
 
@@ -785,10 +761,10 @@ function syncFavButton() {
   btn.classList.toggle('on', on);
 }
 function openFavorites() {
-  sheet('⭐ Favorilerim', 'Kaydettiğin kelimeler cihazında saklanır.', function (b) {
+  sheet(window.t?window.t('fav_title'):'⭐ Favorilerim', window.t?window.t('fav_sub'):'Kaydettiğin kelimeler cihazında saklanır.', function (b) {
     var list = favs();
     if (!list.length) {
-      b.innerHTML = '<div class="pwa-empty">Henüz favori yok.<br>Kartın sağ üstündeki ☆ ile ekleyebilirsin.</div>';
+      b.innerHTML = '<div class="pwa-empty">'+(window.t?window.t('fav_empty'):'Henüz favori yok.<br>Kartın sağ üstündeki ☆ ile ekleyebilirsin.')+'</div>';
       return;
     }
     var flags = { de: '🇩🇪', en: '🇬🇧', ar: '🇸🇦', fr: '🇫🇷', es: '🇪🇸', ru: '🇷🇺' };
@@ -798,15 +774,10 @@ function openFavorites() {
       it.innerHTML = '<div class="fl">' + (flags[f.lang] || '🏳️') + '</div>' +
         '<div class="w"><b>' + escapeHtml(f.w) + '</b><span>' + escapeHtml(f.tr || '') + '</span></div>' +
         '<button class="rm" aria-label="Sil">✕</button>';
-      qs('.rm', it).onclick = function () {
-        removeFavorite(f);
-        try{ window.NB_unfavoriteByWord && window.NB_unfavoriteByWord(f.lang, f.w); }catch(e){}
-        it.remove();
-        syncFavButton();
-      };
+      qs('.rm', it).onclick = function () { removeFavorite(f); it.remove(); syncFavButton(); };
       b.appendChild(it);
     });
-    var exp = row('📤', 'Favorileri paylaş / indir', list.length + ' kelime');
+    var exp = row('📤', window.t?window.t('fav_share_row'):'Favorileri paylaş / indir', (window.t?window.t('word_count')(list.length):(list.length + ' kelime')));
     exp.onclick = function () { exportFavorites(); };
     b.appendChild(exp);
   });
@@ -814,8 +785,8 @@ function openFavorites() {
 function exportFavorites() {
   var list = favs();
   var txt = list.map(function (f) { return f.w + ' — ' + (f.tr || ''); }).join('\n');
-  var content = 'Lumira · Dil Kartları — Favorilerim (' + today() + ')\n\n' + txt;
-  shareOrSave('favorilerim-' + today() + '.txt', content, 'text/plain', 'Favori kelimelerim');
+  var content = (window.t?window.t('fav_export_title')(today()):('Lumira · Dil Kartları — Favorilerim (' + today() + ')')) + '\n\n' + txt;
+  shareOrSave('favorilerim-' + today() + '.txt', content, 'text/plain', window.t?window.t('fav_export_title_short'):'Favori kelimelerim');
 }
 
 /* ================== 9 · DOSYA İNDİRME · PAYLAŞMA ======================== */
@@ -827,9 +798,9 @@ function saveFile(filename, content, mime) {
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    toast('⬇️ ' + filename + ' indirildi', { kind: 'good' });
+    toast((window.t?window.t('downloaded')(filename):('⬇️ ' + filename + ' indirildi')), { kind: 'good' });
     return true;
-  } catch (e) { logError(e); toast('İndirme başarısız', { kind: 'bad' }); return false; }
+  } catch (e) { logError(e); toast(window.t?window.t('download_failed'):'İndirme başarısız', { kind: 'bad' }); return false; }
 }
 function shareOrSave(filename, content, mime, title) {
   var blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
@@ -847,7 +818,7 @@ function shareApp() {
   var shareUrl = isTwa ? PLAY_URL : (location.origin + location.pathname);
   var data = {
     title: CONFIG.brand + ' · ' + CONFIG.appName,
-    text: '6 dilde kelime kartları, quiz ve seslendirme — çevrimdışı da çalışıyor 🌙',
+    text: window.t?window.t('share_app_text'):'6 dilde kelime kartları, quiz ve seslendirme — çevrimdışı da çalışıyor 🌙',
     url: shareUrl
   };
   if (navigator.share) {
@@ -859,26 +830,25 @@ function shareApp() {
 function copyText(t) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(t)
-      .then(function () { toast('📋 Panoya kopyalandı', { kind: 'good' }); })
-      .catch(function () { toast('Kopyalanamadı', { kind: 'bad' }); });
+      .then(function () { toast(window.t?window.t('copied_clipboard'):'📋 Panoya kopyalandı', { kind: 'good' }); })
+      .catch(function () { toast(window.t?window.t('copy_failed'):'Kopyalanamadı', { kind: 'bad' }); });
   } else {
     var ta = document.createElement('textarea');
     ta.value = t; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); toast('📋 Panoya kopyalandı', { kind: 'good' }); } catch (e) {}
+    try { document.execCommand('copy'); toast(window.t?window.t('copied_clipboard'):'📋 Panoya kopyalandı', { kind: 'good' }); } catch (e) {}
     ta.remove();
   }
 }
-function backupKeyAllowed(k){ return /^(pm_data_|pwa_|lumira_(favs_|resume_|nb_cache_|notebook|lt_|support_|onboarded_|welcome_))/.test(k); }
 function exportAllData() {
   var dump = { app: CONFIG.brand, exportedAt: new Date().toISOString(), data: {} };
   try {
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
-      if(backupKeyAllowed(k)) dump.data[k] = localStorage.getItem(k);
+      dump.data[k] = localStorage.getItem(k);
     }
   } catch (e) {}
   shareOrSave('dil-kartlari-yedek-' + today() + '.json',
-    JSON.stringify(dump, null, 2), 'application/json', 'İlerleme yedeğim');
+    JSON.stringify(dump, null, 2), 'application/json', window.t?window.t('backup_title'):'İlerleme yedeğim');
 }
 function importData() {
   var inp = document.createElement('input');
@@ -886,24 +856,15 @@ function importData() {
   inp.onchange = function () {
     var f = inp.files && inp.files[0];
     if (!f) return;
-    if(f.size > 10*1024*1024){ toast('Yedek en fazla 10 MB olabilir.', {kind:'bad'}); return; }
     var fr = new FileReader();
     fr.onload = function () {
       try {
         var j = JSON.parse(fr.result);
         var d = j.data || j;
-        if(!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Geçersiz yedek');
-        var keys=Object.keys(d).filter(backupKeyAllowed), previous={};
-        if(!keys.length || keys.some(function(k){return typeof d[k] !== 'string';})) throw new Error('Geçersiz yedek');
-        keys.forEach(function(k){ JSON.parse(d[k]); previous[k]=localStorage.getItem(k); });
-        try{ keys.forEach(function(k){localStorage.setItem(k,d[k]);}); }
-        catch(error){
-          keys.forEach(function(k){try{if(previous[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,previous[k]);}catch(e){}});
-          throw error;
-        }
-        toast('✅ Yedek geri yüklendi, yenileniyor…', { kind: 'good' });
+        Object.keys(d).forEach(function (k) { localStorage.setItem(k, d[k]); });
+        toast(window.t?window.t('backup_restored'):'✅ Yedek geri yüklendi, yenileniyor…', { kind: 'good' });
         setTimeout(function () { location.reload(); }, 1200);
-      } catch (e) { toast('Dosya okunamadı', { kind: 'bad' }); }
+      } catch (e) { toast(window.t?window.t('file_unreadable'):'Dosya okunamadı', { kind: 'bad' }); }
     };
     fr.readAsText(f);
   };
@@ -960,23 +921,23 @@ function setupErrorReporting() {
 }
 function openErrorReport() {
   var list = store(ERR_KEY) || [];
-  sheet('🐞 Hata raporu', list.length ? (list.length + ' kayıt bulundu.') : 'Kayıtlı hata yok — her şey yolunda.', function (b) {
+  sheet(window.t?window.t('err_report_title'):'🐞 Hata raporu', list.length ? (window.t?window.t('err_records_found')(list.length):(list.length + ' kayıt bulundu.')) : (window.t?window.t('err_no_records'):'Kayıtlı hata yok — her şey yolunda.'), function (b) {
     if (!list.length) {
-      b.innerHTML = '<div class="pwa-empty">🎉 Hiç hata kaydedilmemiş.</div>';
+      b.innerHTML = '<div class="pwa-empty">'+(window.t?window.t('err_none_logged'):'🎉 Hiç hata kaydedilmemiş.')+'</div>';
     } else {
       list.slice(0, 8).forEach(function (e) {
         b.appendChild(row('•', escapeHtml((e.m || '').slice(0, 60)), new Date(e.t).toLocaleString('tr-TR')));
       });
     }
-    var snd = row('📤', 'Raporu paylaş / indir', 'Cihaz bilgisi + son hatalar');
+    var snd = row('📤', window.t?window.t('err_share_row'):'Raporu paylaş / indir', window.t?window.t('err_share_desc'):'Cihaz bilgisi + son hatalar');
     snd.onclick = function () {
       shareOrSave('hata-raporu-' + today() + '.json',
         JSON.stringify({ app: CONFIG.brand, ua: navigator.userAgent, errors: list }, null, 2),
-        'application/json', 'Hata raporu');
+        'application/json', window.t?window.t('err_report_title2'):'Hata raporu');
     };
     b.appendChild(snd);
-    var clr = row('🧹', 'Kayıtları temizle', '');
-    clr.onclick = function () { store(ERR_KEY, []); toast('Temizlendi'); };
+    var clr = row('🧹', window.t?window.t('err_clear_row'):'Kayıtları temizle', '');
+    clr.onclick = function () { store(ERR_KEY, []); toast(window.t?window.t('cleared'):'Temizlendi'); };
     b.appendChild(clr);
   });
 }
@@ -991,16 +952,16 @@ function maybeAskRating() {
   if (opens < 6 || days < 2 || Date.now() - snoozed < 7 * 86400000) return;
 
   setTimeout(function () {
-    sheet('⭐ Beğendin mi?', 'Uygulamayı puanlaman bize çok yardımcı olur.', function (b) {
-      var yes = row('💛', 'Play Store\'da puan ver', '30 saniye sürer');
+    sheet(window.t?window.t('rate_title'):'⭐ Beğendin mi?', window.t?window.t('rate_sub'):'Uygulamayı puanlaman bize çok yardımcı olur.', function (b) {
+      var yes = row('💛', window.t?window.t('rate_now'):'Play Store\'da puan ver', window.t?window.t('rate_time'):'30 saniye sürer');
       yes.onclick = function () {
         store('pwa_rated', true);
         try { location.href = 'market://details?id=' + CONFIG.packageId; } catch (e) {}
         setTimeout(function () { window.open(CONFIG.playUrl, '_blank', 'noopener'); }, 700);
       };
-      var later = row('⏰', 'Sonra hatırlat', '1 hafta sonra tekrar sorulur');
+      var later = row('⏰', window.t?window.t('rate_later'):'Sonra hatırlat', window.t?window.t('rate_later_desc'):'1 hafta sonra tekrar sorulur');
       later.onclick = function () { store('pwa_rate_snooze', Date.now()); openSheets[openSheets.length - 1].close(); };
-      var never = row('🚫', 'Bir daha sorma', '');
+      var never = row('🚫', window.t?window.t('rate_never'):'Bir daha sorma', '');
       never.onclick = function () { store('pwa_rate_never', true); openSheets[openSheets.length - 1].close(); };
       b.appendChild(yes); b.appendChild(later); b.appendChild(never);
     });
@@ -1060,7 +1021,8 @@ function applyResume(r) {
   /* Önce kelimeyi ara (deste karıştırılmış olabilir), bulamazsan sırayı kullan */
   if (r.word) {
     for (var i = 0; i < deck.length; i++) {
-      if (deck[i] && deck[i].w === r.word) { target = i; break; }
+      var fw = (window.FRONT_W && deck[i]) ? window.FRONT_W(deck[i]) : (deck[i] && deck[i].w);
+      if (deck[i] && fw === r.word) { target = i; break; }
     }
   }
   if (target < 0 && typeof r.idx === 'number' && r.idx < deck.length) target = r.idx;
@@ -1085,8 +1047,9 @@ function offerResume() {
   if (r.tab === 'cards' && (r.idx || 0) === 0) return;
 
   var pos = (typeof r.idx === 'number' && r.total) ? ' · ' + (r.idx + 1) + '/' + r.total : '';
-  toast('📖 "' + escapeHtml(r.word) + '"' + pos + ' — kaldığın yerden devam?', {
-    action: 'Devam',
+  var T = window.t || function(k){ return k; };
+  toast(window.t ? window.t('resume_prompt')(escapeHtml(r.word), pos) : ('📖 "' + escapeHtml(r.word) + '"' + pos + ' — kaldığın yerden devam?'), {
+    action: T('resume_action'),
     duration: 11000,
     onAction: function () {
       var lo = qs('.lang-opt[data-lang="' + r.lang + '"]');
@@ -1102,8 +1065,8 @@ function offerResume() {
 
       /* Dil/seviye değiştiyse deste yeniden kurulur — kısa bir nefes al */
       setTimeout(function () {
-        if (applyResume(r)) toast('✅ ' + r.word + ' kartına dönüldü', { kind: 'good' });
-        else toast('Bu kart artık listede yok', { kind: 'bad' });
+        if (applyResume(r)) toast(window.t ? window.t('resume_returned')(r.word) : ('✅ ' + r.word + ' kartına dönüldü'), { kind: 'good' });
+        else toast(T('resume_not_found'), { kind: 'bad' });
       }, switched ? 420 : 60);
     }
   });
@@ -1124,35 +1087,39 @@ function pickDailyWord() {
 }
 function showDailyWord() {
   var w = pickDailyWord();
-  sheet('🌙 Günün kelimesi', today(), function (b) {
+  var T = window.t || function(k){ return k; };
+  sheet(T('daily_word_title'), today(), function (b) {
     if (!w) {
-      b.innerHTML = '<div class="pwa-empty">Kartlar henüz yüklenmedi. Birkaç saniye sonra tekrar dene.</div>';
+      b.innerHTML = '<div class="pwa-empty">' + T('daily_word_not_loaded') + '</div>';
       return;
     }
+    var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
+    var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || w.t);
     var card = document.createElement('div');
     card.className = 'pwa-row';
     card.innerHTML = '<div class="ic">📘</div><div class="tx"><b style="font-size:19px">' +
-      escapeHtml(w.w || '') + '</b><span style="font-size:13px">' + escapeHtml(w.tr || w.t || '') + '</span></div>';
+      escapeHtml(fw || '') + '</b><span style="font-size:13px">' + escapeHtml(bw || '') + '</span></div>';
     b.appendChild(card);
 
-    var listen = row('🔊', 'Dinle', 'Telaffuzu seslendir');
+    var listen = row('🔊', T('listen_row'), T('listen_desc'));
     listen.onclick = function () {
       try {
         if (typeof window.speakNative === 'function') {
           var map = { de: 'de-DE', en: 'en-US', ar: 'ar-SA', fr: 'fr-FR', es: 'es-ES', ru: 'ru-RU' };
-          window.speakNative(w.w, map[w.lang || activeLangCode()] || 'de-DE', 0.92, function () {});
+          var voice = window.FRONT_VOICE ? window.FRONT_VOICE(w) : (map[w.lang || activeLangCode()] || 'de-DE');
+          window.speakNative(fw, voice, 0.92, function () {});
         }
       } catch (e) { logError(e); }
     };
     b.appendChild(listen);
 
-    var fav = row('⭐', 'Favorilere ekle', '');
-    fav.onclick = function () { addFavorite({ w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() }); toast('⭐ Eklendi', { kind: 'good' }); };
+    var fav = row('⭐', T('add_to_favs'), '');
+    fav.onclick = function () { addFavorite({ w: fw, tr: bw || '', lang: w.lang || activeLangCode() }); toast(T('added_toast'), { kind: 'good' }); };
     b.appendChild(fav);
 
-    var sh = row('📤', 'Paylaş', 'Arkadaşına gönder');
+    var sh = row('📤', T('share_row'), T('share_desc'));
     sh.onclick = function () {
-      var txt = w.w + ' — ' + (w.tr || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
+      var txt = fw + ' — ' + (bw || '') + '\n' + CONFIG.brand + ' · ' + CONFIG.appName;
       if (navigator.share) navigator.share({ text: txt, url: location.origin + location.pathname }).catch(function () {});
       else copyText(txt);
     };
@@ -1162,12 +1129,14 @@ function showDailyWord() {
 }
 function updateWidgetData(w) {
   if (!w) return;
-  store('lumira_daily_word', { date: today(), w: w.w, tr: w.tr || '', lang: w.lang || activeLangCode() });
+  var fw = window.FRONT_W ? window.FRONT_W(w) : w.w;
+  var bw = window.BACK_W ? window.BACK_W(w) : (w.tr || '');
+  store('lumira_daily_word', { date: today(), w: fw, tr: bw || '', lang: w.lang || activeLangCode() });
   try {
     if ('widgets' in navigator) {
       /* Windows Widgets Board / desteklenen platformlar */
       navigator.widgets.updateByTag && navigator.widgets.updateByTag('daily-word', {
-        template: 'daily-word', data: JSON.stringify({ word: w.w, translation: w.tr || '' })
+        template: 'daily-word', data: JSON.stringify({ word: fw, translation: bw || '' })
       });
     }
   } catch (e) {}
@@ -1235,16 +1204,16 @@ function showWelcomeCard(name) {
   var st = welcomeStats();
 
   var lines = [];
-  if (st.streak > 0) lines.push('🔥 <b>' + st.streak + ' günlük</b> serin devam ediyor');
-  lines.push('⭐ Seviye <b>' + st.level + '</b> · ' + st.xp + ' XP');
-  if (st.goal > 0) lines.push('📚 Bugünkü hedefin: <b>' + st.goal + '</b> kelime');
+  if (st.streak > 0) lines.push(window.t ? window.t('welcome_streak')(st.streak) : ('🔥 <b>' + st.streak + ' günlük</b> serin devam ediyor'));
+  lines.push(window.t ? '⭐ ' + window.t('level_xp')(st.level, st.xp) : ('⭐ Seviye <b>' + st.level + '</b> · ' + st.xp + ' XP'));
+  if (st.goal > 0) lines.push(window.t ? window.t('welcome_goal')(st.goal) : ('📚 Bugünkü hedefin: <b>' + st.goal + '</b> kelime'));
 
   var el = document.createElement('div');
   el.id = 'lumira-welcome';
   el.innerHTML =
     '<div class="wc-card">' +
       '<span class="wc-mark">🦋</span>' +
-      '<div class="wc-hi">Hoş geldin,</div>' +
+      '<div class="wc-hi">' + (window.t ? window.t('welcome_hi') : 'Hoş geldin,') + '</div>' +
       '<div class="wc-name">' + escapeHtml(name) + '</div>' +
       '<div class="wc-lines">' + lines.map(function (l) {
         return '<div class="wc-line">' + l + '</div>';
@@ -1352,100 +1321,188 @@ function bigButton(text) {
 }
 
 /* ------------------------------- PROFİLİM ------------------------------- */
+/* ============================================== DİL AYARI (native/hedef) === */
+function openLanguageSettings() {
+  sheet('🌐 ' + t('language_row'), '', function (b, api) {
+    var NATIVE_OPTS = [
+      { c: 'tr', t: '🇹🇷 Türkçe' }, { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' },
+      { c: 'ar', t: '🇸🇦 العربية' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }
+    ];
+    var TARGET_OPTS = [
+      { c: 'de', t: '🇩🇪 Deutsch' }, { c: 'en', t: '🇬🇧 English' }, { c: 'ar', t: '🇸🇦 العربية' },
+      { c: 'fr', t: '🇫🇷 Français' }, { c: 'es', t: '🇪🇸 Español' }, { c: 'ru', t: '🇷🇺 Русский' }, { c: 'tr', t: '🇹🇷 Türkçe' }
+    ];
+    var native = window.NATIVE_LANG || 'tr';
+    var target = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
+
+    var nativeWrap = document.createElement('div');
+    nativeWrap.className = 'pwa-row'; nativeWrap.style.display = 'block'; nativeWrap.style.cursor = 'default';
+    nativeWrap.innerHTML = '<b style="display:block;margin-bottom:10px;">' + t('onb_native_title') + '</b>';
+    var nativeChips = document.createElement('div');
+    nativeChips.className = 'pdf-chips';
+    nativeWrap.appendChild(nativeChips);
+    b.appendChild(nativeWrap);
+
+    var targetWrap = document.createElement('div');
+    targetWrap.className = 'pwa-row'; targetWrap.style.display = 'block'; targetWrap.style.cursor = 'default';
+    targetWrap.innerHTML = '<b style="display:block;margin-bottom:10px;margin-top:6px;">' + t('onb_target_title') + '</b>';
+    var targetChips = document.createElement('div');
+    targetChips.className = 'pdf-chips';
+    targetWrap.appendChild(targetChips);
+    b.appendChild(targetWrap);
+
+    function drawNative() {
+      nativeChips.innerHTML = '';
+      NATIVE_OPTS.forEach(function (o) {
+        var c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'pdf-chip' + (o.c === native ? ' on' : '');
+        c.textContent = o.t;
+        c.onclick = function () {
+          native = o.c;
+          if (target === native) target = (native === 'tr') ? 'de' : 'tr'; /* çakışma olursa otomatik düzelt */
+          drawNative(); drawTarget();
+        };
+        nativeChips.appendChild(c);
+      });
+    }
+    function drawTarget() {
+      targetChips.innerHTML = '';
+      TARGET_OPTS.filter(function (o) { return o.c !== native && (o.c !== 'tr' || native !== 'tr'); }).forEach(function (o) {
+        var c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'pdf-chip' + (o.c === target ? ' on' : '');
+        c.textContent = o.t;
+        c.onclick = function () { target = o.c; drawTarget(); };
+        targetChips.appendChild(c);
+      });
+    }
+    drawNative(); drawTarget();
+
+    var go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'pwa-btn';
+    go.style.marginTop = '18px';
+    go.textContent = t('save_apply');
+    go.onclick = function () {
+      go.disabled = true; go.textContent = t('applying');
+      var p = window.setLangPair ? window.setLangPair(native, target) : Promise.resolve();
+      p.then(function () {
+        try {
+          document.querySelectorAll('.lang-opt').forEach(function (o) { o.classList.toggle('active', o.dataset.lang === target); });
+          if (window.renderLangPair) window.renderLangPair();
+          if (window.rebuildLevelBox) window.rebuildLevelBox();
+          if (window.rebuildChips) window.rebuildChips();
+          if (window.applyFilter) window.applyFilter();
+          if (document.querySelector('.pm-root') && window.PM_open) window.PM_open();
+        } catch (e) { logError(e); }
+        toast('🌐 Dil ayarı güncellendi', { kind: 'good' });
+        settingsOpen && settingsOpen.close && settingsOpen.close();
+        api.close();
+      }).catch(function () {
+        go.disabled = false; go.textContent = t('save_apply');
+        toast('⚠️ Sözlük yüklenemedi, tekrar dene', { kind: 'bad' });
+      });
+    };
+    b.appendChild(go);
+  });
+}
+
 function openProfile() {
   var u = fbUser();
-  sheet('👤 Profilim', u ? 'Giriş yapıldı' : 'Bu bölüm için önce giriş yapman gerekiyor.', function (b) {
+  var T = window.t || function(k){ return k; };
+  sheet(T('profile_title'), u ? T('profile_logged_in') : T('profile_need_login'), function (b) {
     if (!u) {
-      b.innerHTML = '<div class="pwa-empty">Açılış ekranındaki sıralama bölümünden giriş yapabilirsin.</div>';
+      b.innerHTML = '<div class="pwa-empty">' + T('profile_login_from_splash') + '</div>';
       return;
     }
 
     var loginName = (u.email || '').split('@')[0];
-    var info = row('🪪', 'Giriş adın', loginName + ' — bu ad değişmez, giriş için hep bunu kullan');
+    var info = row('🪪', T('profile_login_name_row'), T('profile_login_name_desc')(loginName));
     info.style.cursor = 'default';
     b.appendChild(info);
 
-    var idRow = row('🔑', 'Kullanıcı kimliğim', 'Dokun ve kopyala');
+    var idRow = row('🔑', T('profile_user_id_row'), T('profile_tap_copy'));
     idRow.onclick = function () { copyText(u.uid); };
     b.appendChild(idRow);
 
     /* --- görünen ad --- */
-    b.insertAdjacentHTML('beforeend', '<p class="pwa-note" style="margin:18px 2px 6px">Görünen ad</p>');
-    var nameF = inputRow('Sıralamada görünecek ad', 'text', u.displayName || '', 'Adın');
+    b.insertAdjacentHTML('beforeend', '<p class="pwa-note" style="margin:18px 2px 6px">' + T('profile_display_name_header') + '</p>');
+    var nameF = inputRow(T('profile_display_name_label'), 'text', u.displayName || '', T('profile_name_ph'));
     b.appendChild(nameF);
-    var nameBtn = bigButton('Adı güncelle');
+    var nameBtn = bigButton(T('profile_update_name_btn'));
     nameBtn.onclick = function () {
       var v = qs('input', nameF).value.trim();
-      if (v.length < 2) { toast('Ad en az 2 karakter olmalı', { kind: 'bad' }); return; }
-      nameBtn.disabled = true; nameBtn.textContent = 'Güncelleniyor…';
+      if (v.length < 2) { toast(T('toast_name_too_short'), { kind: 'bad' }); return; }
+      nameBtn.disabled = true; nameBtn.textContent = T('profile_updating');
       u.updateProfile({ displayName: v }).then(function () {
         var db = fbDb();
         if (db) return db.ref('leaderboard/' + u.uid + '/name').set(v);
       }).then(function () {
-        nameBtn.disabled = false; nameBtn.textContent = 'Adı güncelle';
-        toast('✅ Ad güncellendi', { kind: 'good' });
+        nameBtn.disabled = false; nameBtn.textContent = T('profile_update_name_btn');
+        toast(T('toast_name_updated'), { kind: 'good' });
       }).catch(function (e) {
-        nameBtn.disabled = false; nameBtn.textContent = 'Adı güncelle';
-        toast('Ad değiştirilemedi: ' + (e && e.code ? e.code : 'hata'), { kind: 'bad', duration: 6000 });
+        nameBtn.disabled = false; nameBtn.textContent = T('profile_update_name_btn');
+        toast(T('toast_name_failed')(e && e.code ? e.code : T('error_generic_short')), { kind: 'bad', duration: 6000 });
       });
     };
     b.appendChild(nameBtn);
 
     /* --- şifre --- */
-    b.insertAdjacentHTML('beforeend', '<p class="pwa-note" style="margin:22px 2px 6px">Şifre değiştir</p>');
-    var oldF = inputRow('Mevcut şifren', 'password', '', '••••••');
-    var newF = inputRow('Yeni şifre (en az 6 karakter)', 'password', '', '••••••');
+    b.insertAdjacentHTML('beforeend', '<p class="pwa-note" style="margin:22px 2px 6px">' + T('profile_change_password_header') + '</p>');
+    var oldF = inputRow(T('profile_current_password_label'), 'password', '', '••••••');
+    var newF = inputRow(T('profile_new_password_label'), 'password', '', '••••••');
     b.appendChild(oldF); b.appendChild(newF);
-    var passBtn = bigButton('Şifreyi değiştir');
+    var passBtn = bigButton(T('profile_change_password_btn'));
     passBtn.onclick = function () {
       var oldP = qs('input', oldF).value;
       var newP = qs('input', newF).value;
-      if (!oldP) { toast('Mevcut şifreni yaz', { kind: 'bad' }); return; }
-      if (!newP || newP.length < 6) { toast('Yeni şifre en az 6 karakter olmalı', { kind: 'bad' }); return; }
-      passBtn.disabled = true; passBtn.textContent = 'Değiştiriliyor…';
+      if (!oldP) { toast(T('toast_write_current_pw'), { kind: 'bad' }); return; }
+      if (!newP || newP.length < 6) { toast(T('toast_new_pw_short'), { kind: 'bad' }); return; }
+      passBtn.disabled = true; passBtn.textContent = T('profile_changing');
 
       var cred;
       try { cred = firebase.auth.EmailAuthProvider.credential(u.email, oldP); }
-      catch (e) { passBtn.disabled = false; passBtn.textContent = 'Şifreyi değiştir'; toast('Yapılamadı', { kind: 'bad' }); return; }
+      catch (e) { passBtn.disabled = false; passBtn.textContent = T('profile_change_password_btn'); toast(T('toast_cannot_do'), { kind: 'bad' }); return; }
 
       u.reauthenticateWithCredential(cred).then(function () {
         return u.updatePassword(newP);
       }).then(function () {
-        passBtn.disabled = false; passBtn.textContent = 'Şifreyi değiştir';
+        passBtn.disabled = false; passBtn.textContent = T('profile_change_password_btn');
         qs('input', oldF).value = ''; qs('input', newF).value = '';
-        toast('✅ Şifren değişti', { kind: 'good' });
+        toast(T('toast_pw_changed'), { kind: 'good' });
       }).catch(function (e) {
-        passBtn.disabled = false; passBtn.textContent = 'Şifreyi değiştir';
+        passBtn.disabled = false; passBtn.textContent = T('profile_change_password_btn');
         var code = e && e.code;
         toast(code === 'auth/wrong-password' || code === 'auth/invalid-credential'
-          ? 'Mevcut şifre yanlış'
-          : 'Değiştirilemedi: ' + (code || 'hata'), { kind: 'bad', duration: 6000 });
+          ? T('toast_wrong_current_pw')
+          : T('toast_failed_generic')(code || T('error_generic_short')), { kind: 'bad', duration: 6000 });
       });
     };
     b.appendChild(passBtn);
 
     /* --- Hesabı sil (KALICI) --------------------------------------- */
     b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note" style="margin:24px 2px 6px;color:#ff8a8a">Hesabımı sil</p>' +
-      '<p class="pwa-note" style="margin:0 2px 8px;opacity:.75">Hesabın, ilerlemen ve sıralaman kalıcı olarak silinir. Geri alınamaz.</p>');
-    var delF = inputRow('Onaylamak için şifreni yaz', 'password', '', '••••••');
+      '<p class="pwa-note" style="margin:24px 2px 6px;color:#ff8a8a">' + T('profile_delete_header') + '</p>' +
+      '<p class="pwa-note" style="margin:0 2px 8px;opacity:.75">' + T('profile_delete_warning') + '</p>');
+    var delF = inputRow(T('profile_delete_confirm_label'), 'password', '', '••••••');
     b.appendChild(delF);
-    var delBtn = bigButton('Hesabımı kalıcı olarak sil');
+    var delBtn = bigButton(T('profile_delete_btn'));
     delBtn.style.background = 'rgba(255,80,80,.14)';
     delBtn.style.borderColor = 'rgba(255,80,80,.5)';
     delBtn.style.color = '#ff8a8a';
     delBtn.onclick = function () {
       var pw = qs('input', delF).value;
-      if (!pw) { toast('Önce şifreni yaz', { kind: 'bad' }); return; }
-      if (!window.confirm('Hesabın, ilerlemen ve sıralaman KALICI olarak silinecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?')) return;
+      if (!pw) { toast(T('toast_write_pw_first'), { kind: 'bad' }); return; }
+      if (!window.confirm(T('confirm_delete_account'))) return;
 
       var uid = u.uid;
       var d = (typeof fbDb === 'function') ? fbDb() : null;
-      delBtn.disabled = true; delBtn.textContent = 'Siliniyor…';
+      delBtn.disabled = true; delBtn.textContent = T('profile_deleting');
 
       var cred;
       try { cred = firebase.auth.EmailAuthProvider.credential(u.email, pw); }
-      catch (e) { delBtn.disabled = false; delBtn.textContent = 'Hesabımı kalıcı olarak sil'; toast('Yapılamadı', { kind: 'bad' }); return; }
+      catch (e) { delBtn.disabled = false; delBtn.textContent = T('profile_delete_btn'); toast(T('toast_cannot_do'), { kind: 'bad' }); return; }
 
       u.reauthenticateWithCredential(cred).then(function () {
         /* Kimlik hâlâ geçerliyken önce sunucudaki verileri sil */
@@ -1459,21 +1516,20 @@ function openProfile() {
         return u.delete();               /* sonra hesabı sil */
       }).then(function () {
         try { localStorage.clear(); } catch (e) {}
-        toast('✅ Hesabın ve tüm verilerin silindi', { kind: 'good' });
+        toast(T('toast_account_deleted'), { kind: 'good' });
         setTimeout(function () { location.reload(); }, 1200);
       }).catch(function (e) {
-        delBtn.disabled = false; delBtn.textContent = 'Hesabımı kalıcı olarak sil';
+        delBtn.disabled = false; delBtn.textContent = T('profile_delete_btn');
         var code = e && e.code;
         toast(code === 'auth/wrong-password' || code === 'auth/invalid-credential'
-          ? 'Şifre yanlış'
-          : 'Silinemedi: ' + (code || 'hata'), { kind: 'bad', duration: 6000 });
+          ? T('toast_wrong_password')
+          : T('toast_delete_failed')(code || T('error_generic_short')), { kind: 'bad', duration: 6000 });
       });
     };
     b.appendChild(delBtn);
 
     b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note">Görünen adını değiştirmen giriş bilgilerini etkilemez; ' +
-      'uygulamaya girerken yine <b>' + escapeHtml(loginName) + '</b> adını kullanacaksın.</p>');
+      '<p class="pwa-note">' + T('profile_footer_note')(escapeHtml(loginName)) + '</p>');
   });
 }
 
@@ -1751,10 +1807,10 @@ function hardRefresh(full) {
 var settingsOpen = null;
 function openSettings() {
   if (settingsOpen) { try { settingsOpen.close(); } catch (e) {} settingsOpen = null; return; }
-  settingsOpen = sheet('⚙️ Uygulama', CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
+  settingsOpen = sheet(t('set_app_title'), CONFIG.brand + ' · ' + CONFIG.appName + (isStandalone ? ' · uygulama modu' : ''), function (b) {
 
     var liteOn = document.documentElement.classList.contains('lite');
-    var liteRow = row('⚡', 'Hafif mod',
+    var liteRow = row('⚡', t('set_lite_row'),
       liteOn
         ? (liteSetting() === true ? 'Açık — süslemeler kapalı, daha akıcı'
                                   : 'Açık (cihaz zayıf olduğu için otomatik)')
@@ -1777,7 +1833,7 @@ function openSettings() {
     /* --- Bildirimler ------------------------------------------------- */
     var s = reminderSettings();
     var permOk = notifyState() === 'granted';
-    var notifRow = row('🔔', 'Günlük hatırlatma',
+    var notifRow = row('🔔', t('set_notif_row'),
       permOk ? (s.on ? 'Her gün ' + pad(s.hour) + ':' + pad(s.min) : 'Kapalı') : 'İzin gerekiyor',
       '<div class="pwa-switch' + (s.on && permOk ? ' on' : '') + '"></div>');
     notifRow.onclick = function () {
@@ -1793,7 +1849,7 @@ function openSettings() {
     };
     b.appendChild(notifRow);
 
-    var timeRow = row('⏰', 'Hatırlatma saati', 'Bildirimin geleceği saat',
+    var timeRow = row('⏰', t('set_notif_time_row'), 'Bildirimin geleceği saat',
       '<input class="pwa-time" type="time" value="' + pad(s.hour) + ':' + pad(s.min) + '">');
     var inp = qs('.pwa-time', timeRow);
     inp.onclick = function (e) { e.stopPropagation(); };
@@ -1807,7 +1863,7 @@ function openSettings() {
     };
     b.appendChild(timeRow);
 
-    var testRow = row('📨', 'Test bildirimi gönder', 'Çalışıyor mu diye bak');
+    var testRow = row('📨', t('set_notif_test_row'), 'Çalışıyor mu diye bak');
     testRow.onclick = function () {
       askNotifyPermission().then(function (p) {
         if (p !== 'granted') { toast('Önce izin ver', { kind: 'bad' }); return; }
@@ -1817,7 +1873,7 @@ function openSettings() {
     b.appendChild(testRow);
 
     /* --- Çevrimdışı --------------------------------------------------- */
-    var packRow = row('📦', 'Çevrimdışı paketi indir', '6 dilin tüm sözlükleri · destek rozeti gerekir');
+    var packRow = row('📦', t('set_offline_row'), '6 dilin tüm sözlükleri · destek rozeti gerekir');
     var bar = document.createElement('div');
     bar.className = 'pwa-progress';
     bar.innerHTML = '<i></i>';
@@ -1831,17 +1887,17 @@ function openSettings() {
 
     estimateStorage().then(function (st) {
       if (!st) return;
-      var r = row('💾', 'Kullanılan alan', mb(st.used) + ' / ' + mb(st.quota));
+      var r = row('💾', t('set_storage_row'), mb(st.used) + ' / ' + mb(st.quota));
       r.style.cursor = 'default';
       b.insertBefore(r, packRow.nextSibling);
     });
 
     /* --- Favoriler & veri --------------------------------------------- */
-    var favRow = row('⭐', 'Favorilerim', favs().length + ' kelime');
+    var favRow = row('⭐', t('set_favs_row'), favs().length + ' kelime');
     favRow.onclick = function () { openFavorites(); };
     b.appendChild(favRow);
 
-    var check = row('🔍', 'Verilerim duruyor mu?', 'Kayıtlı ilerleme kayıtlarını say');
+    var check = row('🔍', t('set_check_row'), 'Kayıtlı ilerleme kayıtlarını say');
     check.onclick = function () {
       var n = 0, keys = [];
       try {
@@ -1856,27 +1912,27 @@ function openSettings() {
     };
     b.appendChild(check);
 
-    var exp = row('⬇️', 'Bu cihazdaki ilerlememi yedekle', 'Defterini ayrıca Notlarım içinden yedekleyebilirsin');
+    var exp = row('⬇️', t('set_export_row'), 'JSON dosyası indir veya paylaş');
     exp.onclick = exportAllData;
     b.appendChild(exp);
 
-    var imp = row('⬆️', 'Yedekten geri yükle', 'Daha önce indirdiğin dosyayı seç');
+    var imp = row('⬆️', t('set_import_row'), 'Daha önce indirdiğin dosyayı seç');
     imp.onclick = importData;
     b.appendChild(imp);
 
-    var shr = row('🔗', 'Uygulamayı paylaş', 'Arkadaşlarına gönder');
+    var shr = row('🔗', t('set_share_row'), 'Arkadaşlarına gönder');
     shr.onclick = shareApp;
     b.appendChild(shr);
 
     /* --- Kurulum / güncelleme ----------------------------------------- */
     if (!isStandalone && !isTwa) {
-      var ins = row('📲', 'Ana ekrana ekle', 'Tam ekran, hızlı ve çevrimdışı');
+      var ins = row('📲', t('set_install_row'), 'Tam ekran, hızlı ve çevrimdışı');
       ins.onclick = doInstall;
       b.appendChild(ins);
     }
 
     var myVer = (window.PWA && window.PWA.version) ? window.PWA.version : 'bilinmiyor';
-    var upd = row('🔄', 'Güncellemeleri denetle', 'Çalışan sürüm: ' + myVer);
+    var upd = row('🔄', t('set_update_row'), 'Çalışan sürüm: ' + myVer);
     var updDesc = qs('.tx span', upd);
     b.appendChild(upd);
 
@@ -1954,8 +2010,19 @@ function openSettings() {
 
     /* --- Profil (en altta) ------------------------------------------- */
     b.insertAdjacentHTML('beforeend',
-      '<p class="pwa-note" style="margin:20px 2px 8px">Hesap</p>');
-    var prof = row('👤', 'Profilim', 'Adını ve şifreni değiştir · 3. seviye gerekir');
+      '<p class="pwa-note" style="margin:20px 2px 8px">' + t('account') + '</p>');
+
+    var curNative = window.NATIVE_LANG || 'tr';
+    var curTarget = (window.isReversed && window.isReversed()) ? 'tr' : (window.TARGET_LANG || 'de');
+    var NATIVE_NAMES = { tr:'Türkçe', de:'Deutsch', en:'English', ar:'العربية', ru:'Русский', fr:'Français', es:'Español' };
+    var langSub = (window.I18N && window.I18N[curNative] && window.I18N[curNative].lang_change_sub)
+      ? window.I18N[curNative].lang_change_sub(NATIVE_NAMES[curNative]||curNative, NATIVE_NAMES[curTarget]||curTarget)
+      : (NATIVE_NAMES[curNative]||curNative) + ' konuşuyorsun · ' + (NATIVE_NAMES[curTarget]||curTarget) + ' öğreniyorsun';
+    var langRow = row('🌐', t('language_row'), langSub);
+    langRow.onclick = function () { openLanguageSettings(); };
+    b.appendChild(langRow);
+
+    var prof = row('👤', t('profile_row'), t('profile_desc'));
     prof.onclick = function () {
       if (window.LUMIRA_LOCK && !window.LUMIRA_LOCK.level(3, 'Profilim')) return;
       openProfile();
@@ -2147,7 +2214,7 @@ window.PWA = {
     });
     return { onLine: navigator.onLine, badgeVisible: !!(document.getElementById('pwa-offline') || {}).classList && document.getElementById('pwa-offline').classList.contains('in') };
   },
-  version: '1.7.52',
+  version: '1.7.22',
   isStandalone: function () { return isStandalone; }
 };
 
