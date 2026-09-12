@@ -27,6 +27,17 @@
   /* PDF için gereken rozetler */
   var PDF_BADGES = ['💛', '⭐️', '👑'];
 
+  /* Rozet adını kullanıcının ANA diline göre döner (I18N.tier_names, sku ile
+     eşleşir); çeviri yoksa TIERS tablosundaki Türkçe ada düşer. */
+  function tierName(t){
+    try{
+      var lang = (typeof NATIVE_LANG !== 'undefined' && NATIVE_LANG) || 'tr';
+      var names = window.I18N && window.I18N[lang] && window.I18N[lang].tier_names;
+      if(names && names[t.sku]) return names[t.sku];
+    }catch(e){}
+    return t.name;
+  }
+
   function store(k, v) {
     try {
       if (v === undefined) { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; }
@@ -53,8 +64,8 @@
     if (!t) return false;
     var list = myBadges();
     if (list.indexOf(t.badge) === -1) { list.push(t.badge); store(KEY, list); }
-    try { if (typeof window.PR_addXp === 'function') window.PR_addXp(t.xp, t.name + ' rozeti'); } catch (e) {}
-    toast(t.badge + ' ' + t.name + ' rozeti kazandın · +' + t.xp + ' XP', { kind: 'good', duration: 6000 });
+    try { if (typeof window.PR_addXp === 'function') window.PR_addXp(t.xp, tierName(t)); } catch (e) {}
+    toast((window.t ? window.t('purchase_success_toast')(t.badge, tierName(t), t.xp) : (t.badge + ' ' + t.name + ' rozeti kazandın · +' + t.xp + ' XP')), { kind: 'good', duration: 6000 });
     return true;
   };
   window.LUMIRA_BADGES = { list: myBadges, has: hasBadge, tiers: TIERS };
@@ -77,7 +88,7 @@
       return;
     }
     var methodData = [{ supportedMethods: 'https://play.google.com/billing', data: { sku: t.sku } }];
-    var details = { total: { label: 'Toplam', amount: { currency: 'TRY', value: '0' } } };
+    var details = { total: { label: (window.t ? window.t('purchase_total_label') : 'Toplam'), amount: { currency: 'TRY', value: '0' } } };
     var request;
     try { request = new PaymentRequest(methodData, details); }
     catch (e) { toast(window.t?window.t('purchase_start_failed'):'Satın alma başlatılamadı.', { kind: 'bad' }); return; }
@@ -134,10 +145,11 @@
       }
 
       b.insertAdjacentHTML('beforeend',
-        '<p class="sup-desc">Lumira\'yı herkes için ücretsiz sunmaya devam etmek istiyoruz. ' +
+        '<p class="sup-desc">' + (window.t ? window.t('support_desc') :
+        'Lumira\'yı herkes için ücretsiz sunmaya devam etmek istiyoruz. ' +
         'Eğer uygulamayı faydalı bulduysanız, tamamen isteğe bağlı bir destekle yeni ' +
         'özelliklerin geliştirilmesine katkıda bulunabilirsiniz. Her katkı bizim için ' +
-        'çok değerli. ❤️ 🇹🇷</p>');
+        'çok değerli. ❤️ 🇹🇷') + '</p>');
     });
   }
   window.openSupport = openSupport;
@@ -413,7 +425,7 @@
         var g = sn.val() || {}; var list = myBadges(); var changed = false; var got = [];
         TIERS.forEach(function (t) {
           if (g[t.amount] && list.indexOf(t.badge) === -1) {
-            list.push(t.badge); changed = true; got.push(t.badge + ' ' + t.name);
+            list.push(t.badge); changed = true; got.push(t.badge + ' ' + tierName(t));
           }
         });
         if (changed) {

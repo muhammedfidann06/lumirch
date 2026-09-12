@@ -223,6 +223,16 @@
   }
 
   .lang-box{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  /* GÜVENLİK KATMANI: "Notlarım" (ve "Kişisel") sekmesi açıkken üstteki dil
+     kartları/seviye/kategori çubuğu normalde ilgili tab handler'ı içindeki
+     setDisplay(...,'none') satırlarıyla gizleniyor. Olası bir zamanlama/
+     cache sorununda bile bu asla yanlışlıkla görünür KALMASIN diye, aynı
+     şeyi body sınıfı üzerinden CSS ile de zorunlu kılıyoruz — iki bağımsız
+     mekanizma birden aynı sonucu garanti ediyor. */
+  body.notebook-active #langBox, body.notebook-active #langPair,
+  body.notebook-active #levelBox, body.notebook-active #chips{
+    display:none !important;
+  }
   body.pm-active #langBox,body.pm-active #langPair,body.pm-active #levelBox,body.pm-active #chips{display:none !important;}
   .lang-opt{
     flex:1 1 27%;min-width:78px;text-align:center;padding:12px 4px;border-radius:16px;cursor:pointer;
@@ -669,8 +679,8 @@
     animation:pmNeonShift 4s ease-in-out infinite;
   }
 </style>
-<link rel="stylesheet" href="theme.css?v=1.7.27">
-<link rel="stylesheet" href="pwa.css?v=1.7.27">
+<link rel="stylesheet" href="theme.css?v=1.8.0">
+<link rel="stylesheet" href="pwa.css?v=1.8.0">
 </head>
 <body>
 <!-- Açılış ekranı (splash.js yönetir; kritik stil satır içi, anında boyanır) -->
@@ -805,7 +815,7 @@
     <div class="lang-opt" data-lang="fr"><div class="flag">🇫🇷</div><div class="lname">Fransızca</div></div>
     <div class="lang-opt" data-lang="es"><div class="flag">🇪🇸</div><div class="lname">İspanyolca</div></div>
     <div class="lang-opt" data-lang="ru"><div class="flag">🇷🇺</div><div class="lname">Rusça</div></div>
-    <div class="lang-opt" data-lang="tr" id="langOptTr" style="display:none;"><div class="flag">🇹🇷</div><div class="lname">Türkçe</div></div>
+    <div class="lang-opt" data-lang="tr" id="langOptTr" style="display:none;"><span class="landmark" aria-hidden="true">🌉</span><div class="flag">🇹🇷</div><div class="lname">Türkçe</div></div>
   </div>
 
   <div class="level-box" id="levelBox"></div>
@@ -814,6 +824,7 @@
     <div class="tab active" id="tabCards">Kartlar</div>
     <div class="tab" id="tabQuiz">Quiz</div>
     <div class="tab" id="tabPersonal">🎯 Kişisel</div>
+    <div class="tab" id="tabNotebook">📒 Notlarım</div>
   </div>
 
   <div class="chips" id="chips">
@@ -842,6 +853,7 @@
       <div class="card" id="card">
         <div class="face face-front">
           <div class="card-bg-emoji" id="frontBgEmoji" aria-hidden="true"></div>
+          <div class="fav-star off" id="favStarFront" title="Favorilere ekle">☆</div>
           <div class="level-badge" id="levelBadgeFront">A1</div>
           <div class="tag" id="tagFront">Deutsch</div>
           <div class="word" id="frontWord">Hallo</div>
@@ -861,6 +873,7 @@
         </div>
         <div class="face face-back">
           <div class="card-bg-emoji" id="backBgEmoji" aria-hidden="true"></div>
+          <div class="fav-star off" id="favStarBack" title="Favorilere ekle">☆</div>
           <div class="level-badge" id="levelBadgeBack">A1</div>
           <div class="tag" id="tagBack">Türkçe</div>
           <div class="word" id="trWord">Merhaba</div>
@@ -869,12 +882,21 @@
       </div>
     </div>
     <div class="hint">Çevirmek için karta dokun</div>
+    <div class="nb-diff-box" id="nbDifficultyBox" style="display:none;">
+      <div class="nb-diff-title">ZORLUK SEVİYESİ</div>
+      <div class="nb-diff-row">
+        <div class="nb-diff-opt" data-diff="kolay"><span class="nb-diff-emoji">🙂</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--green);">Kolay</div><div class="nb-diff-sub">Kolay hatırlıyorum</div></div><div class="nb-diff-radio"></div></div>
+        <div class="nb-diff-opt" data-diff="orta"><span class="nb-diff-emoji">😐</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--gold);">Orta</div><div class="nb-diff-sub">Biraz zorlanıyorum</div></div><div class="nb-diff-radio"></div></div>
+        <div class="nb-diff-opt" data-diff="zor"><span class="nb-diff-emoji">☹️</span><div class="nb-diff-text"><div class="nb-diff-name" style="color:var(--red);">Zor</div><div class="nb-diff-sub">Unutuyorum</div></div><div class="nb-diff-radio"></div></div>
+      </div>
+    </div>
 
     <div class="controls">
       <button class="ctrl" id="prevBtn">Önceki</button>
       <button class="ctrl" id="shuffleBtn">Karıştır</button>
       <button class="ctrl primary" id="nextBtn">Sonraki</button>
     </div>
+    <button class="ctrl primary" id="nbFinishStudyBtn" style="display:none;width:100%;margin-top:10px;">✅ Çalışmayı Bitir</button>
   </div>
 
   <div id="quizView" style="display:none;">
@@ -907,6 +929,7 @@
     <div class="controls" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
       <button class="ctrl" id="showMistakesBtn" style="display:none;">Hatalarını Gör</button>
       <button class="ctrl primary" id="restartBtn">Tekrar Başla</button>
+      <button class="ctrl" id="nbBackToNotebookBtn" style="display:none;">📒 Notlarım'a Dön</button>
     </div>
   </div>
 
@@ -919,6 +942,7 @@
   </div>
 
   <div id="personalView" style="display:none;"></div>
+  <div id="notebookView" style="display:none;"></div>
 
   <div class="info-overlay" id="infoPanel">
     <div class="info-card">
@@ -1153,7 +1177,7 @@ window.VOCAB_LOADED = { de: true };
   }, true);
 })();
 </script>
-<script src="leaderboard.js?v=1.7.27"></script>
+<script src="leaderboard.js?v=1.8.0"></script>
 <script>
 /* ================================================================
    ŞİFRE GÖSTER/GİZLE — Maymun emoji animasyonu (sadece görsel, saf UI)
@@ -1190,7 +1214,7 @@ document.addEventListener('DOMContentLoaded', function(){
    metne, o da yoksa anahtarın kendisine düşer. Asla boş/undefined dönmez. */
 const I18N = {
 tr:{
-  tab_cards:"Kartlar", tab_quiz:"Quiz", tab_personal:"🎯 Kişisel",
+  tab_cards:"Kartlar", tab_quiz:"Quiz", tab_personal:"🎯 Kişisel", tab_notebook:"📒 Notlarım",
   main_sub_full:"Seviye, dil ve kategori seç — kartına dokun, dinle, öğren",
   level_all:"TÜMÜ", cat_all:"Tümü", cat_pick:"Kategori Seç",
   tap_to_listen:"Dinlemek İçin Tıkla", tap_to_flip:"Çevirmek için karta dokun",
@@ -1251,7 +1275,7 @@ tr:{
   streak_days:function(n){ return n+" günlük seri"; },
   level_xp:function(lvl,xp){ return "Seviye "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "Dün öğrendiğin <b>"+n+"</b> kelimenin günlük tekrarı var"; },
-  review_btn:"Tekrar Et", quiz_finish:"Quizi Bitir",
+  review_btn:"Tekrar Et", quiz_finish:"Quizi Bitir", quiz_progress:function(c,t){return "Soru "+c+" / "+t;}, quiz_score:function(s){return s+" doğru";}, quiz_your_answer:"Senin Cevabın:", quiz_correct_answer:"Doğrusu:", quiz_final_score:function(s,t){return s+" / "+t+" doğru cevap";}, nb_login_required:"📒 Kelime Defterin hesabına bağlı olarak saklanır.<br>Devam edebilmek için önce giriş yapmalısın.", nb_study_lang_title:"🌍 Hangi Dilde Çalışmak İstiyorsun?", nb_study_lang_sub:"Kelime Defterindeki kelimeler arasından önce bir dil seç.", nb_word_count:function(a){return a+' kelime';}, nb_cancel:"Vazgeç", nb_study_level_title:"📊 Hangi Seviyeyle Çalışmak İstiyorsun?", nb_study_level_sub:function(a){return a+' kelimelerinin tümüyle ya da sadece bir seviyeyle çalışabilirsin.';}, nb_all_caps:"TÜMÜ", nb_back_change_lang:"← Dili Değiştir", nb_quiz_lang_title:"🧩 Quiz — Hangi Dilde?", nb_quiz_lang_sub:"Önce bir dil seç, sonra zorluk seviyesine göre quiz olacaksın.", nb_quiz_diff_title:"🧩 Quiz — Zorluk Seviyesi", nb_quiz_diff_sub:function(a){return a+' kelimelerinden hangi zorlukta quiz olmak istersin?';}, nb_quiz_all_diff:function(a){return 'Tüm Zorluklarla Quiz Ol ('+a+' kelime)';}, nb_intro:"Kendi eklediğin kelimeler ve favorilerine attığın kartlar burada, hesabına bağlı olarak saklanır — herkesin gördüğü hazır listelerden ayrıdır. Farklı bir cihazdan aynı hesapla girsen de kelimelerin seninle gelir.", nb_edit_title:"✏️ Kelimeyi Düzenle", nb_add_title:"➕ Yeni Kelime Ekle", nb_step1_lang:"1) Hangi dilde? *", nb_step2_search:"2) Hazır sözlükte ara (opsiyonel)", nb_search_placeholder:"🔍 örn. Schmetterling, hello, manzana…", nb_step3_info:"3) Bilgileri gir", nb_word_placeholder:"Kelime * (örn. Schmetterling)", nb_meaning_placeholder:"Türkçe anlamı (örn. kelebek)", nb_cat_placeholder:"Kategori (opsiyonel, örn. Hayvanlar)", nb_example_placeholder:"Örnek cümle (opsiyonel)", nb_save:"Kaydet", nb_add_to_notebook:"Kelime Defterime Ekle", nb_start_study:function(a){return '🚀 Çalışmaya Başla ('+a+' kelime)';}, nb_quiz_ol:"🧩 Quiz Ol", nb_writing_practice:"✍️ Yazma Pratiği", nb_search_notebook_placeholder:"Kelime Defterimde ara…", nb_all_langs:"Tüm diller", nb_all_cats:"Tüm kategoriler", nb_all_diffs:"Tüm seviyeler", nb_diff_easy:"Kolay", nb_diff_medium:"Orta", nb_diff_hard:"Zor", nb_diff_easy_sub:"Kolay hatırlıyorum", nb_diff_medium_sub:"Biraz zorlanıyorum", nb_diff_hard_sub:"Unutuyorum", nb_diff_level_title:"ZORLUK SEVİYESİ", nb_finish_study:"✅ Çalışmayı Bitir", nb_list_title:"Kelime Defterim", nb_list_count:function(a,b){return a+' / '+b+' kelime';}, nb_empty_none:"Henüz kelime eklemedin.<br>İnternette, derste ya da günlük hayatta öğrendiğin bir kelimeyi yukarıdan ekleyebilir, ya da kartlardaki ⭐ ile favorilerine attığın kelimeleri burada görebilirsin.", nb_empty_filtered:"Bu filtrelere uyan kelime yok.", nb_badge_favorite:"⭐ Favori", nb_badge_added:"📝 Eklenen", nb_edit_tooltip:"Düzenle", nb_delete_tooltip:"Sil", nb_select_lang_first:"Lütfen önce bir dil seç.", nb_autofilled_toast:"🤖 Kategori/örnek cümle otomatik dolduruldu — istersen sonra düzenleyebilirsin.", nb_duplicate_word:"Bu kelime zaten Kelime Defterinde var.", nb_deleted_toast:"Kelime defterinden silindi.", nb_delete_failed_toast:"Silinemedi, tekrar dener misin?", nb_custom_level_tag:"ÖZEL", nb_favorite_tag:"Favori", nb_my_notebook_tag:"Kelime Defterim", nb_fav_login_required:"Favorilere eklemek için önce giriş yapmalısın.", nb_fav_removed:"Favorilerden çıkarıldı — kelime defterinden silinmedi.", nb_fav_remove_failed:"Favoriden çıkarılamadı, tekrar dener misin?", nb_fav_added:"⭐ Favorilere eklendi — Notlarım'da görebilirsin.", nb_fav_add_failed:"Favori eklenirken bir sorun oluştu, tekrar dener misin?", wp_choose_lang_sub:"Hangi dilde yazma pratiği yapmak istersin?", wp_back_to_notebook:"← Notlarım'a Dön", wp_choose_level_sub:"Seviyeni seç", wp_empty_text:"Önce bir şeyler yaz, sonra kontrol edelim 🙂", wp_too_long:"Metin çok uzun (max. 4000 karakter). Daha kısa bir bölüm dene.", wp_checking:"Kontrol ediliyor...", wp_loading_msg:"📝 Metnin kontrol ediliyor, birkaç saniye sürebilir...", wp_clean_msg:"✅ Hata bulunamadı, harika bir metin yazmışsın!", wp_your_text:"Metnin", wp_listen:"🔊 Dinle", wp_errors_found:function(a){return 'Bulunan Hatalar ('+a+')';}, wp_explanations:"Açıklamalar", wp_corrected_text:"Düzeltilmiş Metin", wp_service_error:function(a){return 'Servis şu an yanıt vermiyor (HTTP '+a+'). Biraz sonra tekrar dene.';}, wp_generic_error:"Kontrol sırasında bir sorun oluştu. İnternet bağlantını kontrol edip biraz sonra tekrar dene.", wp_check_btn:"Kontrol Et", wp_back_level:"← Seviye Değiştir", wp_placeholder:function(a){return 'Buraya '+a+' bir metin yaz...';}, wp_lang_level_sub:function(a,b){return a+' · Seviye '+b;},
   pm_exam_completed:"Sınav Tamamlandı",
   pm_level_result:function(lvl){ return "🎓 "+lvl+" Seviye Sonucun"; },
   pm_scope_categories:function(n){ return n+" kategori"; }, pm_scope_all_categories:"tüm kategoriler",
@@ -1346,9 +1370,9 @@ tr:{
   fav_title:"⭐ Favorilerim", fav_sub:"Kaydettiğin kelimeler cihazında saklanır.", fav_empty:"Henüz favori yok.<br>Kartın sağ üstündeki ☆ ile ekleyebilirsin.", fav_share_row:"Favorileri paylaş / indir", download_failed:"İndirme başarısız", share_app_text:"6 dilde kelime kartları, quiz ve seslendirme — çevrimdışı da çalışıyor 🌙", copied_clipboard:"📋 Panoya kopyalandı", copy_failed:"Kopyalanamadı", backup_title:"İlerleme yedeğim", backup_restored:"✅ Yedek geri yüklendi, yenileniyor…", file_unreadable:"Dosya okunamadı", err_report_title:"🐞 Hata raporu", err_no_records:"Kayıtlı hata yok — her şey yolunda.", err_none_logged:"🎉 Hiç hata kaydedilmemiş.", err_share_row:"Raporu paylaş / indir", err_share_desc:"Cihaz bilgisi + son hatalar", err_report_title2:"Hata raporu", err_clear_row:"Kayıtları temizle", cleared:"Temizlendi", rate_title:"⭐ Beğendin mi?", rate_sub:"Uygulamayı puanlaman bize çok yardımcı olur.", rate_now:"Play Store'da puan ver", rate_time:"30 saniye sürer", rate_later:"Sonra hatırlat", rate_later_desc:"1 hafta sonra tekrar sorulur", rate_never:"Bir daha sorma", word_count:function(n){ return n+" kelime"; }, fav_export_title:function(d){ return "Lumira · Dil Kartları — Favorilerim ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" indirildi"; }, err_records_found:function(n){ return n+" kayıt bulundu."; },
   back_to_exit:"Çıkmak için geri tuşuna tekrar bas", installing:"Kuruluyor…", install_add_title:"Ana ekrana ekle", install_add_desc:"Tam ekran, çevrimdışı ve daha hızlı", install_go:"Yükle", install_added:"🎉 Uygulama ana ekranına eklendi!", ios_install_title:"📲 Ana ekrana ekle", ios_install_desc:"Uygulamayı tam ekran ve çevrimdışı kullanmak için:", ios_step1_title:"Safari'de paylaş simgesine dokun", ios_step1_desc:"Alt çubuktaki ⬆️ simgesi", ios_step2_title:"\"Ana Ekrana Ekle\"yi seç", ios_step2_desc:"Listede aşağı kaydırman gerekebilir", ios_step3_title:"\"Ekle\"ye dokun", ios_step3_desc:"Uygulama ana ekranında belirir", ios_install_note:"Not: iOS'ta bu adım yalnızca Safari üzerinden çalışır. Ekledikten sonra bildirimler de (iOS 16.4+) etkinleştirilebilir.", resume_action:"Devam", resume_not_found:"Bu kart artık listede yok", sw_not_ready:"Service Worker henüz hazır değil", need_internet_download:"İndirmek için internet gerekli", downloading_dicts:"📦 Sözlükler indiriliyor…", offline_pack_ready:"✅ Çevrimdışı paket hazır — internet olmadan da çalışır", daily_word_title:"🌙 Günün kelimesi", daily_word_not_loaded:"Kartlar henüz yüklenmedi. Birkaç saniye sonra tekrar dene.", listen_row:"Dinle", listen_desc:"Telaffuzu seslendir", add_to_favs:"Favorilere ekle", added_toast:"⭐ Eklendi", share_row:"Paylaş", share_desc:"Arkadaşına gönder", removed_from_favs:"Favorilerden çıkarıldı", copy_to_clipboard:"Panoya kopyala", shared_content_title:"📥 Paylaşılan metin", shared_content_desc:"Başka bir uygulamadan gönderdiğin içerik:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — kaldığın yerden devam?'; }, resume_returned:function(word){ return "✅ "+word+" kartına dönüldü"; },
   save_to_word_list:"Kendi kelime listene kaydet", added_to_favs_toast:"⭐ Favorilere eklendi",
-  lock_pdf_feature_name:"Kelime listesi PDF", lock_pdf_msg:"Bu özellik için <b>💛</b>, <b>⭐️</b> veya <b>👑</b> rozetlerinden birine sahip olman gerekiyor.<br><br>Rozetleri ❤️ <b>Lumira'yı Destekle</b> bölümünden edinebilirsin.", lock_any_badge_msg:"Bu özelliği kullanmak için herhangi bir destek rozetine sahip olman gerekiyor — en küçüğü bile (👍🏻 Teşekkür) yeterli.<br><br>Rozetleri ❤️ <b>Lumira'yı Destekle</b> bölümünden edinebilirsin.", purchase_start_failed:"Satın alma başlatılamadı.", purchase_complete_failed:"Satın alma tamamlanamadı.", support_title:"❤️ Lumira'yı Destekle", support_desc:"Lumira'yı herkes için ücretsiz sunmaya devam etmek istiyoruz. Eğer uygulamayı faydalı bulduysanız, tamamen isteğe bağlı bir destekle yeni özelliklerin geliştirilmesine katkıda bulunabilirsiniz. Her katkı bizim için çok değerli. ❤️ 🇹🇷", pdf_export_title:"📄 Kelimeleri PDF olarak indir", pdf_export_desc:"Dil ve seviye seç, kitap düzeninde bir kelime listesi oluşturulsun.", pdf_words_not_found:"Bu seçimde kelime bulunamadı", pdf_generate_btn:"Listeyi oluştur", pdf_generating:"Hazırlanıyor…", pdf_dict_load_failed:"Sözlük yüklenemedi", pdf_popup_blocked:"Açılır pencere engellendi — tarayıcı ayarlarından izin ver", pdf_web_payment_note:"Bu satın alma yalnızca Play Store üzerinden yapılabilir. Web sürümünde ödeme alınmıyor.", lock_level_msg:function(need,lvl){ return "Bu özelliği kullanmak için en az <b>"+need+". seviye</b> olmalısın. Şu anki seviyen: <b>"+lvl+"</b>.<br><br>🎯 <b>Kişisel</b> sekmesinden çalışarak seviyeni yükseltebilirsin."; }, your_badges:function(badges){ return "Rozetlerin: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Sana rozet verildi: "+name+" · +"+xp+" özellikler açıldı"; },},
+  lock_pdf_feature_name:"Kelime listesi PDF", lock_pdf_msg:"Bu özellik için <b>💛</b>, <b>⭐️</b> veya <b>👑</b> rozetlerinden birine sahip olman gerekiyor.<br><br>Rozetleri ❤️ <b>Lumira'yı Destekle</b> bölümünden edinebilirsin.", lock_any_badge_msg:"Bu özelliği kullanmak için herhangi bir destek rozetine sahip olman gerekiyor — en küçüğü bile (👍🏻 Teşekkür) yeterli.<br><br>Rozetleri ❤️ <b>Lumira'yı Destekle</b> bölümünden edinebilirsin.", purchase_start_failed:"Satın alma başlatılamadı.", purchase_complete_failed:"Satın alma tamamlanamadı.", support_title:"❤️ Lumira'yı Destekle", support_desc:"Lumira'yı herkes için ücretsiz sunmaya devam etmek istiyoruz. Eğer uygulamayı faydalı bulduysanız, tamamen isteğe bağlı bir destekle yeni özelliklerin geliştirilmesine katkıda bulunabilirsiniz. Her katkı bizim için çok değerli. ❤️ 🇹🇷", pdf_export_title:"📄 Kelimeleri PDF olarak indir", pdf_export_desc:"Dil ve seviye seç, kitap düzeninde bir kelime listesi oluşturulsun.", pdf_words_not_found:"Bu seçimde kelime bulunamadı", pdf_generate_btn:"Listeyi oluştur", pdf_generating:"Hazırlanıyor…", pdf_dict_load_failed:"Sözlük yüklenemedi", pdf_popup_blocked:"Açılır pencere engellendi — tarayıcı ayarlarından izin ver", pdf_web_payment_note:"Bu satın alma yalnızca Play Store üzerinden yapılabilir. Web sürümünde ödeme alınmıyor.", lock_level_msg:function(need,lvl){ return "Bu özelliği kullanmak için en az <b>"+need+". seviye</b> olmalısın. Şu anki seviyen: <b>"+lvl+"</b>.<br><br>🎯 <b>Kişisel</b> sekmesinden çalışarak seviyeni yükseltebilirsin."; }, your_badges:function(badges){ return "Rozetlerin: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Sana rozet verildi: "+name+" · +"+xp+" özellikler açıldı"; }, purchase_success_toast:function(b,n,x){return b+' '+n+' rozeti kazandın · +'+x+' XP';}, purchase_total_label:"Toplam",},
 en:{
-  tab_cards:"Cards", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
+  tab_cards:"Cards", tab_quiz:"Quiz", tab_personal:"🎯 Personal", tab_notebook:"📒 Notebook",
   main_sub_full:"Choose level, language and category — tap a card, listen, learn",
   level_all:"ALL", cat_all:"All", cat_pick:"Choose Category",
   tap_to_listen:"Tap to Listen", tap_to_flip:"Tap the card to flip",
@@ -1409,7 +1433,7 @@ en:{
   streak_days:function(n){ return n+"-day streak"; },
   level_xp:function(lvl,xp){ return "Level "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "You have <b>"+n+"</b> words due for daily review"; },
-  review_btn:"Review", quiz_finish:"Finish Quiz",
+  review_btn:"Review", quiz_finish:"Finish Quiz", quiz_progress:function(c,t){return "Question "+c+" / "+t;}, quiz_score:function(s){return s+" correct";}, quiz_your_answer:"Your answer:", quiz_correct_answer:"Correct answer:", quiz_final_score:function(s,t){return s+" / "+t+" correct answers";}, nb_login_required:"📒 Your Notebook is stored with your account.<br>Please sign in first to continue.", nb_study_lang_title:"🌍 Which Language Do You Want to Study?", nb_study_lang_sub:"First pick a language among the words in your Notebook.", nb_word_count:function(a){return a+' words';}, nb_cancel:"Cancel", nb_study_level_title:"📊 Which Level Do You Want to Study?", nb_study_level_sub:function(a){return 'You can study all '+a+' words or just one level.';}, nb_all_caps:"ALL", nb_back_change_lang:"← Change Language", nb_quiz_lang_title:"🧩 Quiz — Which Language?", nb_quiz_lang_sub:"First pick a language, then you'll be quizzed by difficulty level.", nb_quiz_diff_title:"🧩 Quiz — Difficulty Level", nb_quiz_diff_sub:function(a){return 'At which difficulty do you want to be quizzed on '+a+' words?';}, nb_quiz_all_diff:function(a){return 'Quiz with All Difficulties ('+a+' words)';}, nb_intro:"The words you've added and the cards you've favorited are stored here, tied to your account — separate from the shared built-in lists. Sign in with the same account on a different device and your words come with you.", nb_edit_title:"✏️ Edit Word", nb_add_title:"➕ Add New Word", nb_step1_lang:"1) Which language? *", nb_step2_search:"2) Search the built-in dictionary (optional)", nb_search_placeholder:"🔍 e.g. Schmetterling, hello, manzana…", nb_step3_info:"3) Enter the details", nb_word_placeholder:"Word * (e.g. Schmetterling)", nb_meaning_placeholder:"Meaning (e.g. butterfly)", nb_cat_placeholder:"Category (optional, e.g. Animals)", nb_example_placeholder:"Example sentence (optional)", nb_save:"Save", nb_add_to_notebook:"Add to My Notebook", nb_start_study:function(a){return '🚀 Start Studying ('+a+' words)';}, nb_quiz_ol:"🧩 Take a Quiz", nb_writing_practice:"✍️ Writing Practice", nb_search_notebook_placeholder:"Search my Notebook…", nb_all_langs:"All languages", nb_all_cats:"All categories", nb_all_diffs:"All levels", nb_diff_easy:"Easy", nb_diff_medium:"Medium", nb_diff_hard:"Hard", nb_diff_easy_sub:"I remember it easily", nb_diff_medium_sub:"I struggle a little", nb_diff_hard_sub:"I keep forgetting it", nb_diff_level_title:"DIFFICULTY LEVEL", nb_finish_study:"✅ Finish Studying", nb_list_title:"My Notebook", nb_list_count:function(a,b){return a+' / '+b+' words';}, nb_empty_none:"You haven't added any words yet.<br>You can add a word you learned online, in class, or in everyday life above, or see the words you've starred ⭐ as favorites on the cards here.", nb_empty_filtered:"No words match these filters.", nb_badge_favorite:"⭐ Favorite", nb_badge_added:"📝 Added", nb_edit_tooltip:"Edit", nb_delete_tooltip:"Delete", nb_select_lang_first:"Please select a language first.", nb_autofilled_toast:"🤖 Category/example sentence auto-filled — you can edit it later if you want.", nb_duplicate_word:"This word is already in your Notebook.", nb_deleted_toast:"Removed from your Notebook.", nb_delete_failed_toast:"Couldn't delete it, want to try again?", nb_custom_level_tag:"CUSTOM", nb_favorite_tag:"Favorite", nb_my_notebook_tag:"My Notebook", nb_fav_login_required:"Please sign in first to add favorites.", nb_fav_removed:"Removed from favorites — not deleted from your Notebook.", nb_fav_remove_failed:"Couldn't remove from favorites, want to try again?", nb_fav_added:"⭐ Added to favorites — you can see it in your Notebook.", nb_fav_add_failed:"There was a problem adding the favorite, want to try again?", wp_choose_lang_sub:"Which language do you want to practice writing in?", wp_back_to_notebook:"← Back to My Notebook", wp_choose_level_sub:"Choose your level", wp_empty_text:"Write something first, then let's check it 🙂", wp_too_long:"The text is too long (max. 4000 characters). Try a shorter section.", wp_checking:"Checking...", wp_loading_msg:"📝 Checking your text, this may take a few seconds...", wp_clean_msg:"✅ No errors found, you wrote a great text!", wp_your_text:"Your Text", wp_listen:"🔊 Listen", wp_errors_found:function(a){return 'Errors Found ('+a+')';}, wp_explanations:"Explanations", wp_corrected_text:"Corrected Text", wp_service_error:function(a){return 'The service is not responding right now (HTTP '+a+'). Try again in a bit.';}, wp_generic_error:"Something went wrong during the check. Check your internet connection and try again in a bit.", wp_check_btn:"Check", wp_back_level:"← Change Level", wp_placeholder:function(a){return 'Write a text in '+a+' here...';}, wp_lang_level_sub:function(a,b){return a+' · Level '+b;},
   pm_exam_completed:"Test Complete",
   pm_level_result:function(lvl){ return "🎓 Your "+lvl+" Level Result"; },
   pm_scope_categories:function(n){ return n+" categories"; }, pm_scope_all_categories:"all categories",
@@ -1531,9 +1555,9 @@ en:{
   fav_title:"⭐ My Favorites", fav_sub:"Your saved words are stored on this device.", fav_empty:"No favorites yet.<br>Tap the ☆ on the top-right of a card to add one.", fav_share_row:"Share / download favorites", download_failed:"Download failed", share_app_text:"Word cards, quizzes and pronunciation in 6 languages — works offline too 🌙", copied_clipboard:"📋 Copied to clipboard", copy_failed:"Couldn't copy", backup_title:"My progress backup", backup_restored:"✅ Backup restored, refreshing…", file_unreadable:"Couldn't read the file", err_report_title:"🐞 Error report", err_no_records:"No errors logged - everything's fine.", err_none_logged:"🎉 No errors logged.", err_share_row:"Share / download report", err_share_desc:"Device info + recent errors", err_report_title2:"Error report", err_clear_row:"Clear records", cleared:"Cleared", rate_title:"⭐ Enjoying it?", rate_sub:"Rating the app really helps us out.", rate_now:"Rate on Play Store", rate_time:"Takes 30 seconds", rate_later:"Remind me later", rate_later_desc:"We'll ask again in a week", rate_never:"Don't ask again", word_count:function(n){ return n+" words"; }, fav_export_title:function(d){ return "Lumira · Language Cards — My Favorites ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" downloaded"; }, err_records_found:function(n){ return n+" records found."; },
   back_to_exit:"Press back again to exit", installing:"Installing…", install_add_title:"Add to home screen", install_add_desc:"Full screen, offline and faster", install_go:"Install", install_added:"🎉 Added to your home screen!", ios_install_title:"📲 Add to Home Screen", ios_install_desc:"To use the app full screen and offline:", ios_step1_title:"Tap the share icon in Safari", ios_step1_desc:"The ⬆️ icon in the bottom bar", ios_step2_title:"Choose \"Add to Home Screen\"", ios_step2_desc:"You may need to scroll down the list", ios_step3_title:"Tap \"Add\"", ios_step3_desc:"The app appears on your home screen", ios_install_note:"Note: on iOS this only works through Safari. After adding, notifications (iOS 16.4+) can also be enabled.", resume_action:"Continue", resume_not_found:"This card isn't in the list anymore", sw_not_ready:"Service Worker isn't ready yet", need_internet_download:"Internet connection needed to download", downloading_dicts:"📦 Downloading dictionaries…", offline_pack_ready:"✅ Offline pack ready — works without internet", daily_word_title:"🌙 Word of the day", daily_word_not_loaded:"Cards haven't loaded yet. Try again in a few seconds.", listen_row:"Listen", listen_desc:"Hear the pronunciation", add_to_favs:"Add to favorites", added_toast:"⭐ Added", share_row:"Share", share_desc:"Send to a friend", removed_from_favs:"Removed from favorites", copy_to_clipboard:"Copy to clipboard", shared_content_title:"📥 Shared text", shared_content_desc:"Content shared from another app:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — pick up where you left off?'; }, resume_returned:function(word){ return "✅ Back to "+word; },
   save_to_word_list:"Save to your own word list", added_to_favs_toast:"⭐ Added to favorites",
-  lock_pdf_feature_name:"Word list PDF", lock_pdf_msg:"You need one of the <b>💛</b>, <b>⭐️</b> or <b>👑</b> badges to use this feature.<br><br>You can get a badge from ❤️ <b>Support Lumira</b>.", lock_any_badge_msg:"You need any support badge to use this feature — even the smallest one (👍🏻 Thanks) is enough.<br><br>You can get a badge from ❤️ <b>Support Lumira</b>.", purchase_start_failed:"Couldn't start the purchase.", purchase_complete_failed:"Couldn't complete the purchase.", support_title:"❤️ Support Lumira", support_desc:"We want to keep offering Lumira for free to everyone. If you find the app useful, you can support new feature development with a completely optional contribution. Every contribution means a lot to us. ❤️ 🇹🇷", pdf_export_title:"📄 Download words as PDF", pdf_export_desc:"Choose a language and level to generate a book-style word list.", pdf_words_not_found:"No words found for this selection", pdf_generate_btn:"Generate list", pdf_generating:"Preparing…", pdf_dict_load_failed:"Couldn't load the dictionary", pdf_popup_blocked:"Pop-up blocked — allow it in your browser settings", pdf_web_payment_note:"This purchase can only be made through the Play Store. Payments aren't accepted in the web version.", lock_level_msg:function(need,lvl){ return "You need to be at least <b>level "+need+"</b> to use this. Your current level: <b>"+lvl+"</b>.<br><br>🎯 Study in the <b>Personal</b> tab to level up."; }, your_badges:function(badges){ return "Your badges: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 You earned a badge: "+name+" · +"+xp+" features unlocked"; },},
+  lock_pdf_feature_name:"Word list PDF", lock_pdf_msg:"You need one of the <b>💛</b>, <b>⭐️</b> or <b>👑</b> badges to use this feature.<br><br>You can get a badge from ❤️ <b>Support Lumira</b>.", lock_any_badge_msg:"You need any support badge to use this feature — even the smallest one (👍🏻 Thanks) is enough.<br><br>You can get a badge from ❤️ <b>Support Lumira</b>.", purchase_start_failed:"Couldn't start the purchase.", purchase_complete_failed:"Couldn't complete the purchase.", support_title:"❤️ Support Lumira", support_desc:"We want to keep offering Lumira for free to everyone. If you find the app useful, you can support new feature development with a completely optional contribution. Every contribution means a lot to us. ❤️ 🇹🇷", pdf_export_title:"📄 Download words as PDF", pdf_export_desc:"Choose a language and level to generate a book-style word list.", pdf_words_not_found:"No words found for this selection", pdf_generate_btn:"Generate list", pdf_generating:"Preparing…", pdf_dict_load_failed:"Couldn't load the dictionary", pdf_popup_blocked:"Pop-up blocked — allow it in your browser settings", pdf_web_payment_note:"This purchase can only be made through the Play Store. Payments aren't accepted in the web version.", lock_level_msg:function(need,lvl){ return "You need to be at least <b>level "+need+"</b> to use this. Your current level: <b>"+lvl+"</b>.<br><br>🎯 Study in the <b>Personal</b> tab to level up."; }, your_badges:function(badges){ return "Your badges: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 You earned a badge: "+name+" · +"+xp+" features unlocked"; }, purchase_success_toast:function(b,n,x){return b+' You earned the '+n+' badge · +'+x+' XP';}, purchase_total_label:"Total",},
 de:{
-  tab_cards:"Karten", tab_quiz:"Quiz", tab_personal:"🎯 Persönlich",
+  tab_cards:"Karten", tab_quiz:"Quiz", tab_personal:"🎯 Persönlich", tab_notebook:"📒 Notizen",
   main_sub_full:"Stufe, Sprache und Kategorie wählen — Karte antippen, hören, lernen",
   level_all:"ALLE", cat_all:"Alle", cat_pick:"Kategorie wählen",
   tap_to_listen:"Zum Anhören tippen", tap_to_flip:"Zum Umdrehen antippen",
@@ -1594,7 +1618,7 @@ de:{
   streak_days:function(n){ return n+"-Tage-Serie"; },
   level_xp:function(lvl,xp){ return "Stufe "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "Du hast <b>"+n+"</b> Wörter zur täglichen Wiederholung"; },
-  review_btn:"Wiederholen", quiz_finish:"Quiz beenden",
+  review_btn:"Wiederholen", quiz_finish:"Quiz beenden", quiz_progress:function(c,t){return "Frage "+c+" / "+t;}, quiz_score:function(s){return s+" richtig";}, quiz_your_answer:"Deine Antwort:", quiz_correct_answer:"Richtige Antwort:", quiz_final_score:function(s,t){return s+" / "+t+" richtige Antworten";}, nb_login_required:"📒 Dein Notizbuch wird mit deinem Konto gespeichert.<br>Bitte melde dich zuerst an, um fortzufahren.", nb_study_lang_title:"🌍 In welcher Sprache möchtest du lernen?", nb_study_lang_sub:"Wähle zuerst eine Sprache aus den Wörtern in deinem Notizbuch.", nb_word_count:function(a){return a+' Wörter';}, nb_cancel:"Abbrechen", nb_study_level_title:"📊 Mit welchem Niveau möchtest du lernen?", nb_study_level_sub:function(a){return 'Du kannst alle '+a+'-Wörter oder nur ein Niveau lernen.';}, nb_all_caps:"ALLE", nb_back_change_lang:"← Sprache ändern", nb_quiz_lang_title:"🧩 Quiz — Welche Sprache?", nb_quiz_lang_sub:"Wähle zuerst eine Sprache, danach wirst du nach Schwierigkeitsgrad getestet.", nb_quiz_diff_title:"🧩 Quiz — Schwierigkeitsgrad", nb_quiz_diff_sub:function(a){return 'Bei welchem Schwierigkeitsgrad möchtest du bei '+a+'-Wörtern getestet werden?';}, nb_quiz_all_diff:function(a){return 'Quiz mit allen Schwierigkeitsgraden ('+a+' Wörter)';}, nb_intro:"Die von dir hinzugefügten Wörter und favorisierten Karten werden hier, verknüpft mit deinem Konto, gespeichert — getrennt von den öffentlichen Standardlisten. Meldest du dich auf einem anderen Gerät mit demselben Konto an, sind deine Wörter weiterhin da.", nb_edit_title:"✏️ Wort bearbeiten", nb_add_title:"➕ Neues Wort hinzufügen", nb_step1_lang:"1) Welche Sprache? *", nb_step2_search:"2) Im integrierten Wörterbuch suchen (optional)", nb_search_placeholder:"🔍 z. B. Schmetterling, hello, manzana…", nb_step3_info:"3) Angaben eingeben", nb_word_placeholder:"Wort * (z. B. Schmetterling)", nb_meaning_placeholder:"Bedeutung (z. B. Schmetterling)", nb_cat_placeholder:"Kategorie (optional, z. B. Tiere)", nb_example_placeholder:"Beispielsatz (optional)", nb_save:"Speichern", nb_add_to_notebook:"Zu meinem Notizbuch hinzufügen", nb_start_study:function(a){return '🚀 Lernen beginnen ('+a+' Wörter)';}, nb_quiz_ol:"🧩 Quiz starten", nb_writing_practice:"✍️ Schreibübung", nb_search_notebook_placeholder:"In meinem Notizbuch suchen…", nb_all_langs:"Alle Sprachen", nb_all_cats:"Alle Kategorien", nb_all_diffs:"Alle Stufen", nb_diff_easy:"Leicht", nb_diff_medium:"Mittel", nb_diff_hard:"Schwer", nb_diff_easy_sub:"Ich erinnere mich leicht daran", nb_diff_medium_sub:"Ich tue mich etwas schwer", nb_diff_hard_sub:"Ich vergesse es", nb_diff_level_title:"SCHWIERIGKEITSGRAD", nb_finish_study:"✅ Lernen beenden", nb_list_title:"Mein Notizbuch", nb_list_count:function(a,b){return a+' / '+b+' Wörter';}, nb_empty_none:"Du hast noch keine Wörter hinzugefügt.<br>Du kannst oben ein Wort hinzufügen, das du online, im Unterricht oder im Alltag gelernt hast, oder hier die mit ⭐ favorisierten Karten sehen.", nb_empty_filtered:"Keine Wörter entsprechen diesen Filtern.", nb_badge_favorite:"⭐ Favorit", nb_badge_added:"📝 Hinzugefügt", nb_edit_tooltip:"Bearbeiten", nb_delete_tooltip:"Löschen", nb_select_lang_first:"Bitte wähle zuerst eine Sprache.", nb_autofilled_toast:"🤖 Kategorie/Beispielsatz automatisch ausgefüllt — du kannst es später bei Bedarf bearbeiten.", nb_duplicate_word:"Dieses Wort ist bereits in deinem Notizbuch.", nb_deleted_toast:"Aus deinem Notizbuch gelöscht.", nb_delete_failed_toast:"Löschen fehlgeschlagen, nochmal versuchen?", nb_custom_level_tag:"EIGEN", nb_favorite_tag:"Favorit", nb_my_notebook_tag:"Mein Notizbuch", nb_fav_login_required:"Bitte melde dich zuerst an, um Favoriten hinzuzufügen.", nb_fav_removed:"Aus Favoriten entfernt — nicht aus deinem Notizbuch gelöscht.", nb_fav_remove_failed:"Konnte nicht aus Favoriten entfernt werden, nochmal versuchen?", nb_fav_added:"⭐ Zu Favoriten hinzugefügt — du findest es in deinem Notizbuch.", nb_fav_add_failed:"Beim Hinzufügen des Favoriten ist ein Problem aufgetreten, nochmal versuchen?", wp_choose_lang_sub:"In welcher Sprache möchtest du das Schreiben üben?", wp_back_to_notebook:"← Zurück zu meinem Notizbuch", wp_choose_level_sub:"Wähle dein Niveau", wp_empty_text:"Schreib zuerst etwas, dann prüfen wir es 🙂", wp_too_long:"Der Text ist zu lang (max. 4000 Zeichen). Versuche einen kürzeren Abschnitt.", wp_checking:"Wird geprüft...", wp_loading_msg:"📝 Dein Text wird geprüft, das kann ein paar Sekunden dauern...", wp_clean_msg:"✅ Keine Fehler gefunden, du hast einen tollen Text geschrieben!", wp_your_text:"Dein Text", wp_listen:"🔊 Anhören", wp_errors_found:function(a){return 'Gefundene Fehler ('+a+')';}, wp_explanations:"Erklärungen", wp_corrected_text:"Korrigierter Text", wp_service_error:function(a){return 'Der Dienst antwortet gerade nicht (HTTP '+a+'). Versuche es später erneut.';}, wp_generic_error:"Bei der Prüfung ist ein Fehler aufgetreten. Überprüfe deine Internetverbindung und versuche es später erneut.", wp_check_btn:"Prüfen", wp_back_level:"← Niveau ändern", wp_placeholder:function(a){return 'Schreib hier einen Text auf '+a+'...';}, wp_lang_level_sub:function(a,b){return a+' · Niveau '+b;},
   pm_exam_completed:"Test abgeschlossen",
   pm_level_result:function(lvl){ return "🎓 Dein "+lvl+"-Ergebnis"; },
   pm_scope_categories:function(n){ return n+" Kategorien"; }, pm_scope_all_categories:"alle Kategorien",
@@ -1689,9 +1713,9 @@ de:{
   fav_title:"⭐ Meine Favoriten", fav_sub:"Deine gespeicherten Wörter werden auf diesem Gerät gespeichert.", fav_empty:"Noch keine Favoriten.<br>Tippe auf das ☆ oben rechts auf einer Karte, um eins hinzuzufügen.", fav_share_row:"Favoriten teilen / herunterladen", download_failed:"Download fehlgeschlagen", share_app_text:"Wortkarten, Quiz und Aussprache in 6 Sprachen — funktioniert auch offline 🌙", copied_clipboard:"📋 In die Zwischenablage kopiert", copy_failed:"Konnte nicht kopiert werden", backup_title:"Mein Fortschritts-Backup", backup_restored:"✅ Backup wiederhergestellt, wird aktualisiert…", file_unreadable:"Datei konnte nicht gelesen werden", err_report_title:"🐞 Fehlerbericht", err_no_records:"Keine Fehler protokolliert - alles in Ordnung.", err_none_logged:"🎉 Keine Fehler protokolliert.", err_share_row:"Bericht teilen / herunterladen", err_share_desc:"Geräteinfo + letzte Fehler", err_report_title2:"Fehlerbericht", err_clear_row:"Einträge löschen", cleared:"Gelöscht", rate_title:"⭐ Gefällt sie dir?", rate_sub:"Eine Bewertung hilft uns sehr.", rate_now:"Im Play Store bewerten", rate_time:"Dauert 30 Sekunden", rate_later:"Später erinnern", rate_later_desc:"Wir fragen in einer Woche erneut", rate_never:"Nicht mehr fragen", word_count:function(n){ return n+" Wörter"; }, fav_export_title:function(d){ return "Lumira · Sprachkarten — Meine Favoriten ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" heruntergeladen"; }, err_records_found:function(n){ return n+" Einträge gefunden."; },
   back_to_exit:"Zurück erneut drücken zum Beenden", installing:"Wird installiert…", install_add_title:"Zum Startbildschirm hinzufügen", install_add_desc:"Vollbild, offline und schneller", install_go:"Installieren", install_added:"🎉 Zum Startbildschirm hinzugefügt!", ios_install_title:"📲 Zum Startbildschirm hinzufügen", ios_install_desc:"Um die App im Vollbild und offline zu nutzen:", ios_step1_title:"Tippe auf das Teilen-Symbol in Safari", ios_step1_desc:"Das ⬆️-Symbol in der unteren Leiste", ios_step2_title:"Wähle „Zum Home-Bildschirm“", ios_step2_desc:"Du musst evtl. in der Liste nach unten scrollen", ios_step3_title:"Tippe auf „Hinzufügen“", ios_step3_desc:"Die App erscheint auf deinem Startbildschirm", ios_install_note:"Hinweis: Unter iOS funktioniert dies nur über Safari. Nach dem Hinzufügen können auch Benachrichtigungen (iOS 16.4+) aktiviert werden.", resume_action:"Weiter", resume_not_found:"Diese Karte ist nicht mehr in der Liste", sw_not_ready:"Service Worker ist noch nicht bereit", need_internet_download:"Internetverbindung zum Herunterladen erforderlich", downloading_dicts:"📦 Wörterbücher werden heruntergeladen…", offline_pack_ready:"✅ Offline-Paket bereit — funktioniert ohne Internet", daily_word_title:"🌙 Wort des Tages", daily_word_not_loaded:"Karten wurden noch nicht geladen. Versuche es in ein paar Sekunden erneut.", listen_row:"Anhören", listen_desc:"Aussprache anhören", add_to_favs:"Zu Favoriten hinzufügen", added_toast:"⭐ Hinzugefügt", share_row:"Teilen", share_desc:"An einen Freund senden", removed_from_favs:"Aus Favoriten entfernt", copy_to_clipboard:"In die Zwischenablage kopieren", shared_content_title:"📥 Geteilter Text", shared_content_desc:"Inhalt aus einer anderen App:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — dort weitermachen, wo du aufgehört hast?'; }, resume_returned:function(word){ return "✅ Zurück zu "+word; },
   save_to_word_list:"In deiner eigenen Wortliste speichern", added_to_favs_toast:"⭐ Zu Favoriten hinzugefügt",
-  lock_pdf_feature_name:"Wortliste PDF", lock_pdf_msg:"Du brauchst eines der Abzeichen <b>💛</b>, <b>⭐️</b> oder <b>👑</b>, um diese Funktion zu nutzen.<br><br>Ein Abzeichen erhältst du über ❤️ <b>Lumira unterstützen</b>.", lock_any_badge_msg:"Du brauchst irgendein Unterstützer-Abzeichen für diese Funktion — selbst das kleinste (👍🏻 Danke) reicht.<br><br>Ein Abzeichen erhältst du über ❤️ <b>Lumira unterstützen</b>.", purchase_start_failed:"Kauf konnte nicht gestartet werden.", purchase_complete_failed:"Kauf konnte nicht abgeschlossen werden.", support_title:"❤️ Lumira unterstützen", support_desc:"Wir möchten Lumira weiterhin kostenlos für alle anbieten. Wenn du die App nützlich findest, kannst du mit einem völlig freiwilligen Beitrag zur Entwicklung neuer Funktionen beitragen. Jeder Beitrag bedeutet uns viel. ❤️ 🇹🇷", pdf_export_title:"📄 Wörter als PDF herunterladen", pdf_export_desc:"Wähle Sprache und Stufe für eine Wortliste im Buchformat.", pdf_words_not_found:"Keine Wörter für diese Auswahl gefunden", pdf_generate_btn:"Liste erstellen", pdf_generating:"Wird vorbereitet…", pdf_dict_load_failed:"Wörterbuch konnte nicht geladen werden", pdf_popup_blocked:"Pop-up blockiert — in den Browsereinstellungen erlauben", pdf_web_payment_note:"Dieser Kauf ist nur über den Play Store möglich. In der Webversion werden keine Zahlungen akzeptiert.", lock_level_msg:function(need,lvl){ return "Du musst mindestens <b>Stufe "+need+"</b> sein, um dies zu nutzen. Deine aktuelle Stufe: <b>"+lvl+"</b>.<br><br>🎯 Übe im Tab <b>Persönlich</b>, um aufzusteigen."; }, your_badges:function(badges){ return "Deine Abzeichen: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Du hast ein Abzeichen erhalten: "+name+" · +"+xp+" Funktionen freigeschaltet"; },},
+  lock_pdf_feature_name:"Wortliste PDF", lock_pdf_msg:"Du brauchst eines der Abzeichen <b>💛</b>, <b>⭐️</b> oder <b>👑</b>, um diese Funktion zu nutzen.<br><br>Ein Abzeichen erhältst du über ❤️ <b>Lumira unterstützen</b>.", lock_any_badge_msg:"Du brauchst irgendein Unterstützer-Abzeichen für diese Funktion — selbst das kleinste (👍🏻 Danke) reicht.<br><br>Ein Abzeichen erhältst du über ❤️ <b>Lumira unterstützen</b>.", purchase_start_failed:"Kauf konnte nicht gestartet werden.", purchase_complete_failed:"Kauf konnte nicht abgeschlossen werden.", support_title:"❤️ Lumira unterstützen", support_desc:"Wir möchten Lumira weiterhin kostenlos für alle anbieten. Wenn du die App nützlich findest, kannst du mit einem völlig freiwilligen Beitrag zur Entwicklung neuer Funktionen beitragen. Jeder Beitrag bedeutet uns viel. ❤️ 🇹🇷", pdf_export_title:"📄 Wörter als PDF herunterladen", pdf_export_desc:"Wähle Sprache und Stufe für eine Wortliste im Buchformat.", pdf_words_not_found:"Keine Wörter für diese Auswahl gefunden", pdf_generate_btn:"Liste erstellen", pdf_generating:"Wird vorbereitet…", pdf_dict_load_failed:"Wörterbuch konnte nicht geladen werden", pdf_popup_blocked:"Pop-up blockiert — in den Browsereinstellungen erlauben", pdf_web_payment_note:"Dieser Kauf ist nur über den Play Store möglich. In der Webversion werden keine Zahlungen akzeptiert.", lock_level_msg:function(need,lvl){ return "Du musst mindestens <b>Stufe "+need+"</b> sein, um dies zu nutzen. Deine aktuelle Stufe: <b>"+lvl+"</b>.<br><br>🎯 Übe im Tab <b>Persönlich</b>, um aufzusteigen."; }, your_badges:function(badges){ return "Deine Abzeichen: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Du hast ein Abzeichen erhalten: "+name+" · +"+xp+" Funktionen freigeschaltet"; }, purchase_success_toast:function(b,n,x){return b+' Du hast das Abzeichen '+n+' erhalten · +'+x+' XP';}, purchase_total_label:"Gesamt",},
 ar:{
-  tab_cards:"البطاقات", tab_quiz:"اختبار", tab_personal:"🎯 شخصي",
+  tab_cards:"البطاقات", tab_quiz:"اختبار", tab_personal:"🎯 شخصي", tab_notebook:"📒 ملاحظاتي",
   main_sub_full:"اختر المستوى واللغة والفئة — اضغط على البطاقة، استمع، تعلّم",
   level_all:"الكل", cat_all:"الكل", cat_pick:"اختر الفئة",
   tap_to_listen:"اضغط للاستماع", tap_to_flip:"اضغط على البطاقة لقلبها",
@@ -1752,7 +1776,7 @@ ar:{
   streak_days:function(n){ return "تتابع "+n+" أيام"; },
   level_xp:function(lvl,xp){ return "المستوى "+lvl+" - "+xp+" نقطة خبرة"; },
   due_review_banner:function(n){ return "لديك <b>"+n+"</b> كلمة بحاجة لمراجعة يومية"; },
-  review_btn:"مراجعة", quiz_finish:"إنهاء الاختبار",
+  review_btn:"مراجعة", quiz_finish:"إنهاء الاختبار", quiz_progress:function(c,t){return "السؤال "+c+" / "+t;}, quiz_score:function(s){return s+" صحيحة";}, quiz_your_answer:"إجابتك:", quiz_correct_answer:"الإجابة الصحيحة:", quiz_final_score:function(s,t){return s+" / "+t+" إجابة صحيحة";}, nb_login_required:"📒 يتم حفظ دفتر ملاحظاتك مرتبطًا بحسابك.<br>يرجى تسجيل الدخول أولاً للمتابعة.", nb_study_lang_title:"🌍 بأي لغة تريد الدراسة؟", nb_study_lang_sub:"اختر أولاً لغة من بين الكلمات الموجودة في دفترك.", nb_word_count:function(a){return a+' كلمة';}, nb_cancel:"إلغاء", nb_study_level_title:"📊 بأي مستوى تريد الدراسة؟", nb_study_level_sub:function(a){return 'يمكنك دراسة جميع كلمات '+a+' أو مستوى واحد فقط.';}, nb_all_caps:"الكل", nb_back_change_lang:"← تغيير اللغة", nb_quiz_lang_title:"🧩 اختبار — بأي لغة؟", nb_quiz_lang_sub:"اختر لغة أولاً، ثم سيتم اختبارك حسب مستوى الصعوبة.", nb_quiz_diff_title:"🧩 اختبار — مستوى الصعوبة", nb_quiz_diff_sub:function(a){return 'بأي مستوى صعوبة تريد أن يتم اختبارك في كلمات '+a+'؟';}, nb_quiz_all_diff:function(a){return 'اختبار بجميع المستويات ('+a+' كلمة)';}, nb_intro:"الكلمات التي أضفتها والبطاقات التي أضفتها إلى المفضلة محفوظة هنا، مرتبطة بحسابك — منفصلة عن القوائم الجاهزة العامة. إذا سجّلت الدخول من جهاز آخر بنفس الحساب، ستجد كلماتك معك.", nb_edit_title:"✏️ تعديل الكلمة", nb_add_title:"➕ إضافة كلمة جديدة", nb_step1_lang:"1) بأي لغة؟ *", nb_step2_search:"2) ابحث في القاموس الجاهز (اختياري)", nb_search_placeholder:"🔍 مثال: Schmetterling, hello, manzana…", nb_step3_info:"3) أدخل المعلومات", nb_word_placeholder:"الكلمة * (مثال: Schmetterling)", nb_meaning_placeholder:"المعنى (مثال: فراشة)", nb_cat_placeholder:"الفئة (اختياري، مثال: الحيوانات)", nb_example_placeholder:"جملة مثال (اختياري)", nb_save:"حفظ", nb_add_to_notebook:"إضافة إلى دفتري", nb_start_study:function(a){return '🚀 ابدأ الدراسة ('+a+' كلمة)';}, nb_quiz_ol:"🧩 ابدأ الاختبار", nb_writing_practice:"✍️ تدريب الكتابة", nb_search_notebook_placeholder:"البحث في دفتري…", nb_all_langs:"كل اللغات", nb_all_cats:"كل الفئات", nb_all_diffs:"كل المستويات", nb_diff_easy:"سهل", nb_diff_medium:"متوسط", nb_diff_hard:"صعب", nb_diff_easy_sub:"أتذكرها بسهولة", nb_diff_medium_sub:"أواجه بعض الصعوبة", nb_diff_hard_sub:"أنساها", nb_diff_level_title:"مستوى الصعوبة", nb_finish_study:"✅ إنهاء الدراسة", nb_list_title:"دفتري", nb_list_count:function(a,b){return a+' / '+b+' كلمة';}, nb_empty_none:"لم تضف أي كلمات بعد.<br>يمكنك إضافة كلمة تعلمتها عبر الإنترنت أو في الفصل أو في الحياة اليومية من الأعلى، أو رؤية الكلمات التي أضفتها إلى المفضلة بـ ⭐ على البطاقات هنا.", nb_empty_filtered:"لا توجد كلمات تطابق هذه المرشحات.", nb_badge_favorite:"⭐ مفضلة", nb_badge_added:"📝 مضافة", nb_edit_tooltip:"تعديل", nb_delete_tooltip:"حذف", nb_select_lang_first:"يرجى اختيار لغة أولاً.", nb_autofilled_toast:"🤖 تم تعبئة الفئة/جملة المثال تلقائيًا — يمكنك تعديلها لاحقًا إذا أردت.", nb_duplicate_word:"هذه الكلمة موجودة بالفعل في دفترك.", nb_deleted_toast:"تم الحذف من دفترك.", nb_delete_failed_toast:"تعذّر الحذف، هل تريد المحاولة مرة أخرى؟", nb_custom_level_tag:"خاص", nb_favorite_tag:"مفضلة", nb_my_notebook_tag:"دفتري", nb_fav_login_required:"يرجى تسجيل الدخول أولاً لإضافة المفضلة.", nb_fav_removed:"تمت الإزالة من المفضلة — لم يتم حذفها من دفترك.", nb_fav_remove_failed:"تعذّرت الإزالة من المفضلة، هل تريد المحاولة مرة أخرى؟", nb_fav_added:"⭐ تمت الإضافة إلى المفضلة — يمكنك رؤيتها في دفترك.", nb_fav_add_failed:"حدثت مشكلة أثناء إضافة المفضلة، هل تريد المحاولة مرة أخرى؟", wp_choose_lang_sub:"بأي لغة تريد ممارسة الكتابة؟", wp_back_to_notebook:"← العودة إلى دفتري", wp_choose_level_sub:"اختر مستواك", wp_empty_text:"اكتب شيئًا أولاً، ثم دعنا نتحقق منه 🙂", wp_too_long:"النص طويل جدًا (الحد الأقصى 4000 حرف). جرّب جزءًا أقصر.", wp_checking:"جارٍ التحقق...", wp_loading_msg:"📝 جارٍ التحقق من نصك، قد يستغرق ذلك بضع ثوانٍ...", wp_clean_msg:"✅ لم يتم العثور على أخطاء، لقد كتبت نصًا رائعًا!", wp_your_text:"نصك", wp_listen:"🔊 استماع", wp_errors_found:function(a){return 'الأخطاء الموجودة ('+a+')';}, wp_explanations:"التفسيرات", wp_corrected_text:"النص المصحح", wp_service_error:function(a){return 'الخدمة لا تستجيب حاليًا (HTTP '+a+'). حاول مرة أخرى بعد قليل.';}, wp_generic_error:"حدثت مشكلة أثناء التحقق. تحقق من اتصالك بالإنترنت وحاول مرة أخرى بعد قليل.", wp_check_btn:"تحقق", wp_back_level:"← تغيير المستوى", wp_placeholder:function(a){return 'اكتب هنا نصًا باللغة '+a+'...';}, wp_lang_level_sub:function(a,b){return a+' · المستوى '+b;},
   pm_exam_completed:"اكتمل الاختبار",
   pm_level_result:function(lvl){ return "🎓 نتيجتك لمستوى "+lvl; },
   pm_scope_categories:function(n){ return n+" فئات"; }, pm_scope_all_categories:"جميع الفئات",
@@ -1847,9 +1871,9 @@ ar:{
   fav_title:"⭐ مفضلتي", fav_sub:"الكلمات المحفوظة تُخزَّن على هذا الجهاز.", fav_empty:"لا توجد مفضلات بعد.<br>اضغط ☆ أعلى يمين البطاقة لإضافة واحدة.", fav_share_row:"مشاركة / تنزيل المفضلة", download_failed:"فشل التنزيل", share_app_text:"بطاقات كلمات واختبارات ونطق بست لغات — تعمل دون اتصال أيضاً 🌙", copied_clipboard:"📋 تم النسخ إلى الحافظة", copy_failed:"تعذّر النسخ", backup_title:"نسخة احتياطية لتقدّمي", backup_restored:"✅ تمت استعادة النسخة الاحتياطية، جارٍ التحديث…", file_unreadable:"تعذّرت قراءة الملف", err_report_title:"🐞 تقرير الأخطاء", err_no_records:"لا توجد أخطاء مسجّلة - كل شيء على ما يرام.", err_none_logged:"🎉 لا توجد أخطاء مسجّلة.", err_share_row:"مشاركة / تنزيل التقرير", err_share_desc:"معلومات الجهاز + الأخطاء الأخيرة", err_report_title2:"تقرير الأخطاء", err_clear_row:"مسح السجلات", cleared:"تم المسح", rate_title:"⭐ هل أعجبك؟", rate_sub:"تقييمك للتطبيق يساعدنا كثيراً.", rate_now:"قيّم على Play Store", rate_time:"يستغرق 30 ثانية", rate_later:"ذكّرني لاحقاً", rate_later_desc:"سنسأل مجدداً بعد أسبوع", rate_never:"لا تسأل مرة أخرى", word_count:function(n){ return n+" كلمة"; }, fav_export_title:function(d){ return "Lumira · بطاقات اللغة — مفضلتي ("+d+")"; }, downloaded:function(f){ return "⬇️ تم تنزيل "+f; }, err_records_found:function(n){ return "تم العثور على "+n+" سجلاً."; },
   back_to_exit:"اضغط رجوع مرة أخرى للخروج", installing:"جارٍ التثبيت…", install_add_title:"إضافة إلى الشاشة الرئيسية", install_add_desc:"شاشة كاملة، دون اتصال وأسرع", install_go:"تثبيت", install_added:"🎉 تمت الإضافة إلى شاشتك الرئيسية!", ios_install_title:"📲 إضافة إلى الشاشة الرئيسية", ios_install_desc:"لاستخدام التطبيق بملء الشاشة ودون اتصال:", ios_step1_title:"اضغط أيقونة المشاركة في Safari", ios_step1_desc:"أيقونة ⬆️ في الشريط السفلي", ios_step2_title:"اختر \"إضافة إلى الشاشة الرئيسية\"", ios_step2_desc:"قد تحتاج للتمرير لأسفل القائمة", ios_step3_title:"اضغط \"إضافة\"", ios_step3_desc:"يظهر التطبيق على شاشتك الرئيسية", ios_install_note:"ملاحظة: على iOS تعمل هذه الخطوة فقط عبر Safari. بعد الإضافة يمكن أيضاً تفعيل الإشعارات (iOS 16.4+).", resume_action:"متابعة", resume_not_found:"هذه البطاقة لم تعد في القائمة", sw_not_ready:"Service Worker غير جاهز بعد", need_internet_download:"يلزم اتصال إنترنت للتنزيل", downloading_dicts:"📦 جارٍ تنزيل القواميس…", offline_pack_ready:"✅ الحزمة دون اتصال جاهزة — تعمل بدون إنترنت", daily_word_title:"🌙 كلمة اليوم", daily_word_not_loaded:"لم تُحمَّل البطاقات بعد. حاول مرة أخرى بعد ثوانٍ قليلة.", listen_row:"استمع", listen_desc:"اسمع النطق", add_to_favs:"أضف إلى المفضلة", added_toast:"⭐ تمت الإضافة", share_row:"مشاركة", share_desc:"أرسل لصديق", removed_from_favs:"أُزيل من المفضلة", copy_to_clipboard:"نسخ إلى الحافظة", shared_content_title:"📥 نص مشارك", shared_content_desc:"محتوى تمت مشاركته من تطبيق آخر:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — تريد المتابعة من حيث توقفت؟'; }, resume_returned:function(word){ return "✅ عدت إلى "+word; },
   save_to_word_list:"احفظه في قائمة كلماتك الخاصة", added_to_favs_toast:"⭐ أُضيف إلى المفضلة",
-  lock_pdf_feature_name:"قائمة الكلمات PDF", lock_pdf_msg:"تحتاج إلى إحدى الشارات <b>💛</b> أو <b>⭐️</b> أو <b>👑</b> لاستخدام هذه الميزة.<br><br>يمكنك الحصول على شارة من ❤️ <b>ادعم Lumira</b>.", lock_any_badge_msg:"تحتاج إلى أي شارة دعم لاستخدام هذه الميزة — حتى أصغرها (👍🏻 شكراً) كافية.<br><br>يمكنك الحصول على شارة من ❤️ <b>ادعم Lumira</b>.", purchase_start_failed:"تعذّر بدء الشراء.", purchase_complete_failed:"تعذّر إتمام الشراء.", support_title:"❤️ ادعم Lumira", support_desc:"نريد الاستمرار في تقديم Lumira مجاناً للجميع. إذا وجدت التطبيق مفيداً، يمكنك المساهمة في تطوير ميزات جديدة بمساهمة اختيارية بالكامل. كل مساهمة تعني لنا الكثير. ❤️ 🇹🇷", pdf_export_title:"📄 تنزيل الكلمات كملف PDF", pdf_export_desc:"اختر اللغة والمستوى لإنشاء قائمة كلمات بتنسيق كتاب.", pdf_words_not_found:"لم يتم العثور على كلمات لهذا الاختيار", pdf_generate_btn:"إنشاء القائمة", pdf_generating:"جارٍ التحضير…", pdf_dict_load_failed:"تعذّر تحميل القاموس", pdf_popup_blocked:"تم حظر النافذة المنبثقة — اسمح بها من إعدادات المتصفح", pdf_web_payment_note:"لا يمكن إجراء هذا الشراء إلا عبر Play Store. لا تُقبل المدفوعات في النسخة الإلكترونية.", lock_level_msg:function(need,lvl){ return "يجب أن تكون في <b>المستوى "+need+"</b> على الأقل لاستخدام هذا. مستواك الحالي: <b>"+lvl+"</b>.<br><br>🎯 ادرس في تبويب <b>شخصي</b> لرفع مستواك."; }, your_badges:function(badges){ return "شاراتك: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 حصلت على شارة: "+name+" · تم فتح +"+xp+" ميزة"; },},
+  lock_pdf_feature_name:"قائمة الكلمات PDF", lock_pdf_msg:"تحتاج إلى إحدى الشارات <b>💛</b> أو <b>⭐️</b> أو <b>👑</b> لاستخدام هذه الميزة.<br><br>يمكنك الحصول على شارة من ❤️ <b>ادعم Lumira</b>.", lock_any_badge_msg:"تحتاج إلى أي شارة دعم لاستخدام هذه الميزة — حتى أصغرها (👍🏻 شكراً) كافية.<br><br>يمكنك الحصول على شارة من ❤️ <b>ادعم Lumira</b>.", purchase_start_failed:"تعذّر بدء الشراء.", purchase_complete_failed:"تعذّر إتمام الشراء.", support_title:"❤️ ادعم Lumira", support_desc:"نريد الاستمرار في تقديم Lumira مجاناً للجميع. إذا وجدت التطبيق مفيداً، يمكنك المساهمة في تطوير ميزات جديدة بمساهمة اختيارية بالكامل. كل مساهمة تعني لنا الكثير. ❤️ 🇹🇷", pdf_export_title:"📄 تنزيل الكلمات كملف PDF", pdf_export_desc:"اختر اللغة والمستوى لإنشاء قائمة كلمات بتنسيق كتاب.", pdf_words_not_found:"لم يتم العثور على كلمات لهذا الاختيار", pdf_generate_btn:"إنشاء القائمة", pdf_generating:"جارٍ التحضير…", pdf_dict_load_failed:"تعذّر تحميل القاموس", pdf_popup_blocked:"تم حظر النافذة المنبثقة — اسمح بها من إعدادات المتصفح", pdf_web_payment_note:"لا يمكن إجراء هذا الشراء إلا عبر Play Store. لا تُقبل المدفوعات في النسخة الإلكترونية.", lock_level_msg:function(need,lvl){ return "يجب أن تكون في <b>المستوى "+need+"</b> على الأقل لاستخدام هذا. مستواك الحالي: <b>"+lvl+"</b>.<br><br>🎯 ادرس في تبويب <b>شخصي</b> لرفع مستواك."; }, your_badges:function(badges){ return "شاراتك: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 حصلت على شارة: "+name+" · تم فتح +"+xp+" ميزة"; }, purchase_success_toast:function(b,n,x){return b+' حصلت على شارة '+n+' · +'+x+' XP';}, purchase_total_label:"الإجمالي",},
 fr:{
-  tab_cards:"Cartes", tab_quiz:"Quiz", tab_personal:"🎯 Personnel",
+  tab_cards:"Cartes", tab_quiz:"Quiz", tab_personal:"🎯 Personnel", tab_notebook:"📒 Mes notes",
   main_sub_full:"Choisis le niveau, la langue et la catégorie — touche une carte, écoute, apprends",
   level_all:"TOUT", cat_all:"Tout", cat_pick:"Choisir la catégorie",
   tap_to_listen:"Toucher pour écouter", tap_to_flip:"Toucher la carte pour la retourner",
@@ -1922,7 +1946,7 @@ fr:{
   streak_days:function(n){ return "Série de "+n+" jours"; },
   level_xp:function(lvl,xp){ return "Niveau "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "Tu as <b>"+n+"</b> mots à réviser aujourd\u2019hui"; },
-  review_btn:"Réviser", quiz_finish:"Terminer le quiz",
+  review_btn:"Réviser", quiz_finish:"Terminer le quiz", quiz_progress:function(c,t){return "Question "+c+" / "+t;}, quiz_score:function(s){return s+" correctes";}, quiz_your_answer:"Ta réponse :", quiz_correct_answer:"Bonne réponse :", quiz_final_score:function(s,t){return s+" / "+t+" bonnes réponses";}, nb_login_required:"📒 Ton carnet est enregistré avec ton compte.<br>Connecte-toi d'abord pour continuer.", nb_study_lang_title:"🌍 Dans quelle langue veux-tu étudier ?", nb_study_lang_sub:"Choisis d'abord une langue parmi les mots de ton carnet.", nb_word_count:function(a){return a+' mots';}, nb_cancel:"Annuler", nb_study_level_title:"📊 Avec quel niveau veux-tu étudier ?", nb_study_level_sub:function(a){return 'Tu peux étudier tous les mots en '+a+' ou un seul niveau.';}, nb_all_caps:"TOUT", nb_back_change_lang:"← Changer de langue", nb_quiz_lang_title:"🧩 Quiz — Quelle langue ?", nb_quiz_lang_sub:"Choisis d'abord une langue, puis tu seras testé(e) selon le niveau de difficulté.", nb_quiz_diff_title:"🧩 Quiz — Niveau de difficulté", nb_quiz_diff_sub:function(a){return 'À quel niveau de difficulté veux-tu être testé(e) sur les mots en '+a+' ?';}, nb_quiz_all_diff:function(a){return 'Quiz avec toutes les difficultés ('+a+' mots)';}, nb_intro:"Les mots que tu as ajoutés et les cartes mises en favoris sont enregistrés ici, liés à ton compte — séparément des listes prêtes à l'emploi partagées. Connecte-toi avec le même compte sur un autre appareil et tes mots te suivront.", nb_edit_title:"✏️ Modifier le mot", nb_add_title:"➕ Ajouter un nouveau mot", nb_step1_lang:"1) Dans quelle langue ? *", nb_step2_search:"2) Chercher dans le dictionnaire intégré (facultatif)", nb_search_placeholder:"🔍 ex. Schmetterling, hello, manzana…", nb_step3_info:"3) Saisis les informations", nb_word_placeholder:"Mot * (ex. Schmetterling)", nb_meaning_placeholder:"Signification (ex. papillon)", nb_cat_placeholder:"Catégorie (facultatif, ex. Animaux)", nb_example_placeholder:"Phrase d'exemple (facultative)", nb_save:"Enregistrer", nb_add_to_notebook:"Ajouter à mon carnet", nb_start_study:function(a){return '🚀 Commencer à étudier ('+a+' mots)';}, nb_quiz_ol:"🧩 Faire un quiz", nb_writing_practice:"✍️ Entraînement à l'écriture", nb_search_notebook_placeholder:"Rechercher dans mon carnet…", nb_all_langs:"Toutes les langues", nb_all_cats:"Toutes les catégories", nb_all_diffs:"Tous les niveaux", nb_diff_easy:"Facile", nb_diff_medium:"Moyen", nb_diff_hard:"Difficile", nb_diff_easy_sub:"Je m'en souviens facilement", nb_diff_medium_sub:"J'ai un peu de mal", nb_diff_hard_sub:"Je l'oublie", nb_diff_level_title:"NIVEAU DE DIFFICULTÉ", nb_finish_study:"✅ Terminer l'étude", nb_list_title:"Mon carnet", nb_list_count:function(a,b){return a+' / '+b+' mots';}, nb_empty_none:"Tu n'as pas encore ajouté de mots.<br>Tu peux ajouter ci-dessus un mot appris en ligne, en cours ou dans la vie quotidienne, ou voir ici les mots mis en favoris avec ⭐ sur les cartes.", nb_empty_filtered:"Aucun mot ne correspond à ces filtres.", nb_badge_favorite:"⭐ Favori", nb_badge_added:"📝 Ajouté", nb_edit_tooltip:"Modifier", nb_delete_tooltip:"Supprimer", nb_select_lang_first:"Veuillez d'abord choisir une langue.", nb_autofilled_toast:"🤖 Catégorie/phrase d'exemple remplie automatiquement — tu peux la modifier plus tard si tu veux.", nb_duplicate_word:"Ce mot est déjà dans ton carnet.", nb_deleted_toast:"Supprimé de ton carnet.", nb_delete_failed_toast:"Échec de la suppression, veux-tu réessayer ?", nb_custom_level_tag:"PERSO", nb_favorite_tag:"Favori", nb_my_notebook_tag:"Mon carnet", nb_fav_login_required:"Connecte-toi d'abord pour ajouter des favoris.", nb_fav_removed:"Retiré des favoris — pas supprimé de ton carnet.", nb_fav_remove_failed:"Impossible de retirer des favoris, veux-tu réessayer ?", nb_fav_added:"⭐ Ajouté aux favoris — tu peux le voir dans ton carnet.", nb_fav_add_failed:"Un problème est survenu lors de l'ajout aux favoris, veux-tu réessayer ?", wp_choose_lang_sub:"Dans quelle langue veux-tu pratiquer l'écriture ?", wp_back_to_notebook:"← Retour à mon carnet", wp_choose_level_sub:"Choisis ton niveau", wp_empty_text:"Écris d'abord quelque chose, puis vérifions-le 🙂", wp_too_long:"Le texte est trop long (max. 4000 caractères). Essaie une section plus courte.", wp_checking:"Vérification...", wp_loading_msg:"📝 Vérification de ton texte, cela peut prendre quelques secondes...", wp_clean_msg:"✅ Aucune erreur trouvée, tu as écrit un excellent texte !", wp_your_text:"Ton texte", wp_listen:"🔊 Écouter", wp_errors_found:function(a){return 'Erreurs trouvées ('+a+')';}, wp_explanations:"Explications", wp_corrected_text:"Texte corrigé", wp_service_error:function(a){return 'Le service ne répond pas actuellement (HTTP '+a+'). Réessaie un peu plus tard.';}, wp_generic_error:"Un problème est survenu pendant la vérification. Vérifie ta connexion internet et réessaie un peu plus tard.", wp_check_btn:"Vérifier", wp_back_level:"← Changer de niveau", wp_placeholder:function(a){return 'Écris ici un texte en '+a+'...';}, wp_lang_level_sub:function(a,b){return a+' · Niveau '+b;},
   pm_exam_completed:"Prueba completada",
   pm_level_result:function(lvl){ return "🎓 Tu resultado de nivel "+lvl; },
   pm_scope_categories:function(n){ return n+" categorías"; }, pm_scope_all_categories:"todas las categorías",
@@ -2036,9 +2060,9 @@ fr:{
   fav_title:"⭐ Mes favoris", fav_sub:"Tes mots enregistrés sont stockés sur cet appareil.", fav_empty:"Aucun favori pour l’instant.<br>Touche le ☆ en haut à droite d’une carte pour en ajouter un.", fav_share_row:"Partager / télécharger les favoris", download_failed:"Échec du téléchargement", share_app_text:"Cartes de mots, quiz et prononciation en 6 langues — fonctionne aussi hors ligne 🌙", copied_clipboard:"📋 Copié dans le presse-papiers", copy_failed:"Impossible de copier", backup_title:"Ma sauvegarde de progression", backup_restored:"✅ Sauvegarde restaurée, actualisation…", file_unreadable:"Impossible de lire le fichier", err_report_title:"🐞 Rapport d’erreurs", err_no_records:"Aucune erreur enregistrée - tout va bien.", err_none_logged:"🎉 Aucune erreur enregistrée.", err_share_row:"Partager / télécharger le rapport", err_share_desc:"Infos appareil + erreurs récentes", err_report_title2:"Rapport d’erreurs", err_clear_row:"Effacer les entrées", cleared:"Effacé", rate_title:"⭐ Ça te plaît ?", rate_sub:"Noter l’appli nous aide beaucoup.", rate_now:"Noter sur le Play Store", rate_time:"Prend 30 secondes", rate_later:"Me le rappeler plus tard", rate_later_desc:"On te redemandera dans une semaine", rate_never:"Ne plus demander", word_count:function(n){ return n+" mots"; }, fav_export_title:function(d){ return "Lumira · Cartes de langue — Mes favoris ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" téléchargé"; }, err_records_found:function(n){ return n+" entrées trouvées."; },
   back_to_exit:"Appuie de nouveau sur retour pour quitter", installing:"Installation…", install_add_title:"Ajouter à l’écran d’accueil", install_add_desc:"Plein écran, hors ligne et plus rapide", install_go:"Installer", install_added:"🎉 Ajouté à ton écran d’accueil !", ios_install_title:"📲 Ajouter à l’écran d’accueil", ios_install_desc:"Pour utiliser l’appli en plein écran et hors ligne :", ios_step1_title:"Touche l’icône de partage dans Safari", ios_step1_desc:"L’icône ⬆️ dans la barre du bas", ios_step2_title:"Choisis « Sur l’écran d’accueil »", ios_step2_desc:"Il faut peut-être faire défiler la liste", ios_step3_title:"Touche « Ajouter »", ios_step3_desc:"L’appli apparaît sur ton écran d’accueil", ios_install_note:"Remarque : sur iOS, cette étape ne fonctionne que via Safari. Après l’ajout, les notifications (iOS 16.4+) peuvent aussi être activées.", resume_action:"Continuer", resume_not_found:"Cette carte n’est plus dans la liste", sw_not_ready:"Le Service Worker n'est pas encore prêt", need_internet_download:"Connexion internet nécessaire pour télécharger", downloading_dicts:"📦 Téléchargement des dictionnaires…", offline_pack_ready:"✅ Pack hors ligne prêt — fonctionne sans internet", daily_word_title:"🌙 Mot du jour", daily_word_not_loaded:"Les cartes ne sont pas encore chargées. Réessaie dans quelques secondes.", listen_row:"Écouter", listen_desc:"Entendre la prononciation", add_to_favs:"Ajouter aux favoris", added_toast:"⭐ Ajouté", share_row:"Partager", share_desc:"Envoyer à un ami", removed_from_favs:"Retiré des favoris", copy_to_clipboard:"Copier dans le presse-papiers", shared_content_title:"📥 Texte partagé", shared_content_desc:"Contenu partagé depuis une autre appli :", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — reprendre où tu en étais ?'; }, resume_returned:function(word){ return "✅ Retour à "+word; },
   save_to_word_list:"Enregistrer dans ta liste de mots", added_to_favs_toast:"⭐ Ajouté aux favoris",
-  lock_pdf_feature_name:"Liste de mots PDF", lock_pdf_msg:"Tu as besoin d'un des badges <b>💛</b>, <b>⭐️</b> ou <b>👑</b> pour utiliser cette fonctionnalité.<br><br>Obtiens un badge via ❤️ <b>Soutenir Lumira</b>.", lock_any_badge_msg:"Tu as besoin de n'importe quel badge de soutien pour cette fonctionnalité — même le plus petit (👍🏻 Merci) suffit.<br><br>Obtiens un badge via ❤️ <b>Soutenir Lumira</b>.", purchase_start_failed:"Impossible de démarrer l'achat.", purchase_complete_failed:"Impossible de finaliser l'achat.", support_title:"❤️ Soutenir Lumira", support_desc:"Nous voulons continuer à proposer Lumira gratuitement à tous. Si tu trouves l'appli utile, tu peux contribuer au développement de nouvelles fonctionnalités avec une contribution totalement facultative. Chaque contribution compte énormément pour nous. ❤️ 🇹🇷", pdf_export_title:"📄 Télécharger les mots en PDF", pdf_export_desc:"Choisis une langue et un niveau pour générer une liste de mots façon livre.", pdf_words_not_found:"Aucun mot trouvé pour cette sélection", pdf_generate_btn:"Générer la liste", pdf_generating:"Préparation…", pdf_dict_load_failed:"Impossible de charger le dictionnaire", pdf_popup_blocked:"Pop-up bloquée — autorise-la dans les paramètres du navigateur", pdf_web_payment_note:"Cet achat n'est possible que via le Play Store. Les paiements ne sont pas acceptés dans la version web.", lock_level_msg:function(need,lvl){ return "Tu dois être au moins <b>niveau "+need+"</b> pour utiliser ceci. Ton niveau actuel : <b>"+lvl+"</b>.<br><br>🎯 Étudie dans l\u2019onglet <b>Personnel</b> pour monter de niveau."; }, your_badges:function(badges){ return "Tes badges : "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Tu as gagné un badge : "+name+" · +"+xp+" fonctionnalités débloquées"; },},
+  lock_pdf_feature_name:"Liste de mots PDF", lock_pdf_msg:"Tu as besoin d'un des badges <b>💛</b>, <b>⭐️</b> ou <b>👑</b> pour utiliser cette fonctionnalité.<br><br>Obtiens un badge via ❤️ <b>Soutenir Lumira</b>.", lock_any_badge_msg:"Tu as besoin de n'importe quel badge de soutien pour cette fonctionnalité — même le plus petit (👍🏻 Merci) suffit.<br><br>Obtiens un badge via ❤️ <b>Soutenir Lumira</b>.", purchase_start_failed:"Impossible de démarrer l'achat.", purchase_complete_failed:"Impossible de finaliser l'achat.", support_title:"❤️ Soutenir Lumira", support_desc:"Nous voulons continuer à proposer Lumira gratuitement à tous. Si tu trouves l'appli utile, tu peux contribuer au développement de nouvelles fonctionnalités avec une contribution totalement facultative. Chaque contribution compte énormément pour nous. ❤️ 🇹🇷", pdf_export_title:"📄 Télécharger les mots en PDF", pdf_export_desc:"Choisis une langue et un niveau pour générer une liste de mots façon livre.", pdf_words_not_found:"Aucun mot trouvé pour cette sélection", pdf_generate_btn:"Générer la liste", pdf_generating:"Préparation…", pdf_dict_load_failed:"Impossible de charger le dictionnaire", pdf_popup_blocked:"Pop-up bloquée — autorise-la dans les paramètres du navigateur", pdf_web_payment_note:"Cet achat n'est possible que via le Play Store. Les paiements ne sont pas acceptés dans la version web.", lock_level_msg:function(need,lvl){ return "Tu dois être au moins <b>niveau "+need+"</b> pour utiliser ceci. Ton niveau actuel : <b>"+lvl+"</b>.<br><br>🎯 Étudie dans l\u2019onglet <b>Personnel</b> pour monter de niveau."; }, your_badges:function(badges){ return "Tes badges : "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Tu as gagné un badge : "+name+" · +"+xp+" fonctionnalités débloquées"; }, purchase_success_toast:function(b,n,x){return b+' Tu as gagné le badge '+n+' · +'+x+' XP';}, purchase_total_label:"Total",},
 es:{
-  tab_cards:"Tarjetas", tab_quiz:"Quiz", tab_personal:"🎯 Personal",
+  tab_cards:"Tarjetas", tab_quiz:"Quiz", tab_personal:"🎯 Personal", tab_notebook:"📒 Mis notas",
   main_sub_full:"Elige nivel, idioma y categoría — toca una tarjeta, escucha, aprende",
   level_all:"TODOS", cat_all:"Todo", cat_pick:"Elegir categoría",
   tap_to_listen:"Toca para escuchar", tap_to_flip:"Toca la tarjeta para girarla",
@@ -2122,7 +2146,7 @@ es:{
   streak_days:function(n){ return "Racha de "+n+" días"; },
   level_xp:function(lvl,xp){ return "Nivel "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "Tienes <b>"+n+"</b> palabras para repasar hoy"; },
-  review_btn:"Repasar", quiz_finish:"Terminar quiz",
+  review_btn:"Repasar", quiz_finish:"Terminar quiz", quiz_progress:function(c,t){return "Pregunta "+c+" / "+t;}, quiz_score:function(s){return s+" correctas";}, quiz_your_answer:"Tu respuesta:", quiz_correct_answer:"Respuesta correcta:", quiz_final_score:function(s,t){return s+" / "+t+" respuestas correctas";}, nb_login_required:"📒 Tu cuaderno se guarda vinculado a tu cuenta.<br>Inicia sesión primero para continuar.", nb_study_lang_title:"🌍 ¿En qué idioma quieres estudiar?", nb_study_lang_sub:"Primero elige un idioma entre las palabras de tu cuaderno.", nb_word_count:function(a){return a+' palabras';}, nb_cancel:"Cancelar", nb_study_level_title:"📊 ¿Con qué nivel quieres estudiar?", nb_study_level_sub:function(a){return 'Puedes estudiar todas las palabras de '+a+' o solo un nivel.';}, nb_all_caps:"TODO", nb_back_change_lang:"← Cambiar idioma", nb_quiz_lang_title:"🧩 Quiz — ¿Qué idioma?", nb_quiz_lang_sub:"Primero elige un idioma, luego te evaluaremos según el nivel de dificultad.", nb_quiz_diff_title:"🧩 Quiz — Nivel de dificultad", nb_quiz_diff_sub:function(a){return '¿Con qué nivel de dificultad quieres que te evalúen en palabras de '+a+'?';}, nb_quiz_all_diff:function(a){return 'Quiz con todas las dificultades ('+a+' palabras)';}, nb_intro:"Las palabras que has añadido y las tarjetas marcadas como favoritas se guardan aquí, vinculadas a tu cuenta — separadas de las listas predeterminadas compartidas. Si inicias sesión con la misma cuenta en otro dispositivo, tus palabras te acompañarán.", nb_edit_title:"✏️ Editar palabra", nb_add_title:"➕ Añadir nueva palabra", nb_step1_lang:"1) ¿En qué idioma? *", nb_step2_search:"2) Buscar en el diccionario incorporado (opcional)", nb_search_placeholder:"🔍 ej. Schmetterling, hello, manzana…", nb_step3_info:"3) Introduce los datos", nb_word_placeholder:"Palabra * (ej. Schmetterling)", nb_meaning_placeholder:"Significado (ej. mariposa)", nb_cat_placeholder:"Categoría (opcional, ej. Animales)", nb_example_placeholder:"Frase de ejemplo (opcional)", nb_save:"Guardar", nb_add_to_notebook:"Añadir a mi cuaderno", nb_start_study:function(a){return '🚀 Empezar a estudiar ('+a+' palabras)';}, nb_quiz_ol:"🧩 Hacer un quiz", nb_writing_practice:"✍️ Práctica de escritura", nb_search_notebook_placeholder:"Buscar en mi cuaderno…", nb_all_langs:"Todos los idiomas", nb_all_cats:"Todas las categorías", nb_all_diffs:"Todos los niveles", nb_diff_easy:"Fácil", nb_diff_medium:"Medio", nb_diff_hard:"Difícil", nb_diff_easy_sub:"Lo recuerdo fácilmente", nb_diff_medium_sub:"Me cuesta un poco", nb_diff_hard_sub:"Se me olvida", nb_diff_level_title:"NIVEL DE DIFICULTAD", nb_finish_study:"✅ Terminar de estudiar", nb_list_title:"Mi cuaderno", nb_list_count:function(a,b){return a+' / '+b+' palabras';}, nb_empty_none:"Todavía no has añadido palabras.<br>Puedes añadir arriba una palabra que aprendiste en internet, en clase o en la vida diaria, o ver aquí las palabras que marcaste como favoritas con ⭐ en las tarjetas.", nb_empty_filtered:"No hay palabras que coincidan con estos filtros.", nb_badge_favorite:"⭐ Favorito", nb_badge_added:"📝 Añadido", nb_edit_tooltip:"Editar", nb_delete_tooltip:"Eliminar", nb_select_lang_first:"Por favor, elige primero un idioma.", nb_autofilled_toast:"🤖 Categoría/frase de ejemplo rellenada automáticamente — puedes editarla después si quieres.", nb_duplicate_word:"Esta palabra ya está en tu cuaderno.", nb_deleted_toast:"Eliminado de tu cuaderno.", nb_delete_failed_toast:"No se pudo eliminar, ¿quieres intentarlo de nuevo?", nb_custom_level_tag:"PROPIA", nb_favorite_tag:"Favorito", nb_my_notebook_tag:"Mi cuaderno", nb_fav_login_required:"Inicia sesión primero para añadir favoritos.", nb_fav_removed:"Eliminado de favoritos — no se borró de tu cuaderno.", nb_fav_remove_failed:"No se pudo quitar de favoritos, ¿quieres intentarlo de nuevo?", nb_fav_added:"⭐ Añadido a favoritos — puedes verlo en tu cuaderno.", nb_fav_add_failed:"Hubo un problema al añadir el favorito, ¿quieres intentarlo de nuevo?", wp_choose_lang_sub:"¿En qué idioma quieres practicar la escritura?", wp_back_to_notebook:"← Volver a mi cuaderno", wp_choose_level_sub:"Elige tu nivel", wp_empty_text:"Escribe algo primero, luego lo revisamos 🙂", wp_too_long:"El texto es demasiado largo (máx. 4000 caracteres). Prueba con una sección más corta.", wp_checking:"Comprobando...", wp_loading_msg:"📝 Comprobando tu texto, esto puede tardar unos segundos...", wp_clean_msg:"✅ No se encontraron errores, ¡escribiste un texto excelente!", wp_your_text:"Tu texto", wp_listen:"🔊 Escuchar", wp_errors_found:function(a){return 'Errores encontrados ('+a+')';}, wp_explanations:"Explicaciones", wp_corrected_text:"Texto corregido", wp_service_error:function(a){return 'El servicio no responde en este momento (HTTP '+a+'). Inténtalo de nuevo más tarde.';}, wp_generic_error:"Ocurrió un problema durante la comprobación. Revisa tu conexión a internet e inténtalo de nuevo más tarde.", wp_check_btn:"Comprobar", wp_back_level:"← Cambiar nivel", wp_placeholder:function(a){return 'Escribe aquí un texto en '+a+'...';}, wp_lang_level_sub:function(a,b){return a+' · Nivel '+b;},
   lang_change_sub:function(native,target){ return "Hablas "+native+" · aprendes "+target; },
   pm_sync_note:"tu progreso se sincroniza en todos tus dispositivos",
   login_welcome:"¡Bienvenido! 👋",
@@ -2196,9 +2220,9 @@ es:{
   fav_title:"⭐ Mis favoritos", fav_sub:"Tus palabras guardadas se almacenan en este dispositivo.", fav_empty:"Aún no hay favoritos.<br>Toca el ☆ arriba a la derecha de una tarjeta para añadir uno.", fav_share_row:"Compartir / descargar favoritos", download_failed:"Error al descargar", share_app_text:"Tarjetas de palabras, quiz y pronunciación en 6 idiomas — funciona sin conexión también 🌙", copied_clipboard:"📋 Copiado al portapapeles", copy_failed:"No se pudo copiar", backup_title:"Mi copia de seguridad", backup_restored:"✅ Copia restaurada, actualizando…", file_unreadable:"No se pudo leer el archivo", err_report_title:"🐞 Informe de errores", err_no_records:"No hay errores registrados - todo bien.", err_none_logged:"🎉 No hay errores registrados.", err_share_row:"Compartir / descargar informe", err_share_desc:"Info del dispositivo + errores recientes", err_report_title2:"Informe de errores", err_clear_row:"Borrar registros", cleared:"Borrado", rate_title:"⭐ ¿Te gusta?", rate_sub:"Calificar la app nos ayuda mucho.", rate_now:"Calificar en Play Store", rate_time:"Toma 30 segundos", rate_later:"Recordarme después", rate_later_desc:"Te preguntaremos de nuevo en una semana", rate_never:"No preguntar más", word_count:function(n){ return n+" palabras"; }, fav_export_title:function(d){ return "Lumira · Tarjetas de idiomas — Mis favoritos ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" descargado"; }, err_records_found:function(n){ return n+" registros encontrados."; },
   back_to_exit:"Pulsa atrás de nuevo para salir", installing:"Instalando…", install_add_title:"Añadir a inicio", install_add_desc:"Pantalla completa, sin conexión y más rápido", install_go:"Instalar", install_added:"🎉 ¡Añadido a tu pantalla de inicio!", ios_install_title:"📲 Añadir a inicio", ios_install_desc:"Para usar la app en pantalla completa y sin conexión:", ios_step1_title:"Toca el icono de compartir en Safari", ios_step1_desc:"El icono ⬆️ en la barra inferior", ios_step2_title:"Elige \"Añadir a inicio\"", ios_step2_desc:"Puede que tengas que desplazarte por la lista", ios_step3_title:"Toca \"Añadir\"", ios_step3_desc:"La app aparece en tu pantalla de inicio", ios_install_note:"Nota: en iOS esto solo funciona con Safari. Tras añadirla, también se pueden activar las notificaciones (iOS 16.4+).", resume_action:"Continuar", resume_not_found:"Esta tarjeta ya no está en la lista", sw_not_ready:"El Service Worker aún no está listo", need_internet_download:"Se necesita conexión a internet para descargar", downloading_dicts:"📦 Descargando diccionarios…", offline_pack_ready:"✅ Paquete sin conexión listo — funciona sin internet", daily_word_title:"🌙 Palabra del día", daily_word_not_loaded:"Las tarjetas aún no se han cargado. Inténtalo de nuevo en unos segundos.", listen_row:"Escuchar", listen_desc:"Oír la pronunciación", add_to_favs:"Añadir a favoritos", added_toast:"⭐ Añadido", share_row:"Compartir", share_desc:"Enviar a un amigo", removed_from_favs:"Eliminado de favoritos", copy_to_clipboard:"Copiar al portapapeles", shared_content_title:"📥 Texto compartido", shared_content_desc:"Contenido compartido desde otra app:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — ¿continuar donde lo dejaste?'; }, resume_returned:function(word){ return "✅ De vuelta a "+word; },
   save_to_word_list:"Guardar en tu lista de palabras", added_to_favs_toast:"⭐ Añadido a favoritos",
-  lock_pdf_feature_name:"Lista de palabras PDF", lock_pdf_msg:"Necesitas una de las insignias <b>💛</b>, <b>⭐️</b> o <b>👑</b> para usar esta función.<br><br>Consigue una insignia en ❤️ <b>Apoyar a Lumira</b>.", lock_any_badge_msg:"Necesitas cualquier insignia de apoyo para esta función — incluso la más pequeña (👍🏻 Gracias) es suficiente.<br><br>Consigue una insignia en ❤️ <b>Apoyar a Lumira</b>.", purchase_start_failed:"No se pudo iniciar la compra.", purchase_complete_failed:"No se pudo completar la compra.", support_title:"❤️ Apoyar a Lumira", support_desc:"Queremos seguir ofreciendo Lumira gratis para todos. Si te resulta útil la app, puedes contribuir al desarrollo de nuevas funciones con una contribución totalmente opcional. Cada contribución significa mucho para nosotros. ❤️ 🇹🇷", pdf_export_title:"📄 Descargar palabras en PDF", pdf_export_desc:"Elige idioma y nivel para generar una lista de palabras estilo libro.", pdf_words_not_found:"No se encontraron palabras para esta selección", pdf_generate_btn:"Generar lista", pdf_generating:"Preparando…", pdf_dict_load_failed:"No se pudo cargar el diccionario", pdf_popup_blocked:"Ventana emergente bloqueada — permítela en la configuración del navegador", pdf_web_payment_note:"Esta compra solo se puede hacer a través de Play Store. No se aceptan pagos en la versión web.", lock_level_msg:function(need,lvl){ return "Debes tener al menos <b>nivel "+need+"</b> para usar esto. Tu nivel actual: <b>"+lvl+"</b>.<br><br>🎯 Estudia en la pestaña <b>Personal</b> para subir de nivel."; }, your_badges:function(badges){ return "Tus insignias: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Ganaste una insignia: "+name+" · +"+xp+" funciones desbloqueadas"; },},
+  lock_pdf_feature_name:"Lista de palabras PDF", lock_pdf_msg:"Necesitas una de las insignias <b>💛</b>, <b>⭐️</b> o <b>👑</b> para usar esta función.<br><br>Consigue una insignia en ❤️ <b>Apoyar a Lumira</b>.", lock_any_badge_msg:"Necesitas cualquier insignia de apoyo para esta función — incluso la más pequeña (👍🏻 Gracias) es suficiente.<br><br>Consigue una insignia en ❤️ <b>Apoyar a Lumira</b>.", purchase_start_failed:"No se pudo iniciar la compra.", purchase_complete_failed:"No se pudo completar la compra.", support_title:"❤️ Apoyar a Lumira", support_desc:"Queremos seguir ofreciendo Lumira gratis para todos. Si te resulta útil la app, puedes contribuir al desarrollo de nuevas funciones con una contribución totalmente opcional. Cada contribución significa mucho para nosotros. ❤️ 🇹🇷", pdf_export_title:"📄 Descargar palabras en PDF", pdf_export_desc:"Elige idioma y nivel para generar una lista de palabras estilo libro.", pdf_words_not_found:"No se encontraron palabras para esta selección", pdf_generate_btn:"Generar lista", pdf_generating:"Preparando…", pdf_dict_load_failed:"No se pudo cargar el diccionario", pdf_popup_blocked:"Ventana emergente bloqueada — permítela en la configuración del navegador", pdf_web_payment_note:"Esta compra solo se puede hacer a través de Play Store. No se aceptan pagos en la versión web.", lock_level_msg:function(need,lvl){ return "Debes tener al menos <b>nivel "+need+"</b> para usar esto. Tu nivel actual: <b>"+lvl+"</b>.<br><br>🎯 Estudia en la pestaña <b>Personal</b> para subir de nivel."; }, your_badges:function(badges){ return "Tus insignias: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Ganaste una insignia: "+name+" · +"+xp+" funciones desbloqueadas"; }, purchase_success_toast:function(b,n,x){return b+' Ganaste la insignia '+n+' · +'+x+' XP';}, purchase_total_label:"Total",},
 ru:{
-  tab_cards:"Карточки", tab_quiz:"Тест", tab_personal:"🎯 Личный",
+  tab_cards:"Карточки", tab_quiz:"Тест", tab_personal:"🎯 Личный", tab_notebook:"📒 Мои заметки",
   main_sub_full:"Выбери уровень, язык и категорию — коснись карточки, слушай, учись",
   level_all:"ВСЕ", cat_all:"Все", cat_pick:"Выбрать категорию",
   tap_to_listen:"Нажми, чтобы послушать", tap_to_flip:"Нажми на карточку, чтобы перевернуть",
@@ -2259,7 +2283,7 @@ ru:{
   streak_days:function(n){ return "Серия "+n+" дней"; },
   level_xp:function(lvl,xp){ return "Уровень "+lvl+" - "+xp+" XP"; },
   due_review_banner:function(n){ return "У тебя <b>"+n+"</b> слов для ежедневного повторения"; },
-  review_btn:"Повторить", quiz_finish:"Завершить тест",
+  review_btn:"Повторить", quiz_finish:"Завершить тест", quiz_progress:function(c,t){return "Вопрос "+c+" / "+t;}, quiz_score:function(s){return s+" правильно";}, quiz_your_answer:"Твой ответ:", quiz_correct_answer:"Правильный ответ:", quiz_final_score:function(s,t){return s+" / "+t+" правильных ответов";}, nb_login_required:"📒 Твой блокнот сохраняется вместе с твоим аккаунтом.<br>Сначала войди в систему, чтобы продолжить.", nb_study_lang_title:"🌍 На каком языке ты хочешь заниматься?", nb_study_lang_sub:"Сначала выбери язык среди слов в твоём блокноте.", nb_word_count:function(a){return a+' слов';}, nb_cancel:"Отмена", nb_study_level_title:"📊 С каким уровнем ты хочешь заниматься?", nb_study_level_sub:function(a){return 'Ты можешь заниматься всеми словами '+a+' или только одним уровнем.';}, nb_all_caps:"ВСЕ", nb_back_change_lang:"← Изменить язык", nb_quiz_lang_title:"🧩 Тест — на каком языке?", nb_quiz_lang_sub:"Сначала выбери язык, затем тест будет по уровню сложности.", nb_quiz_diff_title:"🧩 Тест — уровень сложности", nb_quiz_diff_sub:function(a){return 'На каком уровне сложности ты хочешь пройти тест по словам '+a+'?';}, nb_quiz_all_diff:function(a){return 'Тест по всем уровням сложности ('+a+' слов)';}, nb_intro:"Добавленные тобой слова и избранные карточки хранятся здесь, привязанные к твоему аккаунту — отдельно от общих готовых списков. Войдя с тем же аккаунтом на другом устройстве, ты снова увидишь свои слова.", nb_edit_title:"✏️ Редактировать слово", nb_add_title:"➕ Добавить новое слово", nb_step1_lang:"1) На каком языке? *", nb_step2_search:"2) Поиск во встроенном словаре (необязательно)", nb_search_placeholder:"🔍 напр. Schmetterling, hello, manzana…", nb_step3_info:"3) Введи данные", nb_word_placeholder:"Слово * (напр. Schmetterling)", nb_meaning_placeholder:"Значение (напр. бабочка)", nb_cat_placeholder:"Категория (необязательно, напр. Животные)", nb_example_placeholder:"Пример предложения (необязательно)", nb_save:"Сохранить", nb_add_to_notebook:"Добавить в мой блокнот", nb_start_study:function(a){return '🚀 Начать учиться ('+a+' слов)';}, nb_quiz_ol:"🧩 Пройти тест", nb_writing_practice:"✍️ Практика письма", nb_search_notebook_placeholder:"Поиск в моём блокноте…", nb_all_langs:"Все языки", nb_all_cats:"Все категории", nb_all_diffs:"Все уровни", nb_diff_easy:"Лёгкий", nb_diff_medium:"Средний", nb_diff_hard:"Сложный", nb_diff_easy_sub:"Легко запоминаю", nb_diff_medium_sub:"Немного затрудняюсь", nb_diff_hard_sub:"Забываю", nb_diff_level_title:"УРОВЕНЬ СЛОЖНОСТИ", nb_finish_study:"✅ Закончить занятие", nb_list_title:"Мой блокнот", nb_list_count:function(a,b){return a+' / '+b+' слов';}, nb_empty_none:"Ты пока не добавил(а) слов.<br>Можешь добавить выше слово, которое выучил(а) в интернете, на уроке или в повседневной жизни, либо посмотреть здесь слова, добавленные в избранное ⭐ на карточках.", nb_empty_filtered:"Нет слов, соответствующих этим фильтрам.", nb_badge_favorite:"⭐ Избранное", nb_badge_added:"📝 Добавлено", nb_edit_tooltip:"Редактировать", nb_delete_tooltip:"Удалить", nb_select_lang_first:"Сначала выбери язык.", nb_autofilled_toast:"🤖 Категория/пример предложения заполнены автоматически — при желании можешь отредактировать позже.", nb_duplicate_word:"Это слово уже есть в твоём блокноте.", nb_deleted_toast:"Удалено из твоего блокнота.", nb_delete_failed_toast:"Не удалось удалить, попробовать снова?", nb_custom_level_tag:"СВОЁ", nb_favorite_tag:"Избранное", nb_my_notebook_tag:"Мой блокнот", nb_fav_login_required:"Сначала войди в систему, чтобы добавлять в избранное.", nb_fav_removed:"Убрано из избранного — не удалено из блокнота.", nb_fav_remove_failed:"Не удалось убрать из избранного, попробовать снова?", nb_fav_added:"⭐ Добавлено в избранное — можешь увидеть это в своём блокноте.", nb_fav_add_failed:"Возникла проблема при добавлении в избранное, попробовать снова?", wp_choose_lang_sub:"На каком языке ты хочешь практиковать письмо?", wp_back_to_notebook:"← Назад к моему блокноту", wp_choose_level_sub:"Выбери свой уровень", wp_empty_text:"Сначала напиши что-нибудь, потом проверим 🙂", wp_too_long:"Текст слишком длинный (макс. 4000 символов). Попробуй более короткий отрывок.", wp_checking:"Проверка...", wp_loading_msg:"📝 Проверяем твой текст, это может занять несколько секунд...", wp_clean_msg:"✅ Ошибок не найдено, ты написал(а) отличный текст!", wp_your_text:"Твой текст", wp_listen:"🔊 Слушать", wp_errors_found:function(a){return 'Найденные ошибки ('+a+')';}, wp_explanations:"Объяснения", wp_corrected_text:"Исправленный текст", wp_service_error:function(a){return 'Сервис сейчас не отвечает (HTTP '+a+'). Попробуй ещё раз чуть позже.';}, wp_generic_error:"Во время проверки произошла ошибка. Проверь интернет-соединение и попробуй ещё раз чуть позже.", wp_check_btn:"Проверить", wp_back_level:"← Изменить уровень", wp_placeholder:function(a){return 'Напиши здесь текст на '+a+'...';}, wp_lang_level_sub:function(a,b){return a+' · Уровень '+b;},
   pm_exam_completed:"Тест завершён",
   pm_level_result:function(lvl){ return "🎓 Твой результат уровня "+lvl; },
   pm_scope_categories:function(n){ return n+" категорий"; }, pm_scope_all_categories:"все категории",
@@ -2354,7 +2378,7 @@ ru:{
   fav_title:"⭐ Мои избранные", fav_sub:"Твои сохранённые слова хранятся на этом устройстве.", fav_empty:"Пока нет избранных.<br>Нажми ☆ в правом верхнем углу карточки, чтобы добавить.", fav_share_row:"Поделиться / скачать избранное", download_failed:"Не удалось скачать", share_app_text:"Карточки слов, тесты и произношение на 6 языках — работает и офлайн 🌙", copied_clipboard:"📋 Скопировано в буфер обмена", copy_failed:"Не удалось скопировать", backup_title:"Резервная копия прогресса", backup_restored:"✅ Резервная копия восстановлена, обновление…", file_unreadable:"Не удалось прочитать файл", err_report_title:"🐞 Отчёт об ошибках", err_no_records:"Ошибок не зафиксировано - всё в порядке.", err_none_logged:"🎉 Ошибок не зафиксировано.", err_share_row:"Поделиться / скачать отчёт", err_share_desc:"Инфо об устройстве + последние ошибки", err_report_title2:"Отчёт об ошибках", err_clear_row:"Очистить записи", cleared:"Очищено", rate_title:"⭐ Нравится?", rate_sub:"Оценка приложения очень нам помогает.", rate_now:"Оценить в Play Store", rate_time:"Займёт 30 секунд", rate_later:"Напомнить позже", rate_later_desc:"Мы спросим снова через неделю", rate_never:"Больше не спрашивать", word_count:function(n){ return n+" слов"; }, fav_export_title:function(d){ return "Lumira · Языковые карточки — Мои избранные ("+d+")"; }, downloaded:function(f){ return "⬇️ "+f+" скачан"; }, err_records_found:function(n){ return "Найдено записей: "+n+"."; },
   back_to_exit:"Нажми назад ещё раз, чтобы выйти", installing:"Установка…", install_add_title:"Добавить на главный экран", install_add_desc:"Полный экран, офлайн и быстрее", install_go:"Установить", install_added:"🎉 Добавлено на главный экран!", ios_install_title:"📲 Добавить на главный экран", ios_install_desc:"Чтобы использовать приложение в полноэкранном и офлайн-режиме:", ios_step1_title:"Нажми значок «Поделиться» в Safari", ios_step1_desc:"Значок ⬆️ на нижней панели", ios_step2_title:"Выбери «На экран «Домой»»", ios_step2_desc:"Возможно, нужно прокрутить список вниз", ios_step3_title:"Нажми «Добавить»", ios_step3_desc:"Приложение появится на главном экране", ios_install_note:"Примечание: на iOS это работает только через Safari. После добавления можно также включить уведомления (iOS 16.4+).", resume_action:"Продолжить", resume_not_found:"Этой карточки больше нет в списке", sw_not_ready:"Service Worker ещё не готов", need_internet_download:"Для загрузки нужно подключение к интернету", downloading_dicts:"📦 Загрузка словарей…", offline_pack_ready:"✅ Офлайн-пакет готов — работает без интернета", daily_word_title:"🌙 Слово дня", daily_word_not_loaded:"Карточки ещё не загружены. Повтори через несколько секунд.", listen_row:"Слушать", listen_desc:"Услышать произношение", add_to_favs:"В избранное", added_toast:"⭐ Добавлено", share_row:"Поделиться", share_desc:"Отправить другу", removed_from_favs:"Удалено из избранного", copy_to_clipboard:"Скопировать в буфер обмена", shared_content_title:"📥 Общий текст", shared_content_desc:"Контент, отправленный из другого приложения:", resume_prompt:function(word,pos){ return '📖 "'+word+'"'+pos+' — продолжить с того места?'; }, resume_returned:function(word){ return "✅ Вернулись к "+word; },
   save_to_word_list:"Сохранить в свой список слов", added_to_favs_toast:"⭐ Добавлено в избранное",
-  lock_pdf_feature_name:"Список слов PDF", lock_pdf_msg:"Для этой функции нужен один из значков <b>💛</b>, <b>⭐️</b> или <b>👑</b>.<br><br>Получить значок можно в ❤️ <b>Поддержать Lumira</b>.", lock_any_badge_msg:"Для этой функции нужен любой значок поддержки — подойдёт даже самый маленький (👍🏻 Спасибо).<br><br>Получить значок можно в ❤️ <b>Поддержать Lumira</b>.", purchase_start_failed:"Не удалось начать покупку.", purchase_complete_failed:"Не удалось завершить покупку.", support_title:"❤️ Поддержать Lumira", support_desc:"Мы хотим продолжать предлагать Lumira бесплатно для всех. Если приложение тебе полезно, ты можешь поддержать разработку новых функций полностью добровольным взносом. Каждый вклад очень важен для нас. ❤️ 🇹🇷", pdf_export_title:"📄 Скачать слова в PDF", pdf_export_desc:"Выбери язык и уровень для создания списка слов в книжном формате.", pdf_words_not_found:"Слова для этого выбора не найдены", pdf_generate_btn:"Создать список", pdf_generating:"Подготовка…", pdf_dict_load_failed:"Не удалось загрузить словарь", pdf_popup_blocked:"Всплывающее окно заблокировано — разреши его в настройках браузера", pdf_web_payment_note:"Эта покупка возможна только через Play Store. В веб-версии платежи не принимаются.", lock_level_msg:function(need,lvl){ return "Тебе нужен как минимум <b>"+need+" уровень</b>, чтобы использовать это. Твой текущий уровень: <b>"+lvl+"</b>.<br><br>🎯 Занимайся во вкладке <b>Личный</b>, чтобы повысить уровень."; }, your_badges:function(badges){ return "Твои значки: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Ты получил значок: "+name+" · открыто +"+xp+" функций"; },}
+  lock_pdf_feature_name:"Список слов PDF", lock_pdf_msg:"Для этой функции нужен один из значков <b>💛</b>, <b>⭐️</b> или <b>👑</b>.<br><br>Получить значок можно в ❤️ <b>Поддержать Lumira</b>.", lock_any_badge_msg:"Для этой функции нужен любой значок поддержки — подойдёт даже самый маленький (👍🏻 Спасибо).<br><br>Получить значок можно в ❤️ <b>Поддержать Lumira</b>.", purchase_start_failed:"Не удалось начать покупку.", purchase_complete_failed:"Не удалось завершить покупку.", support_title:"❤️ Поддержать Lumira", support_desc:"Мы хотим продолжать предлагать Lumira бесплатно для всех. Если приложение тебе полезно, ты можешь поддержать разработку новых функций полностью добровольным взносом. Каждый вклад очень важен для нас. ❤️ 🇹🇷", pdf_export_title:"📄 Скачать слова в PDF", pdf_export_desc:"Выбери язык и уровень для создания списка слов в книжном формате.", pdf_words_not_found:"Слова для этого выбора не найдены", pdf_generate_btn:"Создать список", pdf_generating:"Подготовка…", pdf_dict_load_failed:"Не удалось загрузить словарь", pdf_popup_blocked:"Всплывающее окно заблокировано — разреши его в настройках браузера", pdf_web_payment_note:"Эта покупка возможна только через Play Store. В веб-версии платежи не принимаются.", lock_level_msg:function(need,lvl){ return "Тебе нужен как минимум <b>"+need+" уровень</b>, чтобы использовать это. Твой текущий уровень: <b>"+lvl+"</b>.<br><br>🎯 Занимайся во вкладке <b>Личный</b>, чтобы повысить уровень."; }, your_badges:function(badges){ return "Твои значки: "+badges; }, earned_badge_toast:function(name,xp){ return "🎁 Ты получил значок: "+name+" · открыто +"+xp+" функций"; }, purchase_success_toast:function(b,n,x){return b+' Ты получил значок '+n+' · +'+x+' XP';}, purchase_total_label:"Итого",}
 };
 function t(key){
   var lang = (window.NATIVE_LANG || 'tr');
@@ -2516,6 +2540,7 @@ function applyUIChrome(){
     if($$('tabCards')) $$('tabCards').textContent = t('tab_cards');
     if($$('tabQuiz')) $$('tabQuiz').textContent = t('tab_quiz');
     if($$('tabPersonal')) $$('tabPersonal').textContent = t('tab_personal');
+    if($$('tabNotebook')) $$('tabNotebook').textContent = t('tab_notebook');
     document.querySelectorAll('.speak-caption').forEach(el=>el.textContent=t('tap_to_listen'));
     const hint = document.querySelector('.hint'); if(hint) hint.textContent = t('tap_to_flip');
     document.querySelectorAll('.speak-lbl').forEach((el,i)=>{ el.textContent = (i%2===0)?t('normal_speed'):t('slow_speed'); });
@@ -2554,6 +2579,17 @@ function applyUIChrome(){
     const pwInp = $$('passwordInput'); if(pwInp) pwInp.placeholder = t('login_pw_ph');
     const pwEye = $$('pwEye'); if(pwEye) pwEye.title = t('login_pw_toggle');
     const nameSub = $$('nameSubmit'); if(nameSub) nameSub.textContent = t('login_start');
+    /* zorluk kutusu (kart altı) + çalışmayı bitir düğmesi */
+    const diffTitle = document.querySelector('#nbDifficultyBox .nb-diff-title'); if(diffTitle) diffTitle.textContent = t('nb_diff_level_title');
+    const diffOpts = document.querySelectorAll('#nbDifficultyBox .nb-diff-opt');
+    const diffData = [['nb_diff_easy','nb_diff_easy_sub'],['nb_diff_medium','nb_diff_medium_sub'],['nb_diff_hard','nb_diff_hard_sub']];
+    diffOpts.forEach((el,i)=>{
+      if(!diffData[i]) return;
+      const nm = el.querySelector('.nb-diff-name'); if(nm) nm.textContent = t(diffData[i][0]);
+      const sb = el.querySelector('.nb-diff-sub'); if(sb) sb.textContent = t(diffData[i][1]);
+    });
+    if($$('nbFinishStudyBtn')) $$('nbFinishStudyBtn').textContent = t('nb_finish_study');
+    if($$('nbBackToNotebookBtn')) $$('nbBackToNotebookBtn').textContent = '📒 '+t('tab_notebook');
     updateCatUI();
     if(typeof rebuildLevelBox==='function') rebuildLevelBox();
   } catch(e){}
@@ -3022,7 +3058,8 @@ function rebuildChips(){
   cats.forEach(cat=>{
     const c = document.createElement('div');
     c.className = 'chip' + (cat===activeCat ? ' active' : '');
-    c.textContent = cat;
+    c.textContent = catName(cat);
+    c.dataset.cat = cat;
     c.onclick = () => {
       activeCat = cat;
       applyFilter();
@@ -3040,9 +3077,9 @@ function updateCatUI(){
   allChip.textContent = t('cat_all');
   allChip.classList.toggle('active', isAll);
   trigger.classList.toggle('active', !isAll);
-  trigger.textContent = isAll ? ('📂 '+t('cat_pick')) : ('📂 ' + activeCat);
+  trigger.textContent = isAll ? ('📂 '+t('cat_pick')) : ('📂 ' + catName(activeCat));
   document.querySelectorAll('#catGrid .chip').forEach(c=>{
-    c.classList.toggle('active', c.textContent===activeCat);
+    c.classList.toggle('active', c.dataset.cat===activeCat);
   });
 }
 
@@ -3101,6 +3138,9 @@ function renderCard(){
      document.getElementById('trWord').textContent = "";
      document.getElementById('frontExample').textContent = "";
      document.getElementById('trExample').textContent = "";
+     if(typeof nbUpdateFavStar === 'function') nbUpdateFavStar();
+     if(typeof nbRenderDifficultyBox === 'function') nbRenderDifficultyBox();
+     if(typeof nbUpdateFinishButton === 'function') nbUpdateFinishButton();
      return;
   }
   const v = deck[idx];
@@ -3108,7 +3148,7 @@ function renderCard(){
   const frontWordEl = document.getElementById('frontWord');
   frontWordEl.textContent = FRONT_W(v);
   frontWordEl.setAttribute('dir', FRONT_DIR(v));
-  document.getElementById('frontPos').textContent = v.cat || v.pos;
+  document.getElementById('frontPos').textContent = catName(v.cat) || v.pos;
   document.getElementById('tagFront').textContent = FRONT_LABEL();
   document.getElementById('tagBack').textContent = BACK_LABEL();
   document.getElementById('trWord').textContent = BACK_W(v);
@@ -3132,6 +3172,9 @@ function renderCard(){
   var _bbg = document.getElementById('backBgEmoji'); if(_bbg) _bbg.textContent = _catE;
   document.getElementById('card').classList.remove('flipped');
   flipped = false;
+  if(typeof nbUpdateFavStar === 'function') nbUpdateFavStar();
+  if(typeof nbRenderDifficultyBox === 'function') nbRenderDifficultyBox();
+  if(typeof nbUpdateFinishButton === 'function') nbUpdateFinishButton();
 }
 
 document.getElementById('rabbitBtn').onclick = (e) => {
@@ -3206,7 +3249,7 @@ function buildQuizDeck(){
   quizAnswers = [];
   for(let i=quizDeck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [quizDeck[i],quizDeck[j]]=[quizDeck[j],quizDeck[i]]; }
   qIdx = 0; score = 0; answered = false;
-  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active') || document.getElementById('tabNotebook').classList.contains('active');
   document.getElementById('doneView').style.display = 'none';
   document.getElementById('mistakesView').style.display = 'none';
   if(quizTabActive){ document.getElementById('quizView').style.display = 'block'; }
@@ -3219,7 +3262,7 @@ function buildQuizDeck(){
 }
 
 function renderQuiz(){
-  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active');
+  const quizTabActive = document.getElementById('tabQuiz').classList.contains('active') || document.getElementById('tabNotebook').classList.contains('active');
   if(quizDeck.length===0) return;
   if(qIdx >= quizDeck.length){
     const answeredCount = quizAnswers.filter(a=>a).length;
@@ -3240,8 +3283,10 @@ function renderQuiz(){
       } else {
         mistakeBtn.style.display = 'none';
       }
+      const backNb = document.getElementById('nbBackToNotebookBtn');
+      if(backNb) backNb.style.display = (activeCat === 'Notlarım') ? 'block' : 'none';
     }
-    document.getElementById('finalScore').textContent = `${score} / ${answeredCount} doğru cevap`;
+    document.getElementById('finalScore').textContent = t('quiz_final_score')(score, answeredCount);
     return;
   }
   if(quizTabActive){
@@ -3253,10 +3298,10 @@ function renderQuiz(){
   const qWordEl = document.getElementById('quizWord');
   qWordEl.textContent = FRONT_W(v);
   qWordEl.setAttribute('dir', FRONT_DIR(v));
-  document.getElementById('quizPos').textContent = v.cat || v.pos;
-  document.getElementById('quizCount').textContent = `Soru ${qIdx+1} / ${quizDeck.length}`;
+  document.getElementById('quizPos').textContent = catName(v.cat) || v.pos;
+  document.getElementById('quizCount').textContent = t('quiz_progress')(qIdx+1, quizDeck.length);
   document.getElementById('quizBar').style.width = `${((qIdx+1)/quizDeck.length)*100}%`;
-  document.getElementById('scorePill').textContent = `${score} doğru`;
+  document.getElementById('scorePill').textContent = t('quiz_score')(score);
 
   const existing = quizAnswers[qIdx];
 
@@ -3334,7 +3379,7 @@ function selectAnswer(chosen, correct, btnEl, opts){
     mistakes.push({ word: FRONT_W(v), correct: correct, given: chosen });
   }
   
-  document.getElementById('scorePill').textContent = `${score} doğru`;
+  document.getElementById('scorePill').textContent = t('quiz_score')(score);
   setTimeout(()=>{ qIdx++; renderQuiz(); }, 700);
 }
 
@@ -3350,6 +3395,9 @@ document.getElementById('quizFinishBtn').onclick = () => {
 };
 
 document.getElementById('restartBtn').onclick = buildQuizDeck;
+if(document.getElementById('nbBackToNotebookBtn')) document.getElementById('nbBackToNotebookBtn').onclick = () => {
+  const tabBtn = document.getElementById('tabNotebook'); if(tabBtn) tabBtn.click();
+};
 
 document.getElementById('showMistakesBtn').onclick = () => {
     document.getElementById('doneView').style.display = 'none';
@@ -3362,8 +3410,8 @@ document.getElementById('showMistakesBtn').onclick = () => {
         list.innerHTML += `
         <div class="mistake-item">
             <div class="mistake-word">${m.word}</div>
-            <div class="mistake-given">Senin Cevabın: <b>${m.given}</b></div>
-            <div class="mistake-correct">Doğrusu: <b>${m.correct}</b></div>
+            <div class="mistake-given">${t('quiz_your_answer')} <b>${m.given}</b></div>
+            <div class="mistake-correct">${t('quiz_correct_answer')} <b>${m.correct}</b></div>
         </div>`;
     });
 };
@@ -3383,14 +3431,17 @@ function toggleActive(id, on){ const el = $(id); if(el) el.classList.toggle('act
 
 function deactivateAllTabs(){
   try{document.body.classList.remove('pm-active');}catch(e){}
+  try{document.body.classList.remove('notebook-active');}catch(e){}
   toggleActive('tabCards', false);
   toggleActive('tabQuiz', false);
   toggleActive('tabPersonal', false);
+  toggleActive('tabNotebook', false);
   setDisplay('cardsView', 'none');
   setDisplay('quizView', 'none');
   setDisplay('doneView', 'none');
   setDisplay('mistakesView', 'none');
   setDisplay('personalView', 'none');
+  setDisplay('notebookView', 'none');
   // Kişisel mod farklı bir tema/arkaplan kullandığı için sekmeden çıkınca
   // ana chip/level seçicilerini tekrar görünür yapıyoruz.
   setDisplay('levelBox', '');
@@ -3403,6 +3454,10 @@ if($('tabCards')) $('tabCards').onclick = () => {
   setDisplay('cardsView', 'block');
   setDisplay('langBox', '');       /* dil butonları Kartlar'da görünür */
   setDisplay('langPair', '');
+  if(activeCat === 'Notlarım'){    /* Notlarım'dan geldiyse normal desteye dön */
+    activeCat = 'Tümü';
+    applyFilter();
+  }
 };
 if($('tabQuiz')) $('tabQuiz').onclick = () => {
   deactivateAllTabs();
@@ -3410,6 +3465,10 @@ if($('tabQuiz')) $('tabQuiz').onclick = () => {
   setDisplay('quizView', 'block');
   setDisplay('langBox', '');       /* dil butonları Quiz'de görünür */
   setDisplay('langPair', '');
+  if(activeCat === 'Notlarım'){
+    activeCat = 'Tümü';
+    applyFilter();
+  }
   buildQuizDeck();
 };
 if($('tabPersonal')) $('tabPersonal').onclick = () => {
@@ -3423,6 +3482,1074 @@ if($('tabPersonal')) $('tabPersonal').onclick = () => {
   if(window.PM_open) window.PM_open();
 };
 
+if($('tabNotebook')) $('tabNotebook').onclick = () => {
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('notebookView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  nbInitSync();
+  nbStudyPicking = false;
+  nbRender();
+};
+
+/* =========================================================================
+   📒 NOTLARIM — kullanıcının kendi eklediği kelime defteri + favoriler
+   Mevcut kelime kartı sistemine (deck / renderCard / nextBtn vb.) DOKUNMADAN,
+   sadece "Çalışmaya Başla" ile deck'i kullanıcının kendi kelimeleri +
+   favorilediği kelimelerle doldurup aynı kartlar arayüzünü yeniden
+   kullanıyoruz. Hazır kelime havuzlarıyla (VOCAB) hiç karışmaz.
+
+   HESABA BAĞLI: Veriler artık localStorage yerine Firebase Realtime
+   Database'de, giriş yapan kullanıcının UID'sine bağlı olarak saklanır
+   (progress/{uid}/notebook ve progress/{uid}/favorites) — böylece aynı
+   hesapla farklı cihazdan girildiğinde de kelimeler ve favoriler görünür.
+   Bu yollar zaten mevcut Firebase kuralındaki "progress/$uid" izniyle
+   (auth.uid === $uid) kapsandığı için kural değişikliği GEREKMEZ.
+
+   Önceki (sadece bu cihazda, localStorage) sürümden kalan kelimeler varsa,
+   ilk senkronizasyonda otomatik olarak hesaba taşınır (nbMigrateLocalOnce).
+   ========================================================= */
+const LANG_FLAGS = { de:'🇩🇪', en:'🇬🇧', ar:'🇸🇦', fr:'🇫🇷', es:'🇪🇸', ru:'🇷🇺', tr:'🇹🇷' };
+const LANG_LANDMARK = { de:'🏛️', en:'🕰️', ar:'🕌', fr:'🗼', es:'⛪', ru:'🏰', tr:'🌉' };
+const CAT_I18N = {
+  "Aile": { en:"Family", de:"Familie", ar:"العائلة", fr:"Famille", es:"Familia", ru:"Семья" },
+  "Alet ve Ekipman": { en:"Tools & Equipment", de:"Werkzeug & Ausrüstung", ar:"الأدوات والمعدات", fr:"Outils et équipement", es:"Herramientas y equipo", ru:"Инструменты и оборудование" },
+  "Alışveriş": { en:"Shopping", de:"Einkaufen", ar:"التسوق", fr:"Achats", es:"Compras", ru:"Покупки" },
+  "Aylar": { en:"Months", de:"Monate", ar:"الأشهر", fr:"Mois", es:"Meses", ru:"Месяцы" },
+  "Baharatlar": { en:"Spices", de:"Gewürze", ar:"التوابل", fr:"Épices", es:"Especias", ru:"Специи" },
+  "Bahçe": { en:"Garden", de:"Garten", ar:"الحديقة", fr:"Jardin", es:"Jardín", ru:"Сад" },
+  "Banyo": { en:"Bathroom", de:"Badezimmer", ar:"الحمام", fr:"Salle de bain", es:"Baño", ru:"Ванная" },
+  "Bayramlar": { en:"Holidays", de:"Feiertage", ar:"الأعياد", fr:"Fêtes", es:"Fiestas", ru:"Праздники" },
+  "Bağlaçlar": { en:"Conjunctions", de:"Konjunktionen", ar:"أدوات الربط", fr:"Conjonctions", es:"Conjunciones", ru:"Союзы" },
+  "Bilim": { en:"Science", de:"Wissenschaft", ar:"العلوم", fr:"Sciences", es:"Ciencia", ru:"Наука" },
+  "Deyimler": { en:"Idioms", de:"Redewendungen", ar:"التعابير الاصطلاحية", fr:"Expressions idiomatiques", es:"Modismos", ru:"Идиомы" },
+  "Din": { en:"Religion", de:"Religion", ar:"الدين", fr:"Religion", es:"Religión", ru:"Религия" },
+  "Doğa": { en:"Nature", de:"Natur", ar:"الطبيعة", fr:"Nature", es:"Naturaleza", ru:"Природа" },
+  "Duygular": { en:"Emotions", de:"Gefühle", ar:"المشاعر", fr:"Émotions", es:"Emociones", ru:"Эмоции" },
+  "Edatlar": { en:"Prepositions", de:"Präpositionen", ar:"حروف الجر", fr:"Prépositions", es:"Preposiciones", ru:"Предлоги" },
+  "Ekonomi": { en:"Economy", de:"Wirtschaft", ar:"الاقتصاد", fr:"Économie", es:"Economía", ru:"Экономика" },
+  "Ev": { en:"Home", de:"Zuhause", ar:"المنزل", fr:"Maison", es:"Casa", ru:"Дом" },
+  "Ev Eşyaları": { en:"Household Items", de:"Haushaltsgegenstände", ar:"أدوات المنزل", fr:"Objets ménagers", es:"Artículos del hogar", ru:"Предметы быта" },
+  "Ev İşleri": { en:"Housework", de:"Hausarbeit", ar:"الأعمال المنزلية", fr:"Tâches ménagères", es:"Tareas domésticas", ru:"Домашние дела" },
+  "Eylemler": { en:"Actions", de:"Handlungen", ar:"الأفعال", fr:"Actions", es:"Acciones", ru:"Действия" },
+  "Eğitim": { en:"Education", de:"Bildung", ar:"التعليم", fr:"Éducation", es:"Educación", ru:"Образование" },
+  "Fiiller": { en:"Verbs", de:"Verben", ar:"الأفعال (اللغوية)", fr:"Verbes", es:"Verbos", ru:"Глаголы" },
+  "Genel": { en:"General", de:"Allgemein", ar:"عام", fr:"Général", es:"General", ru:"Общее" },
+  "Giysi": { en:"Clothing", de:"Kleidung", ar:"الملابس", fr:"Vêtements", es:"Ropa", ru:"Одежда" },
+  "Görüşler": { en:"Opinions", de:"Meinungen", ar:"الآراء", fr:"Opinions", es:"Opiniones", ru:"Мнения" },
+  "Günler": { en:"Days", de:"Tage", ar:"الأيام", fr:"Jours", es:"Días", ru:"Дни" },
+  "Hava Durumu": { en:"Weather", de:"Wetter", ar:"الطقس", fr:"Météo", es:"Clima", ru:"Погода" },
+  "Hayvanlar": { en:"Animals", de:"Tiere", ar:"الحيوانات", fr:"Animaux", es:"Animales", ru:"Животные" },
+  "Hobiler": { en:"Hobbies", de:"Hobbys", ar:"الهوايات", fr:"Loisirs", es:"Pasatiempos", ru:"Хобби" },
+  "Kişilik": { en:"Personality", de:"Persönlichkeit", ar:"الشخصية", fr:"Personnalité", es:"Personalidad", ru:"Характер" },
+  "Malzeme": { en:"Material", de:"Material", ar:"المواد", fr:"Matériaux", es:"Materiales", ru:"Материалы" },
+  "Medya": { en:"Media", de:"Medien", ar:"الإعلام", fr:"Médias", es:"Medios", ru:"Медиа" },
+  "Meslekler": { en:"Professions", de:"Berufe", ar:"المهن", fr:"Métiers", es:"Profesiones", ru:"Профессии" },
+  "Mevsimler": { en:"Seasons", de:"Jahreszeiten", ar:"الفصول", fr:"Saisons", es:"Estaciones", ru:"Времена года" },
+  "Meyve ve Sebze": { en:"Fruits & Vegetables", de:"Obst & Gemüse", ar:"الفواكه والخضروات", fr:"Fruits et légumes", es:"Frutas y verduras", ru:"Фрукты и овощи" },
+  "Mutfak": { en:"Kitchen", de:"Küche", ar:"المطبخ", fr:"Cuisine", es:"Cocina", ru:"Кухня" },
+  "Müzik": { en:"Music", de:"Musik", ar:"الموسيقى", fr:"Musique", es:"Música", ru:"Музыка" },
+  "Ofis": { en:"Office", de:"Büro", ar:"المكتب", fr:"Bureau", es:"Oficina", ru:"Офис" },
+  "Okul": { en:"School", de:"Schule", ar:"المدرسة", fr:"École", es:"Escuela", ru:"Школа" },
+  "Politika ve Hukuk": { en:"Politics & Law", de:"Politik & Recht", ar:"السياسة والقانون", fr:"Politique et droit", es:"Política y derecho", ru:"Политика и право" },
+  "Psikoloji": { en:"Psychology", de:"Psychologie", ar:"علم النفس", fr:"Psychologie", es:"Psicología", ru:"Психология" },
+  "Renkler": { en:"Colors", de:"Farben", ar:"الألوان", fr:"Couleurs", es:"Colores", ru:"Цвета" },
+  "Sanat": { en:"Art", de:"Kunst", ar:"الفن", fr:"Art", es:"Arte", ru:"Искусство" },
+  "Sayılar": { en:"Numbers", de:"Zahlen", ar:"الأرقام", fr:"Nombres", es:"Números", ru:"Числа" },
+  "Sağlık": { en:"Health", de:"Gesundheit", ar:"الصحة", fr:"Santé", es:"Salud", ru:"Здоровье" },
+  "Selamlaşma": { en:"Greetings", de:"Begrüßungen", ar:"التحية", fr:"Salutations", es:"Saludos", ru:"Приветствия" },
+  "Sesler ve Duyular": { en:"Sounds & Senses", de:"Geräusche & Sinne", ar:"الأصوات والحواس", fr:"Sons et sens", es:"Sonidos y sentidos", ru:"Звуки и чувства" },
+  "Seyahat": { en:"Travel", de:"Reisen", ar:"السفر", fr:"Voyage", es:"Viajes", ru:"Путешествия" },
+  "Sinema ve Televizyon": { en:"Film & TV", de:"Film & Fernsehen", ar:"السينما والتلفزيون", fr:"Cinéma et télévision", es:"Cine y televisión", ru:"Кино и телевидение" },
+  "Sorular": { en:"Questions", de:"Fragen", ar:"الأسئلة", fr:"Questions", es:"Preguntas", ru:"Вопросы" },
+  "Soyut Kavramlar": { en:"Abstract Concepts", de:"Abstrakte Begriffe", ar:"المفاهيم المجردة", fr:"Concepts abstraits", es:"Conceptos abstractos", ru:"Абстрактные понятия" },
+  "Spor": { en:"Sports", de:"Sport", ar:"الرياضة", fr:"Sport", es:"Deportes", ru:"Спорт" },
+  "Sıfatlar": { en:"Adjectives", de:"Adjektive", ar:"الصفات", fr:"Adjectifs", es:"Adjetivos", ru:"Прилагательные" },
+  "Sıvı Yiyecekler": { en:"Liquid Foods", de:"Flüssige Speisen", ar:"الأطعمة السائلة", fr:"Aliments liquides", es:"Alimentos líquidos", ru:"Жидкая пища" },
+  "Teknoloji": { en:"Technology", de:"Technologie", ar:"التكنولوجيا", fr:"Technologie", es:"Tecnología", ru:"Технологии" },
+  "Toplum": { en:"Society", de:"Gesellschaft", ar:"المجتمع", fr:"Société", es:"Sociedad", ru:"Общество" },
+  "Ulaşım": { en:"Transportation", de:"Transport", ar:"النقل", fr:"Transport", es:"Transporte", ru:"Транспорт" },
+  "Vücut": { en:"Body", de:"Körper", ar:"الجسم", fr:"Corps", es:"Cuerpo", ru:"Тело" },
+  "Yerler": { en:"Places", de:"Orte", ar:"الأماكن", fr:"Lieux", es:"Lugares", ru:"Места" },
+  "Yiyecek": { en:"Food", de:"Essen", ar:"الطعام", fr:"Nourriture", es:"Comida", ru:"Еда" },
+  "Zaman": { en:"Time", de:"Zeit", ar:"الوقت", fr:"Temps", es:"Tiempo", ru:"Время" },
+  "Zamanlar": { en:"Tenses", de:"Zeitformen", ar:"الأزمنة", fr:"Temps (grammaire)", es:"Tiempos verbales", ru:"Времена (грамматика)" },
+  "Zamirler": { en:"Pronouns", de:"Pronomen", ar:"الضمائر", fr:"Pronoms", es:"Pronombres", ru:"Местоимения" },
+  "Zarflar": { en:"Adverbs", de:"Adverbien", ar:"الظروف", fr:"Adverbes", es:"Adverbios", ru:"Наречия" },
+  "Çevre": { en:"Environment", de:"Umwelt", ar:"البيئة", fr:"Environnement", es:"Medio ambiente", ru:"Окружающая среда" },
+  "Ölçüler": { en:"Measurements", de:"Maße", ar:"المقاييس", fr:"Mesures", es:"Medidas", ru:"Измерения" },
+  "Ülkeler ve Milliyetler": { en:"Countries & Nationalities", de:"Länder & Nationalitäten", ar:"البلدان والجنسيات", fr:"Pays et nationalités", es:"Países y nacionalidades", ru:"Страны и национальности" },
+  "İletişim": { en:"Communication", de:"Kommunikation", ar:"التواصل", fr:"Communication", es:"Comunicación", ru:"Общение" },
+  "İlişkiler": { en:"Relationships", de:"Beziehungen", ar:"العلاقات", fr:"Relations", es:"Relaciones", ru:"Отношения" },
+  "İş ve Kariyer": { en:"Work & Career", de:"Arbeit & Karriere", ar:"العمل والمهنة", fr:"Travail et carrière", es:"Trabajo y carrera", ru:"Работа и карьера" },
+  "Şekiller": { en:"Shapes", de:"Formen", ar:"الأشكال", fr:"Formes", es:"Formas", ru:"Формы" },
+};
+/* Kategori adı, kullanıcının ANA diline göre çevrilir; ana dil Türkçe
+   ise veya sözlükte karşılığı yoksa orijinal (Türkçe) ad döner. */
+function catName(trName){
+  if(!trName) return trName;
+  const nl = (typeof NATIVE_LANG !== 'undefined' && NATIVE_LANG) || 'tr';
+  if(nl === 'tr') return trName;
+  const entry = CAT_I18N[trName];
+  return (entry && entry[nl]) ? entry[nl] : trName;
+}
+window.CAT_I18N = CAT_I18N; window.catName = catName;
+let nbWords = {};        /* {pushId: {w,tr,ex,lang,cat,ts}} — manuel eklenenler */
+let nbFavorites = {};    /* ARTIK KULLANILMIYOR (geriye dönük uyumluluk için bırakıldı) — favoriler artık nbWords içinde isFavorite bayrağıyla tutuluyor. */
+let nbSyncedUid = null;
+let nbEditingId = null;      /* düzenlenen manuel kelimenin pushId'si */
+let nbSelectedAddLang = null; /* ekleme formunda seçilen dil (zorunlu) */
+let nbPrefill = null;         /* Kelime Ara'dan seçilince formu önceden dolduran veri {w,tr,ex,cat} */
+let nbStudyPicking = false;   /* false | 'lang' | 'level' — "Çalışmaya Başla" akışının hangi adımda olduğu */
+let nbStudyLang = null;       /* çalışma akışında seçilen dil (geçici) */
+let nbFilterText = '';
+let nbFilterLang = '';
+let nbFilterCat = '';
+let nbFilterDiff = '';
+
+function nbSanitizeKey(s){
+  return String(s||'').toLowerCase().trim()
+    .replace(/[.#$\[\]\/\s]+/g, '_')
+    .replace(/[^a-z0-9_а-яa-zğüşöçıä]/gi, '')
+    .slice(0, 80) || 'x';
+}
+function nbFavKey(lang, w){ return 'fav_' + (lang||'de') + '_' + nbSanitizeKey(w); }
+
+function nbInitSync(){
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid || nbSyncedUid === uid) return;
+  nbSyncedUid = uid;
+  db.ref('progress/'+uid+'/notebook').on('value', snap => {
+    nbWords = snap.val() || {};
+    nbMigrateLocalOnce();
+    nbMigrateOldFavoritesOnce();
+    nbDedupeIfNeeded();
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+  });
+}
+/* ESKİ VERİ TAŞIMA: Favoriler önceden ayrı bir 'progress/{uid}/favorites'
+   düğümünde tutuluyordu ve favoriden çıkarınca kelime tamamen siliniyordu.
+   Artık favoriler de Kelime Defterinin (notebook) kalıcı bir parçası —
+   sadece 'isFavorite' bayrağıyla işaretleniyor; favoriden çıkarmak bayrağı
+   kaldırır, kelimeyi SİLMEZ. Eski düğümde kalmış veri varsa bir kereliğine
+   buraya taşınır. */
+let nbOldFavMigrationAttempted = false;
+function nbMigrateOldFavoritesOnce(){
+  if(nbOldFavMigrationAttempted) return;
+  nbOldFavMigrationAttempted = true;
+  try{
+    if(!nbSyncedUid) return;
+    const db = window.LB_getDb(); if(!db) return;
+    db.ref('progress/'+nbSyncedUid+'/favorites').once('value').then(snap => {
+      const old = snap.val();
+      if(!old) return;
+      const updates = {};
+      Object.keys(old).forEach(key => {
+        const it = old[key] || {};
+        if(!it.w) return;
+        const favId = nbFavKey(it.lang||'de', it.w);
+        if(nbWords[favId]) return; /* zaten taşınmış */
+        updates['progress/'+nbSyncedUid+'/notebook/'+favId] = {
+          w: it.w, tr: it.tr||'', ex: it.ex||'', exTr: it.exTr||'', cat: it.cat||'',
+          level: it.level||'', difficulty: it.difficulty||'orta', lang: it.lang||'de',
+          isFavorite: true, ts: it.ts || Date.now()
+        };
+      });
+      if(Object.keys(updates).length){ db.ref().update(updates); }
+      db.ref('progress/'+nbSyncedUid+'/favorites').remove();
+    }).catch(()=>{});
+  }catch(e){}
+}
+/* Kullanıcı henüz giriş sürecini tamamlamamış olabilir; uid hazır olana
+   kadar (giriş formunu doldurmak dahil, uzunca sürebilir) periyodik dener. */
+(function nbWatchAuth(){
+  let tries = 0;
+  const iv = setInterval(() => {
+    tries++;
+    const uid = window.LB_getUid ? window.LB_getUid() : null;
+    if(uid){ nbInitSync(); clearInterval(iv); }
+    else if(tries > 600){ clearInterval(iv); } /* ~5 dakika sonra vazgeç */
+  }, 500);
+})();
+
+/* BUG NOTU (düzeltildi): nbMigrateLocalOnce daha önce yalnızca bir
+   localStorage bayrağıyla korunuyordu. localStorage.setItem herhangi bir
+   sebeple (gizli sekme, depolama kısıtlaması vb.) sessizce başarısız
+   olursa, bayrak hiç kalıcı olmuyor ve her push() sonrası tekrar tetiklenen
+   'value' olayı fonksiyonu YENİDEN çalıştırıp AYNI kelimeyi tekrar tekrar
+   ekliyordu (sonsuz döngü → yüzlerce kopya). Artık bellek-içi bir bayrakla
+   (nbMigrationAttempted) sayfa boyunca KESİN olarak bir kez çalışıyor. */
+let nbMigrationAttempted = false;
+let nbDedupeAttempted = false;
+
+function nbMigrateLocalOnce(){
+  if(nbMigrationAttempted) return;
+  nbMigrationAttempted = true;
+  try{
+    if(!nbSyncedUid) return;
+    const flagKey = 'lumira_notebook_migrated_' + nbSyncedUid;
+    if(localStorage.getItem(flagKey)) return;
+    const raw = localStorage.getItem('lumira_notebook_v1');
+    let local = raw ? JSON.parse(raw) : [];
+    if(!Array.isArray(local)) local = [];
+    local = local.slice(0, 200);
+    const db = window.LB_getDb();
+    if(local.length && db){
+      const existing = {};
+      Object.keys(nbWords||{}).forEach(id => {
+        const it = nbWords[id]||{};
+        existing[(it.lang||'de')+'::'+nbSanitizeKey(it.w)] = true;
+      });
+      local.forEach(item => {
+        if(!item || !item.w) return;
+        const k = (item.lang||'de')+'::'+nbSanitizeKey(item.w);
+        if(existing[k]) return;
+        existing[k] = true;
+        db.ref('progress/'+nbSyncedUid+'/notebook').push({
+          w:item.w, tr:item.tr||'', ex:item.ex||'', lang:item.lang||'de', cat:'', ts: Date.now()
+        });
+      });
+    }
+    try{ localStorage.setItem(flagKey, '1'); }catch(e){}
+    try{ localStorage.removeItem('lumira_notebook_v1'); }catch(e){}
+  }catch(e){}
+}
+
+/* Kendi kendini onaran temizlik: aynı (dil + kelime) için birden fazla
+   manuel kayıt varsa (ör. yukarıdaki eski bug'dan kalanlar) yalnızca en
+   eskisini tutup gerisini tek seferde siler. Sayfa başına bir kez çalışır. */
+function nbDedupeIfNeeded(){
+  if(nbDedupeAttempted) return;
+  nbDedupeAttempted = true;
+  try{
+    if(!nbSyncedUid) return;
+    const db = window.LB_getDb(); if(!db) return;
+    const seen = {};
+    const toDelete = [];
+    Object.keys(nbWords||{}).sort().forEach(id => {
+      const it = nbWords[id] || {};
+      const key = (it.lang||'de')+'::'+nbSanitizeKey(it.w)+'::'+nbSanitizeKey(it.tr||'');
+      if(seen[key]){ toDelete.push(id); }
+      else{ seen[key] = id; }
+    });
+    if(toDelete.length){
+      const updates = {};
+      toDelete.forEach(id => { updates[id] = null; });
+      db.ref('progress/'+nbSyncedUid+'/notebook').update(updates).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+function nbRenderIfOpen(){
+  const tab = document.getElementById('tabNotebook');
+  if(tab && tab.classList.contains('active') && document.getElementById('notebookView').style.display !== 'none'){
+    nbRender();
+  }
+}
+
+function nbEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* Dil adını (Almanca/German/Deutsch...) kullanıcının ANA diline göre döner.
+   LANGS[code].label her zaman Türkçe olduğu için, varsa I18N'in
+   lang_names sözlüğünden NATIVE_LANG'e göre çevrilmiş adı kullanır. */
+function nbLangLabel(code){
+  const names = (typeof t === 'function' && t('lang_names')) || {};
+  return names[code] || ((LANGS[code]||{}).label) || code;
+}
+
+/* nbWords + nbFavorites birleşik liste — her öğe {id, source, w, tr, ex, lang, cat} */
+function nbCombinedList(){
+  const out = [];
+  Object.keys(nbWords||{}).forEach(id => {
+    const it = nbWords[id] || {};
+    out.push({ id, source: it.isFavorite ? 'favorite' : 'manual', w:it.w, tr:it.tr||'', ex:it.ex||'', exTr:it.exTr||'', pos:it.pos||'', lang:it.lang||'de', cat:it.cat||'', level:it.level||'', difficulty:it.difficulty||'orta', ts:it.ts||0 });
+  });
+  out.sort((a,b) => (b.ts||0) - (a.ts||0));
+  return out;
+}
+function nbLangsPresent(list){
+  const seen = {};
+  list.forEach(it => { seen[it.lang||'de'] = true; });
+  return Object.keys(seen);
+}
+
+/* ---------------------- Özel açılır menü (native <select> yerine) ----------------------
+   Native <select>'in açılır listesi tarayıcı temasını kullanır ve uygulamanın
+   koyu temasıyla uyuşmuyordu. Bunun yerine uygulamanın kendi görsel diliyle
+   (arama sonucu kutusuyla aynı stil) tamamen özel, dokunmatik-uyumlu bir
+   açılır menü. */
+function nbCSelectHtml(id, options, selectedVal, placeholderLabel){
+  const sel = options.find(o => o[0] === selectedVal) || options[0];
+  let html = '<div class="nb-cselect" id="'+id+'Box">';
+  html += '<div class="nb-cselect-trigger" id="'+id+'Trigger"><span>'+(sel[2]?sel[2]+' ':'')+sel[1]+'</span><span class="nb-cselect-arrow">▾</span></div>';
+  html += '<div class="nb-cselect-panel" id="'+id+'Panel" style="display:none;">';
+  options.forEach(o => {
+    html += '<div class="nb-cselect-opt'+(o[0]===selectedVal?' active':'')+'" data-val="'+nbEsc(o[0])+'">'+(o[2]?o[2]+' ':'')+o[1]+'</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+function nbCSelectBind(id, onChange){
+  const trigger = document.getElementById(id+'Trigger');
+  const panel = document.getElementById(id+'Panel');
+  if(!trigger || !panel) return;
+  trigger.onclick = (e) => {
+    e.stopPropagation();
+    const isOpen = panel.style.display !== 'none';
+    document.querySelectorAll('.nb-cselect-panel').forEach(p => { p.style.display = 'none'; });
+    panel.style.display = isOpen ? 'none' : 'block';
+  };
+  panel.querySelectorAll('.nb-cselect-opt').forEach(opt => {
+    opt.onmousedown = (e) => {
+      e.preventDefault();
+      panel.style.display = 'none';
+      onChange(opt.getAttribute('data-val'));
+    };
+  });
+}
+if(!window._nbCSelectOutsideBound){
+  window._nbCSelectOutsideBound = true;
+  document.addEventListener('mousedown', (e) => {
+    if(e.target.closest && e.target.closest('.nb-cselect')) return;
+    document.querySelectorAll('.nb-cselect-panel').forEach(p => { p.style.display = 'none'; });
+  });
+}
+
+/* ---------------------- Hazır listede kelime arama ---------------------- */
+function nbEnsureSearchVocabReady(cb){
+  try{
+    const langs = nbSelectedAddLang ? [nbSelectedAddLang] : Object.keys(LANGS);
+    const need = langs.filter(l => !(window.VOCAB_LOADED && window.VOCAB_LOADED[l]));
+    if(!need.length || !window.ensureVocab){ cb(); return; }
+    Promise.all(need.map(l => window.ensureVocab(l))).then(cb).catch(cb);
+  }catch(e){ cb(); }
+}
+function nbSearchVocab(query){
+  const q = query.trim().toLowerCase();
+  if(!q || typeof VOCAB === 'undefined') return [];
+  const langFilter = nbSelectedAddLang;
+  const starts = [];
+  const contains = [];
+  for(let i=0; i<VOCAB.length; i++){
+    const v = VOCAB[i];
+    if(langFilter && v.lang !== langFilter) continue;
+    const w = (v.w||'').toLowerCase();
+    const tr = (v.tr||'').toLowerCase();
+    if(w.indexOf(q) === 0 || tr.indexOf(q) === 0){ starts.push(v); }
+    else if(w.indexOf(q) > -1 || tr.indexOf(q) > -1){ contains.push(v); }
+    if(starts.length >= 8) break;
+  }
+  return starts.concat(contains).slice(0, 8);
+}
+/* --------------------------- Akıllı otomatik doldurma ---------------------------
+   Not: Bu statik (sunucusuz) sitede gerçek bir üretken yapay zeka API'sini
+   güvenle çağıramayız — API anahtarını tarayıcıya koymak herkesin onu
+   çalıp kötüye kullanmasına açık kapı bırakır. Onun yerine "akıllı
+   doldurma" yapıyoruz: kelime hazır 30.000+ kelimelik veritabanımızda
+   varsa oradaki kategori/örnek cümleyi kullanıyoruz; yoksa basit ama
+   dilbilgisel olarak doğru bir şablon cümle üretip kategoriyi "Genel"
+   olarak bırakıyoruz. Kullanıcı istediği zaman elle değiştirebilir. */
+function nbFindExactVocabMatch(lang, word){
+  if(typeof VOCAB === 'undefined') return null;
+  const q = word.trim().toLowerCase();
+  for(let i=0;i<VOCAB.length;i++){
+    const v = VOCAB[i];
+    if(v.lang === lang && (v.w||'').toLowerCase() === q) return v;
+  }
+  return null;
+}
+const NB_TEMPLATE_EX = {
+  de: w => 'Ich habe heute das Wort "'+w+'" gelernt.',
+  en: w => 'I learned the word "'+w+'" today.',
+  ar: w => 'تعلمت اليوم كلمة "'+w+'".',
+  fr: w => 'J\'ai appris le mot "'+w+'" aujourd\'hui.',
+  es: w => 'Hoy aprendí la palabra "'+w+'".',
+  ru: w => 'Сегодня я выучил слово "'+w+'".'
+};
+const NB_TEMPLATE_EX_TR = w => 'Bugün "'+w+'" kelimesini öğrendim.';
+function nbAutoFill(lang, word, currentCat, currentEx, currentExTr){
+  let cat = currentCat, ex = currentEx, exTr = currentExTr||'', level = '', filled = false;
+  const match = nbFindExactVocabMatch(lang, word);
+  if(match){
+    if(!cat && match.cat){ cat = match.cat; filled = true; }
+    if(!ex && match.ex){ ex = match.ex; filled = true; }
+    if(!exTr && match.exTr){ exTr = match.exTr; filled = true; }
+    if(match.level){ level = match.level; }
+  }
+  if(!cat){ cat = 'Genel'; filled = true; }
+  if(!ex && NB_TEMPLATE_EX[lang]){ ex = NB_TEMPLATE_EX[lang](word); filled = true; }
+  if(!exTr){ exTr = NB_TEMPLATE_EX_TR(word); filled = true; }
+  return { cat, ex, exTr, level, filled };
+}
+
+function nbQuickAdd(v){
+  try{
+    if(!v) return;
+    nbSelectedAddLang = v.lang;
+    nbEditingId = null;
+    nbPrefill = { w: v.w||'', tr: v.tr||'', ex: v.ex||'', cat: v.cat||'', exTr: v.exTr||'' };
+    nbRender();
+    const wi = document.getElementById('nbInputWord');
+    if(wi) wi.scrollIntoView({ behavior:'smooth', block:'center' });
+  }catch(e){ console.error('nbQuickAdd hata:', e); }
+}
+
+function nbRender(){
+  const host = document.getElementById('notebookView');
+  if(!host) return;
+  if(window.PM_injectStyles) window.PM_injectStyles();
+
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!uid){
+    host.innerHTML = '<div class="nb-wrap"><div class="nb-empty">'+t('nb_login_required')+'</div></div>';
+    return;
+  }
+
+  const list = nbCombinedList();
+
+  if(nbStudyPicking === 'lang'){
+    const langs = nbLangsPresent(list);
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>'+t('nb_study_lang_title')+'</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+t('nb_study_lang_sub')+'</div>';
+    html += '<div class="lang-box">';
+    langs.forEach(code => {
+      const L = LANGS[code] || { label: code };
+      const count = list.filter(it => (it.lang||'de') === code).length;
+      html += '<div class="lang-opt" data-lang="'+code+'" data-nb-study-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(nbLangLabel(code))+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+t('nb_word_count')(count)+'</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbStudyCancel" style="width:100%;margin-top:14px;">'+t('nb_cancel')+'</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-study-lang]').forEach(el => {
+      el.onclick = () => { nbStudyLang = el.getAttribute('data-nb-study-lang'); nbStudyPicking = 'level'; nbRender(); };
+    });
+    const cancelStudy = document.getElementById('nbStudyCancel');
+    if(cancelStudy) cancelStudy.onclick = () => { nbStudyPicking = false; nbRender(); };
+    return;
+  }
+
+  if(nbStudyPicking === 'level'){
+    const langWords = list.filter(it => (it.lang||'de') === nbStudyLang);
+    const levelsPresent = Array.from(new Set(langWords.map(it => it.level).filter(Boolean)));
+    const LEVEL_ORDER = ['A1','A2','B1','B2'];
+    levelsPresent.sort((a,b) => LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b));
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>'+t('nb_study_level_title')+'</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+t('nb_study_level_sub')((LANG_FLAGS[nbStudyLang]||'')+' '+nbEsc(nbLangLabel(nbStudyLang)))+'</div>';
+    html += '<div class="lang-box">';
+    html += '<div class="lang-opt" data-nb-study-level=""><div class="lname" style="font-size:15px;">'+t('nb_all_caps')+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+t('nb_word_count')(langWords.length)+'</div></div>';
+    levelsPresent.forEach(lv => {
+      const count = langWords.filter(it => it.level === lv).length;
+      html += '<div class="lang-opt" data-nb-study-level="'+lv+'"><div class="lname" style="font-size:15px;">'+lv+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+t('nb_word_count')(count)+'</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbStudyBack" style="width:100%;margin-top:14px;">'+t('nb_back_change_lang')+'</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-study-level]').forEach(el => {
+      el.onclick = () => nbStartStudy(nbStudyLang, el.getAttribute('data-nb-study-level') || null);
+    });
+    const backL = document.getElementById('nbStudyBack');
+    if(backL) backL.onclick = () => { nbStudyPicking = 'lang'; nbRender(); };
+    return;
+  }
+
+  if(nbQuizPicking === 'lang'){
+    const langs = nbLangsPresent(list);
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>'+t('nb_quiz_lang_title')+'</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+t('nb_quiz_lang_sub')+'</div>';
+    html += '<div class="lang-box">';
+    langs.forEach(code => {
+      const L = LANGS[code] || { label: code };
+      const count = list.filter(it => (it.lang||'de') === code).length;
+      html += '<div class="lang-opt" data-lang="'+code+'" data-nb-quiz-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(nbLangLabel(code))+'</div><div class="lname" style="opacity:.65;font-weight:600;">'+t('nb_word_count')(count)+'</div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn small" id="nbQuizCancel" style="width:100%;margin-top:14px;">'+t('nb_cancel')+'</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-quiz-lang]').forEach(el => {
+      el.onclick = () => { nbQuizLang = el.getAttribute('data-nb-quiz-lang'); nbQuizPicking = 'diff'; nbRender(); };
+    });
+    const c1 = document.getElementById('nbQuizCancel');
+    if(c1) c1.onclick = () => { nbQuizPicking = null; nbRender(); };
+    return;
+  }
+
+  if(nbQuizPicking === 'diff'){
+    const langWords = list.filter(it => (it.lang||'de') === nbQuizLang);
+    const counts = { kolay:0, orta:0, zor:0 };
+    langWords.forEach(it => { counts[it.difficulty||'orta']++; });
+    let html = '<div class="nb-wrap"><div class="pm-root"><div class="pm-card">';
+    html += '<h4>'+t('nb_quiz_diff_title')+'</h4>';
+    html += '<div class="pm-sub" style="margin-bottom:12px;">'+t('nb_quiz_diff_sub')((LANG_FLAGS[nbQuizLang]||'')+' '+nbEsc(nbLangLabel(nbQuizLang)))+'</div>';
+    html += '<div class="nb-diff-row" style="margin-bottom:14px;">';
+    [['kolay','🙂',t('nb_diff_easy'),counts.kolay],['orta','😐',t('nb_diff_medium'),counts.orta],['zor','☹️',t('nb_diff_hard'),counts.zor]].forEach(d => {
+      const disabled = d[3] === 0;
+      html += '<div class="nb-diff-opt'+(disabled?'':' ')+'" data-nb-quiz-diff="'+d[0]+'" style="'+(disabled?'opacity:.4;pointer-events:none;':'cursor:pointer;')+'"><span class="nb-diff-emoji">'+d[1]+'</span><div class="nb-diff-text"><div class="nb-diff-name">'+d[2]+'</div><div class="nb-diff-sub">'+t('nb_word_count')(d[3])+'</div></div></div>';
+    });
+    html += '</div>';
+    html += '<button type="button" class="pm-btn primary" data-nb-quiz-diff="" style="width:100%;margin-bottom:8px;">'+t('nb_quiz_all_diff')(langWords.length)+'</button>';
+    html += '<button type="button" class="pm-btn small" id="nbQuizBack" style="width:100%;">'+t('nb_back_change_lang')+'</button>';
+    html += '</div></div></div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-nb-quiz-diff]').forEach(el => {
+      el.onclick = () => nbStartQuiz(nbQuizLang, el.getAttribute('data-nb-quiz-diff') || null);
+    });
+    const back = document.getElementById('nbQuizBack');
+    if(back) back.onclick = () => { nbQuizPicking = 'lang'; nbRender(); };
+    return;
+  }
+
+  const editing = nbEditingId != null ? list.find(w => w.id === nbEditingId) : null;
+  if(editing && nbSelectedAddLang == null) nbSelectedAddLang = editing.lang;
+  const formSrc = editing || nbPrefill || null;
+
+  let html = '<div class="nb-wrap">';
+  html += '<p class="nb-intro">'+t('nb_intro')+'</p>';
+
+  html += '<div class="pm-root">';
+  html += '<div class="pm-card" style="position:relative;">';
+  html += '<h4>'+(editing ? t('nb_edit_title') : t('nb_add_title'))+'</h4>';
+
+  html += '<div class="pm-sub" style="margin-bottom:8px;">'+t('nb_step1_lang')+'</div>';
+  html += '<div class="lang-box">';
+  Object.keys(LANGS).forEach(code => {
+    const L = LANGS[code];
+    const active = nbSelectedAddLang === code;
+    html += '<div class="lang-opt'+(active?' active':'')+'" data-lang="'+code+'" data-nb-add-lang="'+code+'"><span class="landmark" aria-hidden="true">'+(LANG_LANDMARK[code]||'')+'</span><div class="flag">'+(LANG_FLAGS[code]||'🌐')+'</div><div class="lname">'+nbEsc(nbLangLabel(code))+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="nb-lang-required" id="nbLangWarn"></div>';
+
+  if(!editing){
+    html += '<div class="pm-sub" style="margin:14px 0 8px;">'+t('nb_step2_search')+'</div>';
+    html += '<input type="text" class="pm-fill-input" id="nbSearchInput" placeholder="'+t('nb_search_placeholder')+'" autocomplete="off" autocapitalize="off" spellcheck="false">';
+    html += '<div id="nbSearchResults" class="nb-search-results"></div>';
+    html += '<div class="pm-sub" style="margin:14px 0 8px;">'+t('nb_step3_info')+'</div>';
+  }
+
+  html += '<input type="text" class="pm-fill-input" id="nbInputWord" placeholder="'+t('nb_word_placeholder')+'" maxlength="60" style="margin-top:'+(editing?'14px':'0')+';margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.w:'')+'">';
+  html += '<input type="text" class="pm-fill-input" id="nbInputTr" placeholder="'+t('nb_meaning_placeholder')+'" maxlength="60" style="margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.tr:'')+'">';
+  html += '<input type="text" class="pm-fill-input" id="nbInputCat" placeholder="'+t('nb_cat_placeholder')+'" maxlength="30" style="margin-bottom:10px;" value="'+nbEsc(formSrc?formSrc.cat:'')+'">';
+  html += '<textarea class="pm-fill-input" id="nbInputEx" placeholder="'+t('nb_example_placeholder')+'" style="margin-bottom:14px;min-height:46px;resize:vertical;font-family:inherit;font-size:14px;">'+nbEsc(formSrc?formSrc.ex:'')+'</textarea>';
+  html += '<div style="display:flex;gap:10px;">';
+  if(editing){
+    html += '<button type="button" class="pm-btn small" id="nbCancelEdit" style="flex:1;">'+t('nb_cancel')+'</button>';
+    html += '<button type="button" class="pm-btn primary" id="nbSaveWord" style="flex:1;">'+t('nb_save')+'</button>';
+  }else{
+    html += '<button type="button" class="pm-btn primary" id="nbSaveWord" style="width:100%;">'+t('nb_add_to_notebook')+'</button>';
+  }
+  html += '</div></div></div>';
+
+  html += '<button type="button" class="nb-start" id="nbStartStudy" '+(list.length===0?'disabled':'')+'>'+t('nb_start_study')(list.length)+'</button>';
+  html += '<button type="button" class="nb-start-secondary" id="nbQuizOl" '+(list.length===0?'disabled style="opacity:.4;"':'')+'>'+t('nb_quiz_ol')+'</button>';
+  html += '<button type="button" class="nb-start-secondary" id="nbWritingBtn">'+t('nb_writing_practice')+'</button>';
+
+  const filterLangs = nbLangsPresent(list);
+  const filterCats = Array.from(new Set(list.map(it => it.cat).filter(Boolean))).sort();
+  let filtered = list;
+  if(nbFilterLang) filtered = filtered.filter(it => (it.lang||'de') === nbFilterLang);
+  if(nbFilterCat) filtered = filtered.filter(it => (it.cat||'') === nbFilterCat);
+  if(nbFilterDiff) filtered = filtered.filter(it => (it.difficulty||'orta') === nbFilterDiff);
+  if(nbFilterText.trim()){
+    const q = nbFilterText.trim().toLowerCase();
+    filtered = filtered.filter(it => (it.w||'').toLowerCase().includes(q) || (it.tr||'').toLowerCase().includes(q));
+  }
+
+  html += '<div class="nb-filter-bar">';
+  html += '<div class="nb-filter-search-wrap"><span class="nb-filter-search-icon">🔍</span><input type="text" class="nb-filter-search" id="nbFilterInput" placeholder="'+t('nb_search_notebook_placeholder')+'" value="'+nbEsc(nbFilterText)+'"></div>';
+  html += '<div class="nb-filter-row">';
+
+  const langOptions = [['',t('nb_all_langs'),'']].concat(filterLangs.map(code => [code, nbEsc(nbLangLabel(code)), LANG_FLAGS[code]||'']));
+  html += nbCSelectHtml('nbFilterLang', langOptions, nbFilterLang, t('nb_all_langs'));
+
+  const catOptions = [['',t('nb_all_cats'),'']].concat(filterCats.map(cat => [cat, nbEsc(catName(cat)), '']));
+  html += nbCSelectHtml('nbFilterCat', catOptions, nbFilterCat, t('nb_all_cats'));
+
+  const diffOptions = [['',t('nb_all_diffs'),''],['kolay',t('nb_diff_easy'),'🙂'],['orta',t('nb_diff_medium'),'😐'],['zor',t('nb_diff_hard'),'☹️']];
+  html += nbCSelectHtml('nbFilterDiff', diffOptions, nbFilterDiff, t('nb_all_diffs'));
+
+  html += '</div></div>';
+
+  html += '<div class="nb-list-title"><span>'+t('nb_list_title')+'</span><span>'+t('nb_list_count')(filtered.length,list.length)+'</span></div>';
+  if(list.length === 0){
+    html += '<div class="nb-empty">'+t('nb_empty_none')+'</div>';
+  }else if(filtered.length === 0){
+    html += '<div class="nb-empty">'+t('nb_empty_filtered')+'</div>';
+  }else{
+    const diffLabel = { kolay:['🙂',t('nb_diff_easy')], orta:['😐',t('nb_diff_medium')], zor:['☹️',t('nb_diff_hard')] };
+    filtered.forEach(w => {
+      const dl = diffLabel[w.difficulty||'orta'];
+      html += '<div class="nb-item">';
+      html += '<div class="nb-item-main">';
+      html += '<div class="nb-item-w">'+nbEsc(w.w)+'</div>';
+      if(w.tr) html += '<div class="nb-item-tr">'+nbEsc(w.tr)+'</div>';
+      if(w.ex) html += '<div class="nb-item-ex">'+nbEsc(w.ex)+'</div>';
+      html += '<div>';
+      html += '<span class="nb-badge nb-badge-'+(w.source==='favorite'?'fav':'manual')+'">'+(w.source==='favorite'?t('nb_badge_favorite'):t('nb_badge_added'))+'</span>';
+      html += '<span class="nb-badge nb-badge-lang">'+(LANG_FLAGS[w.lang]||'🌐')+' '+nbEsc(nbLangLabel(w.lang))+'</span>';
+      if(w.cat) html += '<span class="nb-badge nb-badge-cat">'+nbEsc(catName(w.cat))+'</span>';
+      if(w.level) html += '<span class="nb-badge nb-badge-level">'+nbEsc(w.level)+'</span>';
+      html += '</div>';
+      html += '<div class="nb-diff-mini">';
+      ['kolay','orta','zor'].forEach(d => {
+        html += '<div class="nb-diff-mini-btn'+((w.difficulty||'orta')===d?' active':'')+'" data-diff="'+d+'" data-nb-diff-set="'+w.id+'" data-nb-diff-source="'+w.source+'" data-nb-diff-level="'+d+'">'+diffLabel[d][0]+' '+diffLabel[d][1]+'</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+      html += '<div class="nb-item-actions">';
+      html += '<div class="nb-icon-btn" data-nb-edit="'+w.id+'" title="'+t('nb_edit_tooltip')+'">✏️</div>';
+      html += '<div class="nb-icon-btn danger" data-nb-del="'+w.id+'" title="'+t('nb_delete_tooltip')+'">🗑️</div>';
+      html += '</div></div>';
+    });
+  }
+  html += '</div>';
+  host.innerHTML = html;
+
+  const filterInput = document.getElementById('nbFilterInput');
+  if(filterInput) filterInput.oninput = () => {
+    nbFilterText = filterInput.value;
+    const cursorPos = filterInput.selectionStart;
+    nbRender();
+    const freshInput = document.getElementById('nbFilterInput');
+    if(freshInput){ freshInput.focus(); try{ freshInput.setSelectionRange(cursorPos, cursorPos); }catch(e){} }
+  };
+
+  nbCSelectBind('nbFilterLang', val => { nbFilterLang = val; nbRender(); });
+  nbCSelectBind('nbFilterCat', val => { nbFilterCat = val; nbRender(); });
+  nbCSelectBind('nbFilterDiff', val => { nbFilterDiff = val; nbRender(); });
+
+  host.querySelectorAll('[data-nb-diff-set]').forEach(el => {
+    el.onclick = () => nbSetDifficultyDirect(el.getAttribute('data-nb-diff-set'), el.getAttribute('data-nb-diff-source'), el.getAttribute('data-nb-diff-level'));
+  });
+
+  const quizBtn = document.getElementById('nbQuizOl');
+  if(quizBtn) quizBtn.onclick = () => {
+    if(nbCombinedList().length === 0) return;
+    nbQuizPicking = 'lang';
+    nbRender();
+  };
+
+  const writingBtn = document.getElementById('nbWritingBtn');
+  if(writingBtn) writingBtn.onclick = () => {
+    /* tabPersonal'ın tıklama mantığıyla birebir aynı (bkz. yukarıdaki
+       $('tabPersonal').onclick), sadece sonunda ana sayfa yerine doğrudan
+       Yazma Pratiği'ni açar - iki ayrı openPersonalMode çağrısının yarış
+       durumuna (ve çift veri yüklemeye) yol açmaması için PM_open yerine
+       tek seferde PM_openWritingPractice çağrılır. */
+    deactivateAllTabs();
+    toggleActive('tabPersonal', true);
+    setDisplay('personalView', 'block');
+    setDisplay('levelBox', 'none');
+    setDisplay('chips', 'none');
+    setDisplay('langBox', 'none');
+    setDisplay('langPair', 'none');
+    if(window.PM_openWritingPractice) window.PM_openWritingPractice();
+  };
+
+  host.querySelectorAll('[data-nb-add-lang]').forEach(el => {
+    el.onclick = () => { nbSelectedAddLang = el.getAttribute('data-nb-add-lang'); nbRender(); };
+  });
+
+  const searchInput = document.getElementById('nbSearchInput');
+  const searchResults = document.getElementById('nbSearchResults');
+  if(searchInput && searchResults){
+    let searchSeq = 0;
+    const closeResults = () => { searchResults.innerHTML = ''; searchResults.style.display = 'none'; };
+    searchInput.oninput = () => {
+      const q = searchInput.value.trim();
+      const mySeq = ++searchSeq;
+      if(q.length < 2){ closeResults(); return; }
+      nbEnsureSearchVocabReady(() => {
+        if(mySeq !== searchSeq) return; /* kullanıcı yazmaya devam etmiş, eski sonucu atla */
+        const matches = nbSearchVocab(q);
+        if(!matches.length){
+          searchResults.innerHTML = '<div class="nb-search-empty">Hazır listelerde bulunamadı — aşağıdan elle ekleyebilirsin.</div>';
+          searchResults.style.display = 'block';
+          return;
+        }
+        searchResults.innerHTML = matches.map((v,i) =>
+          '<div class="nb-search-item" data-nb-pick="'+i+'"><span class="nb-search-flag">'+(LANG_FLAGS[v.lang]||'🌐')+'</span><div class="nb-search-text"><b>'+nbEsc(v.w)+'</b>'+(v.tr?(' — '+nbEsc(v.tr)):'')+'</div></div>'
+        ).join('');
+        searchResults.style.display = 'block';
+        /* Not: 'onclick' yerine 'onmousedown' + preventDefault kullanıyoruz.
+           Arama kutusu odaklıyken bir öğeye tıklamak önce 'blur' (odak
+           kaybı) tetikler; input'un blur'da sonucu gizlemesi click'ten
+           ÖNCE gerçekleşebiliyor ve tıklama hiç işlemiyormuş gibi
+           görünüyordu. mousedown + preventDefault, blur'un hiç
+           tetiklenmesini engelleyip seçimi güvenilir hale getiriyor. */
+        searchResults.querySelectorAll('[data-nb-pick]').forEach(el => {
+          el.onmousedown = (e) => {
+            e.preventDefault();
+            const v = matches[parseInt(el.getAttribute('data-nb-pick'), 10)];
+            if(!v) return;
+            closeResults();
+            searchInput.value = '';
+            nbQuickAdd(v);
+          };
+        });
+      });
+    };
+    /* Dışarı tıklanınca sonuç listesini kapat (dokümana bir kez bağlanır) */
+    if(!window._nbOutsideCloseBound){
+      window._nbOutsideCloseBound = true;
+      document.addEventListener('mousedown', (e) => {
+        const wrap = document.getElementById('nbSearchResults');
+        const input = document.getElementById('nbSearchInput');
+        if(!wrap || wrap.style.display === 'none') return;
+        if(e.target === input || wrap.contains(e.target)) return;
+        wrap.innerHTML = ''; wrap.style.display = 'none';
+      });
+    }
+    searchInput.onfocus = () => { if(searchResults.innerHTML) searchResults.style.display = 'block'; };
+  }
+
+  const wordInput = document.getElementById('nbInputWord');
+  const trInput = document.getElementById('nbInputTr');
+  const exInput = document.getElementById('nbInputEx');
+  const catInput = document.getElementById('nbInputCat');
+  const langWarn = document.getElementById('nbLangWarn');
+
+  const saveBtn = document.getElementById('nbSaveWord');
+  if(saveBtn) saveBtn.onclick = () => {
+    const w = (wordInput.value||'').trim();
+    const tr = (trInput.value||'').trim();
+    let ex = (exInput.value||'').trim();
+    let cat = (catInput.value||'').trim();
+    let exTr = (nbPrefill && nbPrefill.w === w) ? (nbPrefill.exTr||'') : (editing && editing.w === w ? (editing.exTr||'') : '');
+    if(!nbSelectedAddLang){
+      if(langWarn) langWarn.textContent = t('nb_select_lang_first');
+      return;
+    }
+    if(!w){ wordInput.focus(); return; }
+    const db = window.LB_getDb(); const uid2 = window.LB_getUid();
+    if(!db || !uid2) return;
+    const af = nbAutoFill(nbSelectedAddLang, w, cat, ex, exTr);
+    if(af.filled) nbToast(t('nb_autofilled_toast'));
+    cat = af.cat; ex = af.ex; exTr = af.exTr;
+    const level = af.level || '';
+    if(nbEditingId != null){
+      db.ref('progress/'+uid2+'/notebook/'+nbEditingId).update({ w, tr, ex, exTr, cat, level, lang: nbSelectedAddLang });
+      nbEditingId = null;
+    }else{
+      const dupExists = Object.keys(nbWords||{}).some(id => {
+        const it = nbWords[id]||{};
+        return (it.lang||'de') === nbSelectedAddLang && nbSanitizeKey(it.w) === nbSanitizeKey(w);
+      });
+      if(dupExists){
+        alert(t('nb_duplicate_word'));
+        return;
+      }
+      db.ref('progress/'+uid2+'/notebook').push({ w, tr, ex, exTr, cat, level, lang: nbSelectedAddLang, ts: Date.now() });
+    }
+    nbSelectedAddLang = null;
+    nbPrefill = null;
+    nbRender();
+  };
+
+  const cancelBtn = document.getElementById('nbCancelEdit');
+  if(cancelBtn) cancelBtn.onclick = () => { nbEditingId = null; nbSelectedAddLang = null; nbPrefill = null; nbRender(); };
+
+  host.querySelectorAll('[data-nb-edit]').forEach(el => {
+    el.onclick = () => { nbEditingId = el.getAttribute('data-nb-edit'); nbSelectedAddLang = null; nbPrefill = null; nbRender(); };
+  });
+  host.querySelectorAll('[data-nb-del]').forEach(el => {
+    el.onclick = () => {
+      const id = el.getAttribute('data-nb-del');
+      const db = window.LB_getDb(); const uid2 = window.LB_getUid();
+      if(!db || !uid2) return;
+      /* Not: burası artık her zaman Kelime Defterinden (notebook) tam
+         silme demek — favori olsa bile. Sadece favoriden çıkarmak
+         isteyen kişi kartın üzerindeki ⭐'a basar (o, silmeden sadece
+         rozeti kaldırır). Bu yüzden burada onay istemiyoruz; işlem geri
+         alınamaz bir "favoriden çıkarma" değil, doğrudan bir "sil". */
+      let backupWord = nbWords[id];
+      delete nbWords[id];
+      if(nbEditingId === id) nbEditingId = null;
+      nbRender();
+      db.ref('progress/'+uid2+'/notebook/'+id).remove().then(() => {
+        nbToast(t('nb_deleted_toast'));
+      }).catch(err => {
+        console.error('Silinemedi:', err);
+        if(backupWord) nbWords[id] = backupWord;
+        nbRenderIfOpen();
+        nbToast(t('nb_delete_failed_toast'), 'bad');
+      });
+    };
+  });
+
+  const startBtn = document.getElementById('nbStartStudy');
+  if(startBtn) startBtn.onclick = () => {
+    if(nbCombinedList().length === 0) return;
+    nbStudyPicking = 'lang';
+    nbRender();
+  };
+}
+
+function nbStartStudy(lang, level){
+  let list = nbCombinedList().filter(it => (it.lang||'de') === lang);
+  if(level) list = list.filter(it => (it.level||'') === level);
+  if(list.length === 0) return;
+  deck = list.map((item, i) => {
+    const c = (typeof pair === 'function') ? pair(i) : ['#4fe8ff','#ff5fb8'];
+    return {
+      lang: item.lang || 'de',
+      level: t('nb_custom_level_tag'),
+      cat: item.cat || 'Notlarım',
+      w: item.w,
+      tr: item.tr || '',
+      pos: item.source === 'favorite' ? (item.pos || t('nb_favorite_tag')) : t('nb_my_notebook_tag'),
+      ex: item.ex || '',
+      exTr: item.exTr || '',
+      c1: c[0], c2: c[1],
+      _nbId: item.id, _nbSource: item.source, difficulty: item.difficulty || 'orta'
+    };
+  });
+  idx = 0; flipped = false;
+  activeCat = 'Notlarım';
+  nbStudyPicking = false;
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('cardsView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  renderCard();
+}
+
+function nbRenderDifficultyBox(){
+  const box = document.getElementById('nbDifficultyBox');
+  if(!box) return;
+  const v = deck[idx];
+  const stage = document.querySelector('.stage');
+  if(activeCat !== 'Notlarım' || !v || !v._nbId){
+    box.style.display = 'none';
+    if(stage) stage.classList.remove('stage-merged');
+    return;
+  }
+  box.style.display = '';
+  if(stage) stage.classList.add('stage-merged');
+  box.querySelectorAll('[data-diff]').forEach(el => {
+    el.classList.toggle('active', (v.difficulty||'orta') === el.getAttribute('data-diff'));
+  });
+}
+function nbUpdateFinishButton(){
+  const btn = document.getElementById('nbFinishStudyBtn');
+  if(!btn) return;
+  btn.style.display = (activeCat === 'Notlarım') ? '' : 'none';
+}
+(function(){
+  const btn = document.getElementById('nbFinishStudyBtn');
+  if(btn) btn.onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
+})();
+function nbSetDifficulty(level){
+  const v = deck[idx];
+  if(!v || !v._nbId) return;
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid) return;
+  v.difficulty = level;
+  if(nbWords[v._nbId]) nbWords[v._nbId].difficulty = level;
+  nbRenderDifficultyBox();
+  db.ref('progress/'+uid+'/notebook/'+v._nbId).update({ difficulty: level }).catch(err => {
+    console.error('Zorluk seviyesi kaydedilemedi:', err);
+    nbToast('Zorluk seviyesi kaydedilemedi.', 'bad');
+  });
+}
+(function(){
+  const box = document.getElementById('nbDifficultyBox');
+  if(box){
+    box.querySelectorAll('[data-diff]').forEach(el => {
+      el.onclick = () => nbSetDifficulty(el.getAttribute('data-diff'));
+    });
+  }
+})();
+
+/* Kelime Defterim listesinden (çalışma moduna girmeden) zorluk değiştirme */
+function nbSetDifficultyDirect(id, source, level){
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid) return;
+  if(nbWords[id]) nbWords[id].difficulty = level;
+  nbRenderIfOpen();
+  db.ref('progress/'+uid+'/notebook/'+id).update({ difficulty: level }).catch(err => {
+    console.error('Zorluk seviyesi kaydedilemedi:', err);
+    nbToast('Zorluk seviyesi kaydedilemedi.', 'bad');
+  });
+}
+
+/* --------------------------- QUIZ OL (dil + zorluk seçip quiz) --------------------------- */
+let nbQuizPicking = null;  /* null | 'lang' | 'diff' */
+let nbQuizLang = null;
+function nbStartQuiz(lang, difficulty){
+  let list = nbCombinedList().filter(it => (it.lang||'de') === lang);
+  if(difficulty) list = list.filter(it => (it.difficulty||'orta') === difficulty);
+  if(list.length === 0) return;
+  deck = list.map((item, i) => {
+    const c = (typeof pair === 'function') ? pair(i) : ['#4fe8ff','#ff5fb8'];
+    return {
+      lang: item.lang || 'de', level:t('nb_custom_level_tag'), cat: item.cat || 'Notlarım',
+      w: item.w, tr: item.tr || '',
+      pos: item.source === 'favorite' ? (item.pos || t('nb_favorite_tag')) : t('nb_my_notebook_tag'),
+      ex: item.ex || '', exTr: item.exTr || '', c1: c[0], c2: c[1],
+      _nbId: item.id, _nbSource: item.source, difficulty: item.difficulty || 'orta'
+    };
+  });
+  activeCat = 'Notlarım';
+  nbQuizPicking = null;
+  deactivateAllTabs();
+  toggleActive('tabNotebook', true);
+  try{document.body.classList.add('notebook-active');}catch(e){}
+  setDisplay('quizView', 'block');
+  setDisplay('levelBox', 'none');
+  setDisplay('chips', 'none');
+  setDisplay('langBox', 'none');
+  setDisplay('langPair', 'none');
+  buildQuizDeck();
+}
+
+/* --------------------------- FAVORİ YILDIZI (kartlar üzerinde) --------------------------- */
+function nbUpdateFavStar(){
+  const v = deck[idx];
+  const inNotebookStudy = (activeCat === 'Notlarım');
+  ['favStarFront','favStarBack'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(!v || inNotebookStudy){ el.style.display = 'none'; return; }
+    el.style.display = '';
+    const key = nbFavKey(v.lang, v.w);
+    const on = !!(nbWords && nbWords[key] && nbWords[key].isFavorite);
+    el.textContent = on ? '★' : '☆';
+    el.classList.toggle('on', on);
+    el.classList.toggle('off', !on);
+  });
+}
+function nbToast(msg, kind){
+  try{
+    if(window.LUM_toast){ window.LUM_toast(msg, kind ? {kind:kind} : undefined); return; }
+  }catch(e){}
+  /* pwa.js her nedenle yüklenmemiş olabilir — sessiz kalmak yerine en azından konsola yaz */
+  console.log('[Lumira]', msg);
+}
+
+/* Favoriler artık Kelime Defterinin (notebook) kalıcı bir parçası —
+   favoriden çıkarmak sadece 'isFavorite' bayrağını kaldırır, kelimeyi
+   Kelime Defterinden SİLMEZ. Silmek için Kelime Defterim'deki 🗑️ kullanılır. */
+function nbToggleFavorite(silent){
+  const v = deck[idx]; if(!v) return;
+  const db = window.LB_getDb ? window.LB_getDb() : null;
+  const uid = window.LB_getUid ? window.LB_getUid() : null;
+  if(!db || !uid){
+    /* Giriş süreci tam bitmemiş olabilir (uygulama yeni açıldıysa) — hemen
+       pes etmek yerine birkaç saniye kısa aralıklarla tekrar dener, ancak
+       gerçekten giriş yoksa kullanıcıyı bilgilendirir. */
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      const db2 = window.LB_getDb ? window.LB_getDb() : null;
+      const uid2 = window.LB_getUid ? window.LB_getUid() : null;
+      if(db2 && uid2){ clearInterval(iv); nbToggleFavorite(silent); }
+      else if(tries > 10){ clearInterval(iv); if(!silent) nbToast(t('nb_fav_login_required'), 'bad'); }
+    }, 300);
+    return;
+  }
+  const favId = nbFavKey(v.lang, v.w);
+  const existing = nbWords[favId];
+  const isFav = !!(existing && existing.isFavorite);
+  const ref = db.ref('progress/'+uid+'/notebook/'+favId);
+  if(isFav){
+    const backup = nbWords[favId];
+    nbWords[favId] = Object.assign({}, existing, { isFavorite: false });
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    ref.update({ isFavorite: false }).then(() => {
+      if(!silent) nbToast(t('nb_fav_removed'));
+    }).catch(err => {
+      console.error('Favori kaldırılamadı:', err);
+      nbWords[favId] = backup;
+      nbUpdateFavStar();
+      nbRenderIfOpen();
+      if(!silent) nbToast(t('nb_fav_remove_failed'), 'bad');
+    });
+  }else{
+    const payload = existing ? Object.assign({}, existing, { isFavorite: true }) : {
+      w: v.w, tr: v.tr||'', ex: v.ex||'', exTr: v.exTr||'', pos: v.pos||'',
+      lang: v.lang, cat: v.cat||'', level: v.level||'', difficulty: 'orta',
+      isFavorite: true, ts: Date.now()
+    };
+    /* İyimser güncelleme: Firebase yanıtını beklemeden yıldızı doldur ve
+       açıksa Notlarım listesine hemen yansıt. */
+    const backup = nbWords[favId];
+    nbWords[favId] = payload;
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    ref.set(payload).then(() => {
+      if(!silent) nbToast(t('nb_fav_added'));
+    }).catch(err => {
+      console.error('Favori eklenemedi:', err);
+      if(backup) nbWords[favId] = backup; else delete nbWords[favId];
+      nbUpdateFavStar();
+      nbRenderIfOpen();
+      if(!silent) nbToast(t('nb_fav_add_failed'), 'bad');
+    });
+  }
+}
+['favStarFront','favStarBack'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.onclick = (e) => { e.stopPropagation(); nbToggleFavorite(); };
+});
+/* pwa.js'teki önceden var olan #favBtn (Ayarlar > Favorilerim) tıklandığında
+   da ÇAĞRILIR — böylece tek bir yıldız/tek bir tıklama hem eski
+   localStorage sistemine hem de yeni Notlarım (Firebase) sistemine birden
+   yazar. "Notlarım" çalışma modundayken (kendi kelimeni favorileme
+   mantıksız olduğu için) hiçbir şey yapmaz. */
+window.NB_toggleFavoriteFromCard = function(){
+  if(activeCat === 'Notlarım') return;
+  nbToggleFavorite(true);
+};
+/* Ayarlar > Favorilerim listesinden bir kelime çıkarılınca (kartın kendisi
+   o an ekranda olmayabilir, bu yüzden deck[idx] değil doğrudan kelime
+   üzerinden çalışır) — sadece 'isFavorite' bayrağını kaldırır, Kelime
+   Defterinden SİLMEZ. */
+window.NB_unfavoriteByWord = function(lang, w){
+  try{
+    const db = window.LB_getDb ? window.LB_getDb() : null;
+    const uid = window.LB_getUid ? window.LB_getUid() : null;
+    if(!db || !uid || !lang || !w) return;
+    const favId = nbFavKey(lang, w);
+    if(!nbWords[favId] || !nbWords[favId].isFavorite) return;
+    nbWords[favId].isFavorite = false;
+    nbUpdateFavStar();
+    nbRenderIfOpen();
+    db.ref('progress/'+uid+'/notebook/'+favId).update({ isFavorite: false }).catch(err => {
+      console.error('Favori kaldırılamadı:', err);
+    });
+  }catch(e){}
+};
+
+/* ======================= INIT =======================
+   TARGET_LANG 'de' değilse (ör. onboarding'de İngilizce/Fransızca vb.
+   seçilmişse veya CROSS moddaysa) gereken sözlük(ler) henüz senkron
+   yüklenmemiş olabilir — bu yüzden ilk render, gerekli dosyalar
+   yüklenene KADAR bekliyor. Türkçe-ana-dilli mevcut kullanıcılar için
+   (activeLang zaten 'de' önceden yüklü) bu bekleme anlık/gözle
+   görülmez şekilde geçer; davranış değişmez. */
 /* ======================= INIT =======================
    TARGET_LANG 'de' değilse (ör. onboarding'de İngilizce/Fransızca vb.
    seçilmişse veya CROSS moddaysa) gereken sözlük(ler) henüz senkron
@@ -3620,7 +4747,7 @@ setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
   }, { once:true });
 })();
 </script>
-<script src="progress.js?v=1.7.27"></script>
+<script src="progress.js?v=1.8.0"></script>
 
 <!-- Service Worker kaydı, güncelleme kontrolü, bildirimler ve geri tuşu
      yönetimi artık pwa.js içinde (sayfanın en altında yükleniyor). -->
@@ -3631,22 +4758,22 @@ setLangPair(NATIVE_LANG, TARGET_LANG).then(function(){
      sadece giriş koreografisi CSS ile yapılır. -->
 <!-- GSAP ve Lenis kaldırıldı: projede hiçbir yerde kullanılmıyordu ama her
      açılışta indirilip ayrıştırılıyordu (~130 KB). -->
-<script defer src="voice.js?v=1.7.27"></script>
-<script defer src="theme.js?v=1.7.27"></script>
+<script defer src="voice.js?v=1.8.0"></script>
+<script defer src="theme.js?v=1.8.0"></script>
 
 <!-- ===================== LUMIRA · PWA KATMANI =====================
      Service Worker, çevrimdışı paket, bildirimler, geri tuşu, kısayollar,
      deep link, favoriler, yedekleme ve güncelleme yönetimi. -->
-<script defer src="pwa.js?v=1.7.27"></script>
+<script defer src="pwa.js?v=1.8.0"></script>
 
 <!-- Destek rozetleri, seviye kilitleri ve PDF dışa aktarma -->
-<script defer src="support-badges.js?v=1.7.27"></script>
+<script defer src="support-badges.js?v=1.8.0"></script>
 
 <!-- Kullanım ölçümü (yönetici panelinde görüntülenir) -->
-<script defer src="splash.js?v=1.7.27"></script>
-<script defer src="analytics.js?v=1.7.27"></script>
+<script defer src="splash.js?v=1.8.0"></script>
+<script defer src="analytics.js?v=1.8.0"></script>
 
 <!-- Yönetici paneli (yalnızca yetkili hesapta açılır) -->
-<script defer src="admin.js?v=1.7.27"></script>
+<script defer src="admin.js?v=1.8.0"></script>
 </body>
 </html>

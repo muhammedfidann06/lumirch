@@ -93,6 +93,9 @@ function toast(msg, opts) {
   }
   return close;
 }
+/* Notlarım/favoriler gibi index.html'in kendi inline script'i de aynı
+   toast sistemini kullanabilsin diye dışarı açıyoruz. */
+window.LUM_toast = toast;
 
 /* ------------------------------------------------------- ALT SAYFA ------ */
 var openSheets = [];
@@ -2214,7 +2217,7 @@ window.PWA = {
     });
     return { onLine: navigator.onLine, badgeVisible: !!(document.getElementById('pwa-offline') || {}).classList && document.getElementById('pwa-offline').classList.contains('in') };
   },
-  version: '1.7.22',
+  version: '1.8.0',
   isStandalone: function () { return isStandalone; }
 };
 

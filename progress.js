@@ -541,9 +541,48 @@
       .pm-root .pm-empty{text-align:center;padding:30px 10px;color:#8291b3;font-size:13px;}
       .pm-root .pm-loading{text-align:center;padding:40px 10px;color:#8291b3;font-size:13px;}
       .pm-root .pm-back-link{display:block;text-align:center;font-size:11.5px;color:#8291b3;margin-top:4px;cursor:pointer;text-decoration:underline;}
+      .pm-root .wp-textarea{
+        width:100%;box-sizing:border-box;min-height:140px;resize:vertical;
+        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.6;color:#eef4ff;
+        background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:14px 16px;outline:none;
+      }
+      .pm-root .wp-textarea:focus{border-color:var(--pm-accent);}
+      .pm-root .wp-counter{text-align:right;font-size:10.5px;color:#8291b3;margin:4px 2px 12px;}
+      .pm-root .wp-section-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--pm-accent);margin:4px 0 8px;}
+      .pm-root .wp-original{
+        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.8;color:#eef4ff;
+        background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:14px 16px;margin-bottom:14px;
+        white-space:pre-wrap;word-break:break-word;
+      }
+      .pm-root .wp-original mark.wp-err{
+        background:rgba(255,95,122,0.22);color:#ffd2d9;border-bottom:2px solid var(--pm-bad);
+        border-radius:3px;padding:0 2px;cursor:help;
+      }
+      .pm-root .wp-corrected{
+        font-family:Georgia,'Iowan Old Style',serif;font-size:15px;line-height:1.8;color:var(--pm-good);
+        background:rgba(61,255,160,0.06);border:1px solid rgba(61,255,160,0.35);border-radius:14px;padding:14px 16px;margin-bottom:14px;
+        white-space:pre-wrap;word-break:break-word;
+      }
+      .pm-root .wp-clean-msg{text-align:center;color:var(--pm-good);font-size:13px;font-weight:700;padding:16px 10px;}
+      .pm-root .wp-issue{display:flex;gap:10px;background:var(--pm-panel);border:1px solid var(--pm-border);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:left;}
+      .pm-root .wp-issue-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(255,95,122,0.18);border:1px solid var(--pm-bad);color:#ffd2d9;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+      .pm-root .wp-issue-body{flex:1;min-width:0;}
+      .pm-root .wp-issue-orig{font-size:13.5px;color:#eef4ff;margin-bottom:3px;}
+      .pm-root .wp-issue-orig b{color:var(--pm-good);}
+      .pm-root .wp-issue-msg{font-size:11.5px;color:#8291b3;line-height:1.5;}
+      .pm-root .wp-loading{text-align:center;padding:26px 10px;color:#8291b3;font-size:13px;}
+      .pm-root .wp-error{text-align:center;padding:20px 10px;color:#ffd2d9;font-size:12.5px;background:rgba(255,95,122,0.1);border:1px solid rgba(255,95,122,0.35);border-radius:14px;margin-bottom:12px;}
+      .pm-root .wp-speak-row{display:flex;gap:8px;margin-bottom:14px;}
+      .pm-root .wp-speak-row button{flex:1;}
     `;
     document.head.appendChild(style);
   }
+  /* Notlarım (index.html) sekmesi de aynı .pm-* görünümünü kullanıyor;
+     kullanıcı "Kişisel" sekmesini hiç açmadan doğrudan "Notlarım"a
+     girerse bu stil hiç eklenmemiş oluyordu (yalnızca renderHome/PM_open
+     içinde çağrılıyordu) ve form stilsiz/çıplak görünüyordu. Artık
+     dışarıdan da tetiklenebiliyor. */
+  window.PM_injectStyles = injectStyles;
 
   function renderHome(){
     injectStyles();
@@ -645,7 +684,7 @@
     html += '<div class="pm-card"><h4>'+window.t('pm_general_review')+'</h4><div class="pm-weak-meta">'+window.t('pm_general_review_desc')+'</div><div class="pm-group-row" id="pmGroupRow">'+groupRow+'</div></div>';
 
     html += '<div class="pm-card"><h4>'+window.t('pm_statistics')+'</h4><div class="pm-stat-grid">';
-    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">'+window.t('pm_learned_in')(L.label)+'</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalKnownLang+'</div><div class="pm-stat-label">'+window.t('pm_learned_in')((typeof nbLangLabel==='function')?nbLangLabel(activeLang):L.label)+'</div></div>';
     html += '<div class="pm-stat-box"><div class="pm-stat-num">'+today+'</div><div class="pm-stat-label">'+window.t('pm_today_learned')+'</div></div>';
     html += '<div class="pm-stat-box"><div class="pm-stat-num">'+totalStudied+'</div><div class="pm-stat-label">'+window.t('pm_total_studied')+'</div></div>';
     html += '<div class="pm-stat-box"><div class="pm-stat-num">'+(acc===null?'-':acc+'%')+'</div><div class="pm-stat-label">'+window.t('pm_accuracy')+'</div></div>';
@@ -681,6 +720,21 @@
       });
       supHtml = '<div class="pm-card"><h4>'+window.t('pm_badges_header')+'</h4><div class="pm-sup-grid">'+supRow+'</div></div>';
     }
+  const ADMIN_BADGE_NAMES = {
+    sampiyon: { tr:"Şampiyon", en:"Champion", de:"Champion", ar:"بطل", fr:"Champion", es:"Campeón", ru:"Чемпион" },
+    elmas: { tr:"Elmas", en:"Diamond", de:"Diamant", ar:"الماس", fr:"Diamant", es:"Diamante", ru:"Алмаз" },
+    efsane: { tr:"Efsane", en:"Legend", de:"Legende", ar:"أسطورة", fr:"Légende", es:"Leyenda", ru:"Легенда" },
+    nisanci: { tr:"Nişancı", en:"Sharpshooter", de:"Scharfschütze", ar:"قناص", fr:"Tireur d'élite", es:"Tirador", ru:"Снайпер" },
+    ates: { tr:"Ateş", en:"Fire", de:"Feuer", ar:"نار", fr:"Feu", es:"Fuego", ru:"Огонь" },
+    oncu: { tr:"Öncü", en:"Pioneer", de:"Pionier", ar:"رائد", fr:"Pionnier", es:"Pionero", ru:"Первопроходец" },
+    bilge: { tr:"Bilge", en:"Sage", de:"Weiser", ar:"حكيم", fr:"Sage", es:"Sabio", ru:"Мудрец" },
+    kitapkurdu: { tr:"Kitap Kurdu", en:"Bookworm", de:"Bücherwurm", ar:"دودة الكتب", fr:"Rat de bibliothèque", es:"Ratón de biblioteca", ru:"Книжный червь" },
+    birinci: { tr:"Birinci", en:"First Place", de:"Erster Platz", ar:"المركز الأول", fr:"Première place", es:"Primer lugar", ru:"Первое место" },
+    madalya: { tr:"Madalya", en:"Medal", de:"Medaille", ar:"ميدالية", fr:"Médaille", es:"Medalla", ru:"Медаль" },
+    onur: { tr:"Onur", en:"Honor", de:"Ehre", ar:"شرف", fr:"Honneur", es:"Honor", ru:"Честь" },
+    kelebek: { tr:"Kelebek", en:"Butterfly", de:"Schmetterling", ar:"فراشة", fr:"Papillon", es:"Mariposa", ru:"Бабочка" },
+  };
+
     var awHtml = '';
     const awards = meta.awards || {};
     const awardKeys = Object.keys(awards);
@@ -693,7 +747,10 @@
            güncel arayüz diline çevrilir; diğerleri (yönetici tarafından
            özel verilenler gibi) olduğu gibi (kaydedildiği hâliyle) kalır. */
         const streakMatch = /^streak(\d+)$/.exec(k);
-        const dispName = (streakMatch && window.t) ? window.t('streak_award')(streakMatch[1]) : (a.n||'');
+        const nativeLang = (typeof NATIVE_LANG !== 'undefined' && NATIVE_LANG) || 'tr';
+        const adminBadge = ADMIN_BADGE_NAMES[k];
+        const dispName = (streakMatch && window.t) ? window.t('streak_award')(streakMatch[1])
+          : (adminBadge ? (adminBadge[nativeLang] || adminBadge.tr) : (a.n||''));
         awRow += '<div class="pm-award" title="'+String(dispName).replace(/"/g,'')+'"><span class="pm-award-e">'+(a.e||'🏅')+'</span><span class="pm-award-n">'+String(dispName).replace(/</g,'')+'</span></div>';
       });
       awHtml = '<div class="pm-card"><h4>'+window.t('pm_achievements_header')+'</h4><div class="pm-awards">'+awRow+'</div></div>';
@@ -1495,7 +1552,7 @@
 
   function renderKnownWords(){
     const list = poolForActiveLang().filter(v=>{ const r=getRecord(v); return r && r.known; });
-    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✅ '+t('pm_known')+'</div><div class="pm-sub">'+list.length+' kelime ('+(window.isReversed && window.isReversed() ? 'Türkçe' : LANGS[activeLang].label)+')</div></div>';
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">✅ '+t('pm_known')+'</div><div class="pm-sub">'+list.length+' kelime ('+(window.isReversed && window.isReversed() ? ((window.t?window.t('lang_names').tr:'Türkçe')) : ((typeof nbLangLabel==='function')?nbLangLabel(activeLang):LANGS[activeLang].label))+')</div></div>';
     if(list.length===0){
       html += '<div class="pm-empty">'+(window.t?window.t('pm_no_known_words'):'Henüz öğrenilmiş kelime yok - çalışmaya başla!')+'</div>';
     } else {
@@ -1535,7 +1592,213 @@
     document.getElementById('pmBackHomeBtn2').onclick = renderHome;
   }
 
-  function openPersonalMode(){
+  /* =========================================================
+     YAZMA PRATİĞİ — Çok dilli Metin Düzeltici (CheckYourWrite benzeri)
+     Akış: Dil Seç → Seviye Seç (A1-B2) → Yaz & Kontrol Et
+     LanguageTool'un ücretsiz, herkese açık kontrol API'sini kullanır
+     (https://api.languagetool.org/v2/check, level=picky - en geniş
+     kural kapsamı). API anahtarı GEREKMEZ, kurulum istemez.
+     A1/A2'de sadece gramer/yazım/noktalama/büyük-küçük harf hataları
+     gösterilir; B1/B2'de üslup (STYLE) önerileri de eklenir.
+     Not: Bu ücretsiz, kural tabanlı bir servistir - bir dil modeli
+     (AI) kadar derin anlam/bağlam analizi yapmaz, ama anahtarsız ve
+     anında çalışır. Türkçe ve Arapça'da kapsamı diğer dillere göre
+     daha dar olabilir. ========================================= */
+  const WP_LANGS = [
+    { code:'en', tts:'en-US', lt:'en-US' },
+    { code:'de', tts:'de-DE', lt:'de-DE' },
+    { code:'ar', tts:'ar-SA', lt:'ar'    },
+    { code:'fr', tts:'fr-FR', lt:'fr'    },
+    { code:'es', tts:'es-ES', lt:'es'    },
+    { code:'ru', tts:'ru-RU', lt:'ru-RU' }
+  ];
+  const WP_LEVELS = ['A1','A2','B1','B2'];
+  let wpLang = null;
+  let wpLevel = null;
+  let wpBusy = false;
+
+  function wpFindLang(code){
+    const w = WP_LANGS.find(x=>x.code===code);
+    if(!w) return null;
+    const L = (typeof LANGS !== 'undefined' && LANGS[code]) ? LANGS[code] : { label: code };
+    const flag = (typeof LANG_FLAGS !== 'undefined' && LANG_FLAGS[code]) ? LANG_FLAGS[code] : '🌐';
+    /* Dil adı kullanıcının ANA diline göre gösterilir (nbLangLabel varsa
+       onu, yoksa I18N'in lang_names sözlüğünü, o da yoksa Türkçe adı kullanır). */
+    let label = L.label;
+    if(typeof nbLangLabel === 'function'){ label = nbLangLabel(code); }
+    else if(window.t){ const names = window.t('lang_names'); if(names && names[code]) label = names[code]; }
+    return { code: w.code, tts: w.tts, lt: w.lt, label: label, flag: flag };
+  }
+
+  function wpLevelShowsStyle(level){
+    return level === 'B1' || level === 'B2';
+  }
+
+  /* ---- 1. adım: dil seçimi ---- */
+  function renderWritingLangSelect(){
+    injectStyles();
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+(window.t?window.t('nb_writing_practice'):'✍️ Yazma Pratiği')+'</div><div class="pm-sub">'+(window.t?window.t('wp_choose_lang_sub'):'Hangi dilde yazma pratiği yapmak istersin?')+'</div></div>';
+    html += '<div class="lang-box">';
+    WP_LANGS.forEach(l=>{
+      const L = (typeof LANGS !== 'undefined' && LANGS[l.code]) ? LANGS[l.code] : { label: l.code };
+      const landmark = (typeof LANG_LANDMARK !== 'undefined' && LANG_LANDMARK[l.code]) ? LANG_LANDMARK[l.code] : '';
+      const flag = (typeof LANG_FLAGS !== 'undefined' && LANG_FLAGS[l.code]) ? LANG_FLAGS[l.code] : '🌐';
+      html += '<div class="lang-opt" data-lang="'+l.code+'" data-wp-lang="'+l.code+'"><span class="landmark" aria-hidden="true">'+landmark+'</span><div class="flag">'+flag+'</div><div class="lname">'+escapeHtml((typeof nbLangLabel==='function')?nbLangLabel(l.code):L.label)+'</div></div>';
+    });
+    html += '</div>';
+    html += '<button class="pm-btn small" id="wpBackHomeBtn" style="margin-top:16px;">'+(window.t?window.t('wp_back_to_notebook'):'← Notlarım\'a Dön')+'</button></div>';
+    root.innerHTML = html;
+    root.querySelectorAll('[data-wp-lang]').forEach(el=>{
+      el.onclick = () => { wpLang = el.getAttribute('data-wp-lang'); wpLevel = null; renderWritingLevelSelect(); };
+    });
+    document.getElementById('wpBackHomeBtn').onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
+  }
+
+  /* ---- 2. adım: seviye seçimi ---- */
+  function renderWritingLevelSelect(){
+    injectStyles();
+    const lang = wpFindLang(wpLang);
+    if(!lang){ renderWritingLangSelect(); return; }
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+lang.flag+' '+lang.label+'</div><div class="pm-sub">'+(window.t?window.t('wp_choose_level_sub'):'Seviyeni seç')+'</div></div>';
+    html += '<div class="pm-lang-grid" style="grid-template-columns:repeat(2,1fr);">';
+    WP_LEVELS.forEach(l=>{
+      html += '<div class="pm-lang-card" data-lvl="'+l+'"><div class="nm" style="font-size:16px;font-weight:800;color:#eef4ff;">'+l+'</div></div>';
+    });
+    html += '</div>';
+    html += '<button class="pm-btn small" id="wpBackLangBtn" style="margin-top:16px;">'+(window.t?window.t('nb_back_change_lang'):'← Dili Değiştir')+'</button></div>';
+    root.innerHTML = html;
+    root.querySelectorAll('.pm-lang-card').forEach(el=>{
+      el.onclick = () => { wpLevel = el.getAttribute('data-lvl'); renderWritingPractice(); };
+    });
+    document.getElementById('wpBackLangBtn').onclick = renderWritingLangSelect;
+  }
+
+  /* LanguageTool'un offset/length tabanlı 'matches' listesinden orijinal
+     metin üzerinde vurgulu görünüm, açıklama listesi ve önerilen düzeltme
+     üretir. */
+  function wpBuildViews(text, matches){
+    const sorted = matches.slice().sort((a,b)=> a.offset - b.offset);
+    let cursor = 0, origHtml = '', corrected = '', issuesHtml = '', count = 0;
+    sorted.forEach(m=>{
+      if(m.offset < cursor || m.offset > text.length) return; /* üst üste binenleri atla */
+      const errText = text.slice(m.offset, m.offset + m.length);
+      const repl = (m.replacements && m.replacements[0] && m.replacements[0].value != null) ? m.replacements[0].value : null;
+      origHtml += escapeHtml(text.slice(cursor, m.offset));
+      origHtml += '<mark class="wp-err" title="'+escapeHtml(m.message||'')+'">'+escapeHtml(errText)+'</mark>';
+      corrected += text.slice(cursor, m.offset);
+      corrected += (repl !== null) ? repl : errText;
+      count++;
+      issuesHtml += '<div class="wp-issue"><div class="wp-issue-num">'+count+'</div><div class="wp-issue-body">'+
+        '<div class="wp-issue-orig">❌ '+escapeHtml(errText)+(repl!==null ? ' → <b>'+escapeHtml(repl)+'</b>' : '')+'</div>'+
+        '<div class="wp-issue-msg">'+escapeHtml(m.shortMessage || m.message || '')+'</div></div></div>';
+      cursor = m.offset + m.length;
+    });
+    origHtml += escapeHtml(text.slice(cursor));
+    corrected += text.slice(cursor);
+    return { origHtml, corrected, issuesHtml, count };
+  }
+
+  function wpRunCheck(){
+    if(wpBusy) return;
+    const lang = wpFindLang(wpLang);
+    if(!lang) return;
+    const ta = document.getElementById('wpInput');
+    const text = ta ? ta.value.trim() : '';
+    const resultBox = document.getElementById('wpResult');
+    if(!text){
+      if(resultBox) resultBox.innerHTML = '<div class="wp-error">'+(window.t?window.t('wp_empty_text'):'Önce bir şeyler yaz, sonra kontrol edelim 🙂')+'</div>';
+      return;
+    }
+    if(text.length > 4000){
+      if(resultBox) resultBox.innerHTML = '<div class="wp-error">'+(window.t?window.t('wp_too_long'):'Metin çok uzun (max. 4000 karakter). Daha kısa bir bölüm dene.')+'</div>';
+      return;
+    }
+
+    wpBusy = true;
+    const btn = document.getElementById('wpCheckBtn');
+    if(btn){ btn.disabled = true; btn.textContent = (window.t?window.t('wp_checking'):'Kontrol ediliyor...'); }
+    if(resultBox) resultBox.innerHTML = '<div class="wp-loading">'+(window.t?window.t('wp_loading_msg'):'📝 Metnin kontrol ediliyor, birkaç saniye sürebilir...')+'</div>';
+
+    fetch('https://api.languagetool.org/v2/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'text=' + encodeURIComponent(text) + '&language=' + encodeURIComponent(lang.lt) + '&level=picky'
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data: data })))
+    .then(res => {
+      if(!res.ok){
+        console.error('[Yazma Pratiği] LanguageTool hatası:', res.status, res.data);
+        const e = new Error((res.data && res.data.message) || ('HTTP ' + res.status));
+        e.wpStatus = res.status;
+        throw e;
+      }
+      let matches = Array.isArray(res.data.matches) ? res.data.matches : [];
+      if(!wpLevelShowsStyle(wpLevel)){
+        matches = matches.filter(m=>{
+          const catId = m.rule && m.rule.category && m.rule.category.id;
+          return catId !== 'STYLE' && catId !== 'REDUNDANCY';
+        });
+      }
+      const views = wpBuildViews(text, matches);
+      if(!resultBox) return;
+      if(views.count === 0){
+        resultBox.innerHTML = '<div class="wp-clean-msg">'+(window.t?window.t('wp_clean_msg'):'✅ Hata bulunamadı, harika bir metin yazmışsın!')+'</div>'+
+          '<div class="wp-section-label">'+(window.t?window.t('wp_your_text'):'Metnin')+'</div><div class="wp-corrected">'+escapeHtml(text)+'</div>'+
+          '<div class="wp-speak-row"><button class="pm-btn small" id="wpListenBtn">'+(window.t?window.t('wp_listen'):'🔊 Dinle')+'</button></div>';
+      } else {
+        resultBox.innerHTML =
+          '<div class="wp-section-label">'+(window.t?window.t('wp_errors_found')(views.count):('Bulunan Hatalar ('+views.count+')'))+'</div>'+
+          '<div class="wp-original">'+views.origHtml+'</div>'+
+          '<div class="wp-section-label">'+(window.t?window.t('wp_explanations'):'Açıklamalar')+'</div>'+views.issuesHtml+
+          '<div class="wp-section-label">'+(window.t?window.t('wp_corrected_text'):'Düzeltilmiş Metin')+'</div>'+
+          '<div class="wp-corrected">'+escapeHtml(views.corrected)+'</div>'+
+          '<div class="wp-speak-row"><button class="pm-btn small" id="wpListenBtn">'+(window.t?window.t('wp_listen'):'🔊 Dinle')+'</button></div>';
+      }
+      const listenBtn = document.getElementById('wpListenBtn');
+      if(listenBtn){
+        listenBtn.onclick = () => { speak(views.count ? views.corrected : text, lang.tts); };
+      }
+    })
+    .catch((err)=>{
+      console.error('[Yazma Pratiği] Kontrol hatası:', err);
+      const msg = (err && err.wpStatus)
+        ? (window.t ? window.t('wp_service_error')(err.wpStatus) : ('Servis şu an yanıt vermiyor (HTTP '+err.wpStatus+'). Biraz sonra tekrar dene.'))
+        : (window.t ? window.t('wp_generic_error') : 'Kontrol sırasında bir sorun oluştu. İnternet bağlantını kontrol edip biraz sonra tekrar dene.');
+      if(resultBox) resultBox.innerHTML = '<div class="wp-error">'+escapeHtml(msg)+'</div>';
+    })
+    .finally(()=>{
+      wpBusy = false;
+      if(btn){ btn.disabled = false; btn.textContent = (window.t?window.t('wp_check_btn'):'Kontrol Et'); }
+    });
+  }
+
+  /* ---- 3. adım: yazma & kontrol ---- */
+  function renderWritingPractice(){
+    injectStyles();
+    const lang = wpFindLang(wpLang);
+    if(!lang || !wpLevel){ renderWritingLangSelect(); return; }
+    let html = '<div class="pm-root"><div class="pm-head"><div class="pm-title">'+(window.t?window.t('nb_writing_practice'):'✍️ Yazma Pratiği')+'</div>'+
+      '<div class="pm-sub">'+(window.t?window.t('wp_lang_level_sub')(lang.flag+' '+lang.label,wpLevel):(lang.flag+' '+lang.label+' · Seviye '+wpLevel))+'</div></div>';
+    html += '<textarea class="wp-textarea" id="wpInput" maxlength="4000" placeholder="'+(window.t?window.t('wp_placeholder')(lang.label):('Buraya '+lang.label+' bir metin yaz...'))+'"></textarea>';
+    html += '<div class="wp-counter" id="wpCounter">0 / 4000</div>';
+    html += '<button class="pm-btn primary" id="wpCheckBtn">'+(window.t?window.t('wp_check_btn'):'Kontrol Et')+'</button>';
+    html += '<div id="wpResult"></div>';
+    html += '<button class="pm-btn small" id="wpBackLevelBtn">'+(window.t?window.t('wp_back_level'):'← Seviye Değiştir')+'</button>';
+    html += '<button class="pm-btn primary" id="wpBackHomeBtn">'+(window.t?window.t('wp_back_to_notebook'):'📒 Notlarım\'a Dön')+'</button></div>';
+    root.innerHTML = html;
+
+    document.getElementById('wpBackHomeBtn').onclick = () => { const t = document.getElementById('tabNotebook'); if(t) t.click(); };
+    document.getElementById('wpBackLevelBtn').onclick = renderWritingLevelSelect;
+    document.getElementById('wpCheckBtn').onclick = wpRunCheck;
+    const ta = document.getElementById('wpInput');
+    const counter = document.getElementById('wpCounter');
+    if(ta && counter){
+      ta.addEventListener('input', ()=>{ counter.textContent = ta.value.length + ' / 4000'; });
+    }
+  }
+
+  function openPersonalMode(landingFn){
+    landingFn = (typeof landingFn === 'function') ? landingFn : renderHome;
     if(!root) return;
     injectStyles();
     const name = window.LB_getUserName ? window.LB_getUserName() : '';
@@ -1544,9 +1807,9 @@
       document.getElementById('pmAskNameBtn').onclick = () => { if(window.LB_checkName) window.LB_checkName(); };
       return;
     }
-    if(dataLoaded && currentName === name){ renderHome(); return; }
+    if(dataLoaded && currentName === name){ landingFn(); return; }
     root.innerHTML = '<div class="pm-root"><div class="pm-loading">'+(window.t?window.t('pm_loading'):'Kişisel alan yükleniyor...')+'</div></div>';
-    loadUserData(name, renderHome);
+    loadUserData(name, landingFn);
   }
 
   window.LB_onNameReady = function(name){
@@ -1558,7 +1821,12 @@
     loadUserData(name, isVisible ? renderHome : null);
   };
 
-  window.PM_open = openPersonalMode;
+  window.PM_open = function(){ openPersonalMode(); };
+
+  /* Notlarım sekmesinden doğrudan Yazma Pratiği akışını açmak için:
+     Kişisel sekmesine geçer (isim/veri kontrolü dahil) ve Ana Sayfa
+     yerine doğrudan dil seçim ekranını gösterir. */
+  window.PM_openWritingPractice = function(){ openPersonalMode(renderWritingLangSelect); };
 
   /* Dışarıdan XP eklemek için ortak kapı: quiz doğru cevapları ve
      destek rozetleri bunu kullanır. Kaydetme ve sunucuya yazma dahil. */

@@ -16,7 +16,7 @@
    ========================================================================== */
 'use strict';
 
-const CACHE_VERSION = 'v1.7.54';
+const CACHE_VERSION = 'v1.8.0';
 const SHELL_CACHE   = `lumira-shell-${CACHE_VERSION}`;
 const VOCAB_CACHE   = 'lumira-vocab-v1';      /* sözlükler sürümden bağımsız */
 const ASSET_CACHE   = 'lumira-assets-v1';
@@ -41,13 +41,10 @@ const SHELL = [
   './admin.js',
   './theme.css',
   './theme.js',
-  './improvements.css',
-  './improvements.js',
   './voice.js',
   './progress.js',
   './leaderboard.js',
   './vocab-core.js',
-  './vocab-extra.js',
   './scene-bg.jpg',
   './icon-192.png',
   './splash-logo.png',
@@ -63,7 +60,7 @@ const VOCAB_FILES = [
   './vocab-fr.js', './vocab-es.js', './vocab-ru.js'
 ];
 
-const isVocab = (url) => /vocab-(de|en|ar|fr|es|ru)\.js$/i.test(url.pathname);
+const isVocab = (url) => /vocab-[a-z_]+\.js$/i.test(url.pathname);
 const isCDN   = (url) => /(gstatic\.com|cdnjs\.cloudflare\.com|googleapis\.com|jsdelivr\.net|unpkg\.com)$/.test(url.hostname);
 const isLive  = (url) => /(firebaseio\.com|firebasedatabase\.app|identitytoolkit|googleapis\.com\/identitytoolkit)/.test(url.hostname + url.pathname);
 const isAsset = (url) => /\.(png|jpg|jpeg|webp|svg|gif|ico|woff2?|ttf|mp3|ogg)$/i.test(url.pathname);
@@ -163,28 +160,27 @@ async function networkFirst(req, cacheName) {
   try {
     const res = await fetch(req);
     if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
-    if(!res || !res.ok) throw new Error("Network response failed");
     return res;
   } catch (e) {
-    const hit = await cache.match(req, { ignoreVary: true, ignoreSearch: true });
+    const hit = await cache.match(req, { ignoreVary: true });
     return hit || Response.error();
   }
 }
 
 async function handleNavigate(event) {
   const cache = await caches.open(SHELL_CACHE);
-  const url = new URL(event.request.url);
-  const scope = new URL(self.registration.scope);
-  const isHome = url.pathname === scope.pathname || url.pathname === scope.pathname + 'index.html';
-  const key = isHome ? new URL('index.html', scope).href : url.origin + url.pathname;
   try {
     const preload = await event.preloadResponse;
-    const fresh = preload || await fetch(event.request);
-    if (!fresh.ok) throw new Error('Navigation failed');
-    await cache.put(key, fresh.clone()).catch(() => {});
+    if (preload) {
+      cache.put('./index.html', preload.clone()).catch(() => {});
+      return preload;
+    }
+    const fresh = await fetch(event.request);
+    cache.put('./index.html', fresh.clone()).catch(() => {});
     return fresh;
   } catch (e) {
-    return (await cache.match(key)) ||
+    return (await cache.match('./index.html')) ||
+           (await cache.match('./')) ||
            (await cache.match(OFFLINE_URL)) ||
            new Response('<h1>Çevrimdışı</h1>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
@@ -192,7 +188,7 @@ async function handleNavigate(event) {
 
 async function cacheFirst(req, cacheName) {
   const cache = await caches.open(cacheName);
-  const hit = await cache.match(req, { ignoreVary: true, ignoreSearch: true });
+  const hit = await cache.match(req, { ignoreVary: true });
   if (hit) return hit;
   try {
     const res = await fetch(req);
@@ -205,7 +201,7 @@ async function cacheFirst(req, cacheName) {
 
 async function staleWhileRevalidate(req, cacheName, allowOpaque) {
   const cache = await caches.open(cacheName);
-  const hit = await cache.match(req, { ignoreVary: true, ignoreSearch: true });
+  const hit = await cache.match(req, { ignoreVary: true });
   const network = fetch(req).then((res) => {
     if (res && (res.ok || (allowOpaque && res.type === 'opaque'))) {
       cache.put(req, res.clone()).catch(() => {});
@@ -241,12 +237,11 @@ self.addEventListener('message', (event) => {
       const cache = await caches.open(VOCAB_CACHE);
       const list = VOCAB_FILES.slice();
       let done = 0;
-      let failed = 0;
       for (const url of list) {
         try {
           const already = await cache.match(url);
           if (!already) await cache.add(new Request(url, { cache: 'reload' }));
-        } catch (e) { failed++; }
+        } catch (e) {}
         done++;
         const clientsList = await self.clients.matchAll({ type: 'window' });
         clientsList.forEach((c) => c.postMessage({
@@ -254,7 +249,7 @@ self.addEventListener('message', (event) => {
         }));
       }
       const clientsList = await self.clients.matchAll({ type: 'window' });
-      clientsList.forEach((c) => c.postMessage({ type: 'CACHE_DONE', failed, total: list.length }));
+      clientsList.forEach((c) => c.postMessage({ type: 'CACHE_DONE' }));
     })());
     return;
   }

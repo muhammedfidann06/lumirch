@@ -380,7 +380,7 @@
         send.disabled = true; send.textContent = 'Yükleniyor…';
 
         var proceed = function () {
-          var pool = (window.VOCAB || []).filter(function (v) { return v.lang === chosenLang && v.level === chosenLevel; });
+          var pool = (typeof VOCAB !== 'undefined' ? VOCAB : []).filter(function (v) { return v.lang === chosenLang && v.level === chosenLevel; });
           if (!pool.length) {
             send.disabled = false; send.textContent = 'Bilinen Kelimelere Aktar';
             toast('Bu seçimde kelime bulunamadı', { kind: 'bad' }); return;

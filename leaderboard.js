@@ -169,6 +169,7 @@ function initLeaderboard(){
       try{
         const cred = await authSvc.createUserWithEmailAndPassword(email, password);
         try{ await cred.user.updateProfile({ displayName: displayName }); }catch(e){}
+        grantNewSignupBonusIfEligible(cred.user.uid); /* arka planda, hataya rağmen akışı bloklamaz */
         onAuthSuccess(cred.user.uid, displayName);
       }catch(err){
         console.error('Giriş hatası:', err && err.code, err && err.message);
@@ -222,6 +223,35 @@ function initLeaderboard(){
     }
     if(!nameSubmit || !nameInput){
       console.warn('Liderlik tablosu: giriş formu elementleri bulunamadı.');
+    }
+
+    /* ============================================ YENİ ÜYE HEDİYESİ (1-100)
+       Kayıt olan HERKES için atomik bir sayaç ilerletilir (system/signupCount).
+       Bu sayaç, bu kullanıcının kaçıncı kayıt olduğunu KESİN olarak (yarış
+       durumu olmadan) verir. Bu turdan itibaren 1. ile 100. kayıt (dahil)
+       arasındaki HERKESE otomatik olarak 👍🏻 Teşekkür destek rozeti + 500 XP
+       hediye edilir. 101. ve sonrası hiçbir şey almaz — normal üye olarak
+       kayıt olur, sayaç orada donuk kalır, tekrar tetiklenmez.
+       NOT: Firebase kurallarında 'system/signupCount' için
+       { ".read": "auth != null", ".write": "auth != null" } izni gerekir
+       — bu kural Console'da yayında değilse bu fonksiyon SESSİZCE hiçbir
+       şey yapmaz (transaction izin hatasıyla düşer, err set edilir). */
+    function grantNewSignupBonusIfEligible(uid){
+      if(!db) return;
+      try{
+        db.ref('system/signupCount').transaction(function(cur){
+          return (typeof cur === 'number' ? cur : 0) + 1;
+        }, function(err, committed, snap){
+          if(err || !committed || !snap) return;
+          var n = snap.val();
+          if(n <= 100){
+            var updates = {};
+            updates['progress/'+uid+'/meta/supportGrants/1'] = true;
+            updates['progress/'+uid+'/meta/xp'] = 500;
+            db.ref().update(updates).catch(function(){});
+          }
+        });
+      }catch(e){}
     }
 
     function onAuthSuccess(uid, displayName){
@@ -598,6 +628,7 @@ function initLeaderboard(){
     window.LB_getActiveSeconds = () => activeAccumulated;
     window.LB_isIdle = isIdleNow;
     window.LB_getDb = () => db;
+    window.LB_getUid = () => currentUid;
     window.LB_getUserName = () => currentName;
     window.LB_getTotalSeconds = (name, cb) => {
       if(!db || !currentUid){ cb(0); return; }
